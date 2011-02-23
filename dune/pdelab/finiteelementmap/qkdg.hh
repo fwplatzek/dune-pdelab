@@ -551,7 +551,7 @@ namespace Dune
       QkCGLocalCoefficients () : li(QkStuff::QkSize<k,d>::value)
       {
         li[24] = LocalKey(6,3,0); li[25] = LocalKey(11,2,0); li[26] = LocalKey(7,3,0);
-        li[21] = LocalKey(8,2,0); li[22] = LocalKey(5,1,0); li[23] = LocalKey(9,2,0);
+        li[21] = LocalKey(8,2,0); li[22] = LocalKey(5,1,0);  li[23] = LocalKey(9,2,0);
         li[18] = LocalKey(4,3,0); li[19] = LocalKey(10,2,0); li[20] = LocalKey(5,3,0);
 
         li[15] = LocalKey(2,2,0); li[16] = LocalKey(3,1,0); li[17] = LocalKey(3,2,0);

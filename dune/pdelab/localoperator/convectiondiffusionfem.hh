@@ -11,6 +11,7 @@
 #include<dune/grid/common/genericreferenceelements.hh>
 #include<dune/grid/common/quadraturerules.hh>
 
+
 #include<dune/pdelab/common/geometrywrapper.hh>
 #include<dune/pdelab/gridoperatorspace/gridoperatorspace.hh>
 #include<dune/pdelab/gridoperatorspace/gridoperatorspaceutilities.hh>
@@ -18,6 +19,7 @@
 #include<dune/pdelab/localoperator/flags.hh>
 #include<dune/pdelab/localoperator/idefault.hh>
 #include<dune/pdelab/localoperator/defaultimp.hh>
+#include<dune/pdelab/finiteelement/localbasiscache.hh>
 
 #include"convectiondiffusionparameter.hh"
 
@@ -38,12 +40,12 @@ namespace Dune {
      *
      * \tparam T model of ConvectionDiffusionParameterInterface
      */
-    template<typename T>
+    template<typename T, typename FiniteElementMap>
     class ConvectionDiffusionFEM : 
-      public Dune::PDELab::NumericalJacobianApplyVolume<ConvectionDiffusionFEM<T> >,
-      public Dune::PDELab::NumericalJacobianApplyBoundary<ConvectionDiffusionFEM<T> >,
-      public Dune::PDELab::NumericalJacobianVolume<ConvectionDiffusionFEM<T> >,
-      public Dune::PDELab::NumericalJacobianBoundary<ConvectionDiffusionFEM<T> >,
+      public Dune::PDELab::NumericalJacobianApplyVolume<ConvectionDiffusionFEM<T,FiniteElementMap> >,
+      public Dune::PDELab::NumericalJacobianApplyBoundary<ConvectionDiffusionFEM<T,FiniteElementMap> >,
+      public Dune::PDELab::NumericalJacobianVolume<ConvectionDiffusionFEM<T,FiniteElementMap> >,
+      public Dune::PDELab::NumericalJacobianBoundary<ConvectionDiffusionFEM<T,FiniteElementMap> >,
       public Dune::PDELab::FullVolumePattern,
       public Dune::PDELab::LocalOperatorDefaultFlags,
       public Dune::PDELab::InstationaryLocalOperatorDefaultMethods<double>
@@ -56,8 +58,10 @@ namespace Dune {
       enum { doAlphaVolume = true };
       enum { doAlphaBoundary = true };
 
-      ConvectionDiffusionFEM (T& param_, int intorderadd_=0) : param(param_), intorderadd(intorderadd_)
-      {}
+      ConvectionDiffusionFEM (T& param_, int intorderadd_=0) 
+        : param(param_), intorderadd(intorderadd_)
+      {
+      }
 
       // volume integral depending on test and ansatz functions
       template<typename EG, typename LFSU, typename X, typename LFSV, typename R>
@@ -93,8 +97,9 @@ namespace Dune {
         for (typename Dune::QuadratureRule<DF,dim>::const_iterator it=rule.begin(); it!=rule.end(); ++it)
           {
             // evaluate basis functions
-            std::vector<RangeType> phi(lfsu.size());
-            lfsu.finiteElement().localBasis().evaluateFunction(it->position(),phi);
+            // std::vector<RangeType> phi(lfsu.size());
+            // lfsu.finiteElement().localBasis().evaluateFunction(it->position(),phi);
+            const std::vector<RangeType>& phi = cache.evaluateFunction(it->position(),lfsu.finiteElement().localBasis());
 
             // evaluate u
             RF u=0.0;
@@ -102,8 +107,9 @@ namespace Dune {
               u += x[lfsu.localIndex(i)]*phi[i];
 
             // evaluate gradient of shape functions (we assume Galerkin method lfsu=lfsv)
-            std::vector<JacobianType> js(lfsu.size());
-            lfsu.finiteElement().localBasis().evaluateJacobian(it->position(),js);
+            // std::vector<JacobianType> js(lfsu.size());
+            // lfsu.finiteElement().localBasis().evaluateJacobian(it->position(),js);
+            const std::vector<JacobianType>& js = cache.evaluateJacobian(it->position(),lfsu.finiteElement().localBasis());
 
             // transform gradients of shape functions to real element
             const Dune::FieldMatrix<DF,dimw,dim> jac = eg.geometry().jacobianInverseTransposed(it->position());
@@ -166,8 +172,9 @@ namespace Dune {
         for (typename Dune::QuadratureRule<DF,dim>::const_iterator it=rule.begin(); it!=rule.end(); ++it)
           {
             // evaluate gradient of shape functions (we assume Galerkin method lfsu=lfsv)
-            std::vector<JacobianType> js(lfsu.size());
-            lfsu.finiteElement().localBasis().evaluateJacobian(it->position(),js);
+            // std::vector<JacobianType> js(lfsu.size());
+            // lfsu.finiteElement().localBasis().evaluateJacobian(it->position(),js);
+            const std::vector<JacobianType>& js = cache.evaluateJacobian(it->position(),lfsu.finiteElement().localBasis());
 
             // transform gradient to real element
             const Dune::FieldMatrix<DF,dimw,dim> jac = eg.geometry().jacobianInverseTransposed(it->position());
@@ -180,8 +187,9 @@ namespace Dune {
               }
 
             // evaluate basis functions
-            std::vector<RangeType> phi(lfsu.size());
-            lfsu.finiteElement().localBasis().evaluateFunction(it->position(),phi);
+            // std::vector<RangeType> phi(lfsu.size());
+            // lfsu.finiteElement().localBasis().evaluateFunction(it->position(),phi);
+            const std::vector<RangeType>& phi = cache.evaluateFunction(it->position(),lfsu.finiteElement().localBasis());
 
             // evaluate velocity field, sink term and source te
             typename T::Traits::RangeType b = param.b(eg.entity(),it->position());
@@ -234,8 +242,9 @@ namespace Dune {
             Dune::FieldVector<DF,dim> local = ig.geometryInInside().global(it->position());
 
             // evaluate shape functions (assume Galerkin method) 
-            std::vector<RangeType> phi(lfsu_s.size());
-            lfsu_s.finiteElement().localBasis().evaluateFunction(local,phi);
+            // std::vector<RangeType> phi(lfsu_s.size());
+            // lfsu_s.finiteElement().localBasis().evaluateFunction(local,phi);
+            const std::vector<RangeType>& phi = cache.evaluateFunction(it->position(),lfsu_s.finiteElement().localBasis());
 
             if (bctype==ConvectionDiffusionBoundaryConditions::Neumann)
               {
@@ -310,8 +319,9 @@ namespace Dune {
             Dune::FieldVector<DF,dim> local = ig.geometryInInside().global(it->position());
 
             // evaluate shape functions (assume Galerkin method) 
-            std::vector<RangeType> phi(lfsu_s.size());
-            lfsu_s.finiteElement().localBasis().evaluateFunction(local,phi);
+            // std::vector<RangeType> phi(lfsu_s.size());
+            // lfsu_s.finiteElement().localBasis().evaluateFunction(local,phi);
+            const std::vector<RangeType>& phi = cache.evaluateFunction(it->position(),lfsu_s.finiteElement().localBasis());
 
             // evaluate velocity field and outer unit normal
             typename T::Traits::RangeType b = param.b(*(ig.inside()),local);
@@ -335,6 +345,8 @@ namespace Dune {
     private:
       T& param;
       int intorderadd;
+      typedef typename FiniteElementMap::Traits::FiniteElementType::Traits::LocalBasisType LocalBasisType;
+      Dune::PDELab::LocalBasisCache<LocalBasisType> cache;
     };
 
   }

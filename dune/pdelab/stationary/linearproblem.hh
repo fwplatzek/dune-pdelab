@@ -87,7 +87,7 @@ namespace Dune {
         ls.apply(m,z,r,red); // solver makes right hand side consistent
         timing = watch.elapsed();
         // timing = gos.trialGridFunctionSpace().gridview().comm().max(timing);
-        std::cout << timing << " s" << std::endl;
+        std::cout << "=== solving " << timing << " s" << std::endl;
 
         // and update
         *x -= z;

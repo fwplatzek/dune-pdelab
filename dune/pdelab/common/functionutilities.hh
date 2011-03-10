@@ -118,7 +118,7 @@ gf.getGridView().comm().sum(sum);
           e.reset(new EPtr
                   (HierarchicSearch<typename GV::Grid, typename GV::IndexSet>
                    (gfp->getGridView().grid(), gfp->getGridView().indexSet()).
-                   template findEntity<Interior_Partition>(xg)));
+                   findEntity(xg)));
           // make sure only interior entities are accepted
           if((*e)->partitionType() == InteriorEntity)
             evalRank = myRank;

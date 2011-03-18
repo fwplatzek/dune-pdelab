@@ -104,7 +104,7 @@ namespace Dune {
         \param[in] maxiter_ maximum number of iterations to do
         \param[in] verbose_ print messages if true
       */
-      explicit ISTLBackend_SEQ_Base(unsigned maxiter_=5000, bool verbose_=true)
+      explicit ISTLBackend_SEQ_Base(unsigned maxiter_=5000, int verbose_=1)
         : maxiter(maxiter_), verbose(verbose_)
       {}
       
@@ -133,7 +133,7 @@ namespace Dune {
 
     private:
       unsigned maxiter;
-      bool verbose;
+      int verbose;
     };
 
     template<template<typename> class Solver>
@@ -229,7 +229,7 @@ namespace Dune {
         \param[in] maxiter_ maximum number of iterations to do
         \param[in] verbose_ print messages if true
       */
-      explicit ISTLBackend_SEQ_BCGS_SSOR (unsigned maxiter_=5000, bool verbose_=true)
+      explicit ISTLBackend_SEQ_BCGS_SSOR (unsigned maxiter_=5000, int verbose_=1)
         : ISTLBackend_SEQ_Base<Dune::SeqSSOR, Dune::BiCGSTABSolver>(maxiter_, verbose_)
       {}
     };
@@ -310,7 +310,7 @@ namespace Dune {
         \param[in] maxiter_ maximum number of iterations to do
         \param[in] verbose_ print messages if true
       */
-      explicit ISTLBackend_SEQ_CG_SSOR (unsigned maxiter_=5000, bool verbose_=true)
+      explicit ISTLBackend_SEQ_CG_SSOR (unsigned maxiter_=5000, int verbose_=1)
         : ISTLBackend_SEQ_Base<Dune::SeqSSOR, Dune::CGSolver>(maxiter_, verbose_)
       {}
     };
@@ -325,7 +325,7 @@ namespace Dune {
 
         \param[in] verbose_ print messages if true
       */
-      explicit ISTLBackend_SEQ_SuperLU (bool verbose_=true)
+      explicit ISTLBackend_SEQ_SuperLU (int verbose_=1)
         : verbose(verbose_)
       {}
 
@@ -350,7 +350,7 @@ namespace Dune {
       }
 
     private:
-      bool verbose;
+      int verbose;
     };
 #endif // HAVE_SUPERLU
 

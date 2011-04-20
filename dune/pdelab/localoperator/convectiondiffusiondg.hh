@@ -959,6 +959,12 @@ namespace Dune {
           }
       }
 
+      //! set time in parameter class
+      void setTime (double t)
+      {
+        param.setTime(t);
+      }
+
     private:
       T& param;  // two phase parameter class
       ConvectionDiffusionDGMethod::Type method;

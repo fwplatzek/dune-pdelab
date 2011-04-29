@@ -129,6 +129,7 @@ namespace Dune {
         res.iterations = stat.iterations;
         res.elapsed    = stat.elapsed;
         res.reduction  = stat.reduction;
+        res.conv_rate  = stat.conv_rate;
       }
 
     private:
@@ -168,6 +169,7 @@ namespace Dune {
         res.iterations = stat.iterations;
         res.elapsed    = stat.elapsed;
         res.reduction  = stat.reduction;
+        res.conv_rate  = stat.conv_rate;
        }
     private:
       unsigned maxiter;
@@ -207,6 +209,7 @@ namespace Dune {
         res.iterations = stat.iterations;
         res.elapsed    = stat.elapsed;
         res.reduction  = stat.reduction;
+        res.conv_rate  = stat.conv_rate;
        }
     private:
       int n_;
@@ -347,6 +350,7 @@ namespace Dune {
         res.iterations = stat.iterations;
         res.elapsed    = stat.elapsed;
         res.reduction  = stat.reduction;
+        res.conv_rate  = stat.conv_rate;
       }
 
     private:
@@ -382,6 +386,7 @@ namespace Dune {
         res.iterations = 1;
         res.elapsed    = 0.0;
         res.reduction  = reduction;
+        res.conv_rate  = reduction; // pow(reduction,1.0/1)
       }
     };
 
@@ -447,6 +452,7 @@ namespace Dune {
         res.iterations = stat.iterations;
         res.elapsed    = stat.elapsed;
         res.reduction  = stat.reduction;
+        res.conv_rate  = stat.conv_rate;
       }
 
       /*! \brief Return access to result data */

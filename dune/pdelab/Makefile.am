@@ -9,9 +9,11 @@ SUBDIRS =					\
 	gridfunctionspace			\
 	gridoperatorspace			\
 	linearsolver				\
+        instationary                            \
 	localoperator				\
 	multistep				\
 	newton					\
+        stationary                              \
 	test
 
 include $(top_srcdir)/am/global-rules

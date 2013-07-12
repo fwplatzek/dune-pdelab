@@ -166,7 +166,7 @@ public:
 
 // generate a P1 function and output it
 template<typename GV, typename FEM, typename CON, int q>
-void poisson (const GV& gv, const FEM& fem, std::string filename)
+void poisson (const GV& gv, const FEM& fem, std::size_t avg_row_size, std::string filename)
 {
   // constants and types
   typedef typename GV::Grid::ctype DF;
@@ -226,14 +226,11 @@ void poisson (const GV& gv, const FEM& fem, std::string filename)
   // it's there to test the copy constructor and assignment operator of the
   // matrix wrapper
   typedef typename GridOperator::Traits::Jacobian M;
-  M m;
-  {
-    M m1(gridoperator);
-    M m2(m1);
-    m2 = 0.0;
-    m = m1;
-    m = m2;
-  }
+
+  std::cout << gridoperator.testGridFunctionSpace().ordering().blockCount() << " x " <<
+    gridoperator.trialGridFunctionSpace().ordering().blockCount() << std::endl;
+
+  M m(gridoperator,avg_row_size,0.05);
   gridoperator.jacobian(x0,m);
   //  Dune::printmatrix(std::cout,m.base(),"global stiffness matrix","row",9,1);
 
@@ -297,7 +294,7 @@ int main(int argc, char** argv)
       Dune::FieldVector<int,2> N(1);
       Dune::FieldVector<bool,2> B(false);
       Dune::YaspGrid<2> grid(L,N,B,0);
-      grid.globalRefine(3);
+      grid.globalRefine(atoi(argv[1]));
 
       // get view
       typedef Dune::YaspGrid<2>::LeafGridView GV;
@@ -309,7 +306,7 @@ int main(int argc, char** argv)
       FEM fem;
 
       // solve problem
-      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,2>(gv,fem,"poisson_yasp_Q1_2d");
+      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,2>(gv,fem,atoi(argv[2]),"poisson_yasp_Q1_2d");
     }
 
     // YaspGrid Q2 2D test
@@ -319,7 +316,7 @@ int main(int argc, char** argv)
       Dune::FieldVector<int,2> N(1);
       Dune::FieldVector<bool,2> B(false);
       Dune::YaspGrid<2> grid(L,N,B,0);
-      grid.globalRefine(3);
+      grid.globalRefine(atoi(argv[3]));
 
       // get view
       typedef Dune::YaspGrid<2>::LeafGridView GV;
@@ -331,17 +328,17 @@ int main(int argc, char** argv)
       FEM fem;
 
       // solve problem
-      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,2>(gv,fem,"poisson_yasp_Q2_2d");
+      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,2>(gv,fem,atoi(argv[4]),"poisson_yasp_Q2_2d");
     }
 
-    // YaspGrid Q2 3D test
+    // YaspGrid Q1 3D test
     {
       // make grid
       Dune::FieldVector<double,3> L(1.0);
       Dune::FieldVector<int,3> N(1);
       Dune::FieldVector<bool,3> B(false);
       Dune::YaspGrid<3> grid(L,N,B,0);
-      grid.globalRefine(3);
+      grid.globalRefine(atoi(argv[5]));
 
       // get view
       typedef Dune::YaspGrid<3>::LeafGridView GV;
@@ -353,7 +350,7 @@ int main(int argc, char** argv)
       FEM fem;
 
       // solve problem
-      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,2>(gv,fem,"poisson_yasp_Q1_3d");
+      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,2>(gv,fem,atoi(argv[6]),"poisson_yasp_Q1_3d");
     }
 
     // UG Pk 2D test
@@ -361,7 +358,7 @@ int main(int argc, char** argv)
     {
       // make grid
       Dune::shared_ptr<Dune::UGGrid<2> > grid(TriangulatedUnitSquareMaker<Dune::UGGrid<2> >::create());
-      grid->globalRefine(4);
+      grid->globalRefine(atoi(argv[7]));
 
       // get view
       typedef Dune::UGGrid<2>::LeafGridView GV;
@@ -376,7 +373,7 @@ int main(int argc, char** argv)
       FEM fem(gv);
 
       // solve problem
-      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,q>(gv,fem,"poisson_UG_Pk_2d");
+      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,q>(gv,fem,atoi(argv[8]),"poisson_UG_Pk_2d");
     }
 #endif
 
@@ -384,7 +381,7 @@ int main(int argc, char** argv)
     {
       // make grid
       AlbertaUnitSquare grid;
-      grid.globalRefine(8);
+      grid.globalRefine(atoi(argv[9]));
 
       // get view
       typedef AlbertaUnitSquare::LeafGridView GV;
@@ -399,7 +396,7 @@ int main(int argc, char** argv)
       FEM fem(gv);
 
       // solve problem
-      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,q>(gv,fem,"poisson_Alberta_Pk_2d");
+      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,q>(gv,fem,atoi(argv[10]),"poisson_Alberta_Pk_2d");
     }
 #endif
 
@@ -407,7 +404,7 @@ int main(int argc, char** argv)
     {
       // make grid
       ALUUnitSquare grid;
-      grid.globalRefine(4);
+      grid.globalRefine(atoi(argv[11]));
 
       // get view
       typedef ALUUnitSquare::LeafGridView GV;
@@ -422,7 +419,7 @@ int main(int argc, char** argv)
       FEM fem(gv);
 
       // solve problem
-      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,q>(gv,fem,"poisson_ALU_Pk_2d");
+      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,q>(gv,fem,atoi(argv[12]),"poisson_ALU_Pk_2d");
     }
 #endif
 

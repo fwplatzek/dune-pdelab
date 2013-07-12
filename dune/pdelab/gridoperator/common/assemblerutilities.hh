@@ -430,8 +430,14 @@ namespace Dune{
           for (size_t j = 0; j<lfsu_indices.size(); ++j)
             {
 
+              bool diagonal_entry = lfsv_indices.containerIndex(i) == lfsu_indices.containerIndex(j);
+
               if (localcontainer(lfsv,i,lfsu,j) == 0.0)
-                continue;
+                {
+                  if (diagonal_entry)
+                    globalcontainer_view.add(i,j,0.0);
+                  continue;
+                }
 
               const bool constrained_v = lfsv_indices.isConstrained(i);
               const bool constrained_u = lfsu_indices.isConstrained(j);
@@ -442,7 +448,11 @@ namespace Dune{
               if (constrained_v)
                 {
                   if (lfsv_indices.isDirichletConstraint(i))
-                    continue;
+                    {
+                      if (diagonal_entry)
+                        globalcontainer_view.add(i,j,0.0);
+                      continue;
+                    }
 
                   for (VConstraintsIterator vcit = lfsv_indices.constraintsBegin(i); vcit != lfsv_indices.constraintsEnd(i); ++vcit)
                     if (constrained_u)
@@ -450,7 +460,7 @@ namespace Dune{
                         if (lfsu_indices.isDirichletConstraint(j))
                           {
                             T value = localcontainer(lfsv,i,lfsu,j) * vcit->weight();
-                            if (value != 0.0)
+                            if (diagonal_entry || value != 0.0)
                               globalcontainer_view.add(vcit->containerIndex(),j,value);
                           }
                         else
@@ -458,7 +468,7 @@ namespace Dune{
                             for (UConstraintsIterator ucit = lfsu_indices.constraintsBegin(j); ucit != lfsu_indices.constraintsEnd(j); ++ucit)
                               {
                                 T value = localcontainer(lfsv,i,lfsu,j) * vcit->weight() * ucit->weight();
-                                if (value != 0.0)
+                                if (diagonal_entry || value != 0.0)
                                   globalcontainer_view.add(vcit->containerIndex(),ucit->containerIndex(),value);
                               }
                           }
@@ -466,7 +476,7 @@ namespace Dune{
                     else
                       {
                         T value = localcontainer(lfsv,i,lfsu,j) * vcit->weight();
-                        if (value != 0.0)
+                        if (diagonal_entry || value != 0.0)
                           globalcontainer_view.add(vcit->containerIndex(),j,value);
                       }
                 }
@@ -477,7 +487,7 @@ namespace Dune{
                       if (lfsu_indices.isDirichletConstraint(j))
                         {
                           T value = localcontainer(lfsv,i,lfsu,j);
-                          if (value != 0.0)
+                          if (diagonal_entry || value != 0.0)
                             globalcontainer_view.add(i,j,value);
                         }
                       else
@@ -485,7 +495,7 @@ namespace Dune{
                           for (UConstraintsIterator ucit = lfsu_indices.constraintsBegin(j); ucit != lfsu_indices.constraintsEnd(j); ++ucit)
                             {
                               T value = localcontainer(lfsv,i,lfsu,j) * ucit->weight();
-                              if (value != 0.0)
+                              if (diagonal_entry || value != 0.0)
                                 globalcontainer_view.add(i,ucit->containerIndex(),value);
                             }
                         }
@@ -590,8 +600,8 @@ namespace Dune{
       void handle_dirichlet_constraints(const GFSV& gfsv, GC& globalcontainer) const
       {
         globalcontainer.flush();
-        set_trivial_rows(gfsv,globalcontainer,*pconstraintsv);
         globalcontainer.finalize();
+        set_trivial_rows(gfsv,globalcontainer,*pconstraintsv);
       }
 
       /* constraints */

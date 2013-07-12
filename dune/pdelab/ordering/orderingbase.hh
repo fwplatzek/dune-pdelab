@@ -57,6 +57,16 @@ namespace Dune {
         return _block_count;
       }
 
+      typename Traits::SizeType childContainerBlockCount(const typename Traits::ContainerIndex& ci, std::size_t depth, std::size_t pos) const
+      {
+        if (depth == 0)
+          return blockCount();
+        if (_container_blocked)
+          return childOrdering(ci[pos]).childContainerBlockCount(ci,depth-1,pos-1);
+        else
+          return childOrdering(0).childContainerBlockCount(ci,depth,pos);
+      }
+
       typename Traits::SizeType size(const typename Traits::SizeType child_index) const
       {
         return _child_size_offsets[child_index + 1] - _child_size_offsets[child_index];

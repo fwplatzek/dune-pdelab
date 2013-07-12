@@ -146,6 +146,16 @@ namespace Dune {
         static const bool value = true;
       };
 
+      template<typename Block>
+      integral_constant<
+        bool,
+        requires_pattern<Block>::value
+        >
+      var_requires_pattern(const Block&)
+      {
+        return integral_constant<bool,requires_pattern<Block>::value>();
+      }
+
       template<typename M, typename RowOrdering, typename ColOrdering, bool pattern>
       struct _build_pattern_type
       {

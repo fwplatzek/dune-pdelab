@@ -41,6 +41,8 @@
 #include"../localoperator/laplacedirichletp12d.hh"
 #include"../localoperator/poisson.hh"
 #include"../gridfunctionspace/vtk.hh"
+#include <dune/pdelab/common/benchmarkhelper.hh>
+#include <dune/pdelab/backend/istl/dynamicbcrsmatrix.hh>
 
 #include"gridexamples.hh"
 
@@ -168,6 +170,11 @@ public:
 template<typename GV, typename FEM, typename CON, int q>
 void poisson (const GV& gv, const FEM& fem, std::size_t avg_row_size, std::string filename)
 {
+  const std::size_t runs = 1;
+  Dune::PDELab::BenchmarkHelper<> bh(filename,runs);
+  for (std::size_t run = 0; run < runs; ++run)
+    {
+      bh.start_run();
   // constants and types
   typedef typename GV::Grid::ctype DF;
   typedef typename FEM::Traits::FiniteElementType::Traits::
@@ -196,9 +203,12 @@ void poisson (const GV& gv, const FEM& fem, std::size_t avg_row_size, std::strin
   typedef Dune::PDELab::Poisson<FType,ConstraintsParameters,JType,q> LOP;
   LOP lop(f,constraintsparameters,j);
 
+  typedef Dune::PDELab::istl::DynamicBCRSMatrixBackend MatrixBackend;
+  //typedef Dune::PDELab::ISTLMatrixBackend MatrixBackend;
+
   // make grid operator
   typedef Dune::PDELab::GridOperator<GFS,GFS,LOP,
-                                     Dune::PDELab::ISTLMatrixBackend,
+                                     MatrixBackend,
                                      double,double,double,
                                      C,C> GridOperator;
   GridOperator gridoperator(gfs,cg,gfs,cg,lop);
@@ -230,8 +240,26 @@ void poisson (const GV& gv, const FEM& fem, std::size_t avg_row_size, std::strin
   std::cout << gridoperator.testGridFunctionSpace().ordering().blockCount() << " x " <<
     gridoperator.trialGridFunctionSpace().ordering().blockCount() << std::endl;
 
-  M m(gridoperator,avg_row_size,0.05);
+  bh.start("creation + assembly");
+  bh.start("matrix creation");
+  M m(gridoperator,avg_row_size,0.02);
+  //M m(gridoperator);
+  bh.end("matrix creation",std::cout);
+  bh.start("first assembly");
   gridoperator.jacobian(x0,m);
+  bh.end("first assembly",std::cout);
+  bh.end("creation + assembly",std::cout);
+  bh.start("matrix zeroing");
+  m = 0.0;
+  bh.end("matrix zeroing",std::cout);
+  bh.start("successive assembly");
+  gridoperator.jacobian(x0,m);
+  bh.end("successive assembly",std::cout);
+  // {
+  //   std::ofstream o("matrix.txt");
+  //   Dune::PDELab::istl::raw(m).print_entries(o);
+  //   Dune::PDELab::istl::raw(m).dump_data(o);
+  // }
   //  Dune::printmatrix(std::cout,m.base(),"global stiffness matrix","row",9,1);
 
   // evaluate residual w.r.t initial guess
@@ -265,6 +293,7 @@ void poisson (const GV& gv, const FEM& fem, std::size_t avg_row_size, std::strin
   Dune::CGSolver<typename DV::BaseT> solverb(opa,richardson,1E-10,5000,2);
   Dune::InverseOperatorResult stat;
 
+  /*
   // solve the jacobian system
   r *= -1.0; // need -residual
   DV x(gfs,0.0);
@@ -275,6 +304,10 @@ void poisson (const GV& gv, const FEM& fem, std::size_t avg_row_size, std::strin
   Dune::VTKWriter<GV> vtkwriter(gv,Dune::VTK::conforming);
   Dune::PDELab::addSolutionToVTKWriter(vtkwriter,gfs,x);
   vtkwriter.write(filename,Dune::VTK::ascii);
+  */
+  bh.end_run(std::cout);
+    }
+  bh.print(std::cout);
 }
 
 //===============================================================
@@ -288,7 +321,7 @@ int main(int argc, char** argv)
     Dune::MPIHelper::instance(argc, argv);
 
     // YaspGrid Q1 2D test
-    {
+    if (atoi(argv[1]) > 0) {
       // make grid
       Dune::FieldVector<double,2> L(1.0);
       Dune::FieldVector<int,2> N(1);
@@ -310,7 +343,7 @@ int main(int argc, char** argv)
     }
 
     // YaspGrid Q2 2D test
-    {
+    if (atoi(argv[3]) > 0) {
       // make grid
       Dune::FieldVector<double,2> L(1.0);
       Dune::FieldVector<int,2> N(1);
@@ -332,7 +365,7 @@ int main(int argc, char** argv)
     }
 
     // YaspGrid Q1 3D test
-    {
+    if (atoi(argv[5]) > 0) {
       // make grid
       Dune::FieldVector<double,3> L(1.0);
       Dune::FieldVector<int,3> N(1);
@@ -355,7 +388,7 @@ int main(int argc, char** argv)
 
     // UG Pk 2D test
 #if HAVE_UG
-    {
+    if (atoi(argv[7]) > 0) {
       // make grid
       Dune::shared_ptr<Dune::UGGrid<2> > grid(TriangulatedUnitSquareMaker<Dune::UGGrid<2> >::create());
       grid->globalRefine(atoi(argv[7]));
@@ -378,7 +411,7 @@ int main(int argc, char** argv)
 #endif
 
 #if HAVE_ALBERTA
-    {
+    if (atoi(argv[9]) > 0) {
       // make grid
       AlbertaUnitSquare grid;
       grid.globalRefine(atoi(argv[9]));
@@ -401,7 +434,7 @@ int main(int argc, char** argv)
 #endif
 
 #if HAVE_ALUGRID
-    {
+    if (atoi(argv[11]) > 0) {
       // make grid
       ALUUnitSquare grid;
       grid.globalRefine(atoi(argv[11]));

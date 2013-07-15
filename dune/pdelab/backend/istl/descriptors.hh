@@ -66,6 +66,22 @@ namespace Dune {
       };
     };
 
+    namespace istl {
+
+      struct DynamicBCRSMatrixBackend
+      {
+
+        typedef std::size_t size_type;
+
+        template<typename VV, typename VU, typename E>
+        struct MatrixHelper
+        {
+          typedef DynamicBCRSMatrix<typename VV::GridFunctionSpace,typename VU::GridFunctionSpace,typename build_matrix_type<E,typename VV::Container,typename VU::Container>::type > type;
+        };
+      };
+
+    }
+
 
   } // namespace PDELab
 } // namespace Dune

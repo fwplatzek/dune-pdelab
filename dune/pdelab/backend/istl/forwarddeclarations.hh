@@ -42,6 +42,9 @@ namespace Dune {
       template<typename E, typename VV, typename VU>
       struct build_matrix_type;
 
+      template<typename GFSV, typename GFSU, typename C>
+      class DynamicBCRSMatrix;
+
     } // namespace istl
   } // namespace PDELab
 } // namespace Dune

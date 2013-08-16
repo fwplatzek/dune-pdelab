@@ -111,15 +111,39 @@ namespace Dune {
       //! export traits class
       typedef typename ImplementationBase::Traits Traits;
 
+    private:
+
+      static typename BaseT::NodeStorage create_children(const GV& gv, const FEM& fem, const LeafBackend& leaf_backend, const LeafOrderingTag& leaf_ordering_tag)
+      {
+        typename BaseT::NodeStorage r;
+        shared_ptr<const FEM> fem_ptr = stackobject_to_shared_ptr(fem);
+        for (std::size_t i = 0; i < k; ++i)
+          r[i] = make_shared<LeafGFS>(gv,fem_ptr,leaf_backend,leaf_ordering_tag);
+        return r;
+      }
+
+      public:
+
       VectorGridFunctionSpace(const GV& gv, const FEM& fem,
                               const Backend& backend = Backend(), const LeafBackend& leaf_backend = LeafBackend(),
                               const OrderingTag& ordering_tag = OrderingTag(), const LeafOrderingTag& leaf_ordering_tag = LeafOrderingTag())
-        : ImplementationBase(backend,ordering_tag)
+        : BaseT(create_children(gv,fem,leaf_backend,leaf_ordering_tag))
+        , ImplementationBase(backend,ordering_tag)
       {
-        shared_ptr<const FEM> fem_ptr = stackobject_to_shared_ptr(fem);
-        for (std::size_t i = 0; i < k; ++i)
-          this->setChild(i,make_shared<LeafGFS>(gv,fem_ptr,leaf_backend,leaf_ordering_tag));
+        //shared_ptr<const FEM> fem_ptr = stackobject_to_shared_ptr(fem);
+        //for (std::size_t i = 0; i < k; ++i)
+        //  this->setChild(i,make_shared<LeafGFS>(gv,fem_ptr,leaf_backend,leaf_ordering_tag));
       }
+
+#ifndef DOXYGEN
+
+      // explicitely forward getter to work around name visibility problem
+      const std::string& name() const
+      {
+        return ImplementationBase::name();
+      }
+
+#endif // DOXYGEN
 
       void name(std::string name)
       {

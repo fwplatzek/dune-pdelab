@@ -21,7 +21,7 @@
 #include <dune/pdelab/finiteelementmap/q22dfem.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #include <dune/pdelab/gridfunctionspace/gridglueremotelfs.hh>
-// #include <dune/pdelab/gridfunctionspace/gridgluegridfunctionspace.hh>
+#include <dune/pdelab/gridfunctionspace/gridgluegridfunctionspace.hh>
 
 // test function trees
 template<int dim>

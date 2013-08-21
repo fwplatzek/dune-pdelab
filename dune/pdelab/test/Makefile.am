@@ -123,6 +123,9 @@ MOSTLYCLEANFILES += multi.vtu single.vtu
 NORMALTESTS += testgridfunctionspace
 testgridfunctionspace_SOURCES = testgridfunctionspace.cc
 
+NORMALTESTS += testremotelfs
+testremotelfs_SOURCES = testremotelfs.cc
+
 NORMALTESTS += testlaplacedirichletccfv
 testlaplacedirichletccfv_SOURCES = testlaplacedirichletccfv.cc
 testlaplacedirichletccfv_CPPFLAGS = $(AM_CPPFLAGS)	\

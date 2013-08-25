@@ -131,10 +131,12 @@ namespace Dune {
       void bind (NodeType& node, ChildNodeType& child,
         const CouplingIntersection& rit)
       {
+#if 0
         assert(&node == this);
         // compute sizes
         RemoteLFSComputeSizeVisitor<CouplingIntersection> csv(rit);
         TypeTree::applyToTree(node,csv);
+#endif
       }
       template<typename NodeType, typename ChildNodeType>
       void bind (NodeType& node, ChildNodeType& child,

@@ -126,6 +126,16 @@ testgridfunctionspace_SOURCES = testgridfunctionspace.cc
 NORMALTESTS += testremotelfs
 testremotelfs_SOURCES = testremotelfs.cc
 
+NORMALTESTS += testgridglue
+testgridglue_SOURCES = testgridglue.cc
+testgridglue_CPPFLAGS = $(AM_CPPFLAGS)	\
+	$(PSURFACE_CPPFLAGS)
+testgridglue_LDFLAGS = $(AM_LDFLAGS)	\
+	$(PSURFACE_LDFLAGS)
+testgridglue_LDADD =		\
+	$(PSURFACE_LIBS)				\
+	$(LDADD)
+
 NORMALTESTS += testlaplacedirichletccfv
 testlaplacedirichletccfv_SOURCES = testlaplacedirichletccfv.cc
 testlaplacedirichletccfv_CPPFLAGS = $(AM_CPPFLAGS)	\

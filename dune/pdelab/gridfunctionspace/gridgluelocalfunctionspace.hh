@@ -89,27 +89,6 @@ namespace Dune {
         , BaseT(stackobject_to_shared_ptr(gfs))
       {}
 
-      // //! \brief initialize with grid function space
-      // template<typename Transformation, typename... DUMMY>
-      // GridGlueLocalFunctionSpaceNode (shared_ptr<const GFS> gfs,
-      //                                 const Transformation& t,
-      //                                 Dune::shared_ptr<LFS0> lfs0,
-      //                                 Dune::shared_ptr<LFS1> lfs1,
-      //                                 DUMMY&... other)
-      //   : TreeNode(lfs0,lfs1)
-      //   , BaseT(gfs)
-      // {}
-
-      // template<typename Transformation, typename... DUMMY>
-      // GridGlueLocalFunctionSpaceNode (const GFS& gfs,
-      //                                 const Transformation& t,
-      //                                 Dune::shared_ptr<LFS0> lfs0,
-      //                                 Dune::shared_ptr<LFS1> lfs1,
-      //                                 DUMMY&... other)
-      //   : TreeNode(lfs0,lfs1)
-      //   , BaseT(stackobject_to_shared_ptr(gfs))
-      // {}
-
     public:
       //! \brief bind local function space to one of the GridGlue contextes (sub-domain cell or remote intersection)
       template<typename Context>

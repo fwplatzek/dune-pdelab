@@ -27,11 +27,10 @@
 #include <dune/grid-glue/test/couplingtest.hh>
 
 #include "../finiteelementmap/q1fem.hh"
-#include "../finiteelementmap/conformingconstraints.hh"
 #include "../gridfunctionspace/gridfunctionspace.hh"
 #include "../gridfunctionspace/gridfunctionspaceutilities.hh"
 #include "../gridfunctionspace/interpolate.hh"
-#include "../constraints/constraints.hh"
+#include "../constraints/conforming.hh"
 #include "../common/function.hh"
 #include "../common/vtkexport.hh"
 #include "../backend/istlvectorbackend.hh"

@@ -28,7 +28,7 @@ namespace Dune {
     struct GridGlueGridFunctionSpaceTag {};
 
     //! Trait class for the GridGlue grid function space
-    template<typename GFS1, typename GFS2, typename B, typename O>
+    template<typename GG, typename GFS1, typename GFS2, typename B, typename O>
     struct GridGlueGridFunctionSpaceTraits
     {
       enum{
@@ -40,8 +40,8 @@ namespace Dune {
 
       const static std::size_t CHILDREN = 2;
 
-      // TODO
-      typedef int GridGlue;
+      //! \brief the GridGlue where the coupling takes places
+      typedef GG GridGlue;
 
       //! \brief the grid view where grid function is defined upon
       typedef GridGlue GridViewType;
@@ -72,15 +72,16 @@ namespace Dune {
         or \link  GridFunctionSpaceDynamicBlockwiseMapper  GridFunctionSpaceDynamicBlockwiseMapper \endlink
         \tparam Ti are all grid function spaces
     */
-    template<typename GFS1,
+    template<typename GG,
+             typename GFS1,
              typename GFS2,
              typename Backend,
              typename OrderingTag>
     class GridGlueGridFunctionSpace
       : public TypeTree::CompositeNode<GFS1,GFS2>
       , public GridFunctionSpaceBase<
-                 GridGlueGridFunctionSpace<GFS1,GFS2,Backend,OrderingTag>,
-                 GridGlueGridFunctionSpaceTraits<GFS1,GFS2,Backend,OrderingTag>
+                 GridGlueGridFunctionSpace<GG,GFS1,GFS2,Backend,OrderingTag>,
+                 GridGlueGridFunctionSpaceTraits<GG,GFS1,GFS2,Backend,OrderingTag>
                  >
 //      , public DataHandleProvider< GridGlueGridFunctionSpace<GFS1,GFS2,Backend,OrderingTag> >
     {
@@ -93,8 +94,8 @@ namespace Dune {
     private:
 
       typedef GridFunctionSpaceBase<
-                 GridGlueGridFunctionSpace<GFS1,GFS2,Backend,OrderingTag>,
-                 GridGlueGridFunctionSpaceTraits<GFS1,GFS2,Backend,OrderingTag>
+                 GridGlueGridFunctionSpace<GG,GFS1,GFS2,Backend,OrderingTag>,
+                 GridGlueGridFunctionSpaceTraits<GG,GFS1,GFS2,Backend,OrderingTag>
                  > ImplementationBase;
 
       template<typename,typename>

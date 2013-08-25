@@ -2,6 +2,10 @@
 // vi: set et ts=4 sw=2 sts=2:
 #include "config.h"
 
+#if ! HAVE_PSURFACE
+#error we need psurface
+#endif
+
 #include <dune/common/version.hh>
 
 #if DUNE_VERSION_NEWER(DUNE_COMMON,2,3)
@@ -19,15 +23,27 @@
 
 #include <dune/grid-glue/extractors/extractorpredicate.hh>
 #include <dune/grid-glue/extractors/codim1extractor.hh>
-
 #include <dune/grid-glue/merging/psurfacemerge.hh>
-#include <dune/grid-glue/adapter/gridglue.hh>
-
 #include <dune/grid-glue/test/couplingtest.hh>
-#include <dune/grid-glue/test/communicationtest.hh>
+
+#include "../finiteelementmap/q1fem.hh"
+#include "../finiteelementmap/conformingconstraints.hh"
+#include "../gridfunctionspace/gridfunctionspace.hh"
+#include "../gridfunctionspace/gridfunctionspaceutilities.hh"
+#include "../gridfunctionspace/interpolate.hh"
+#include "../constraints/constraints.hh"
+#include "../common/function.hh"
+#include "../common/vtkexport.hh"
+#include "../backend/istlvectorbackend.hh"
+#include "../backend/istlmatrixbackend.hh"
+#include "../gridoperator/gridoperator.hh"
+#include "../backend/istlsolverbackend.hh"
+#include "../localoperator/laplacedirichletp12d.hh"
+#include "../localoperator/poisson.hh"
+#include "../gridfunctionspace/vtk.hh"
+#include <dune/pdelab/gridfunctionspace/gridgluegridfunctionspace.hh>
 
 using namespace Dune;
-
 
 template <class GridView>
 class VerticalFaceDescriptor
@@ -79,7 +95,6 @@ void testNonMatchingCubeGrids()
 
   GridType cubeGrid1(elements, lower, upper);
 
-
   // ////////////////////////////////////////
   //   Set up coupling at their interface
   // ////////////////////////////////////////
@@ -96,7 +111,6 @@ void testNonMatchingCubeGrids()
   DomExtractor domEx(cubeGrid0.levelView(0), domdesc);
   TarExtractor tarEx(cubeGrid1.levelView(0), tardesc);
 
-#if HAVE_PSURFACE
   typedef PSurfaceMerge<dim-1,dim,double> SurfaceMergeImpl;
 
   typedef ::GridGlue<DomExtractor,TarExtractor> GlueType;
@@ -114,9 +128,36 @@ void testNonMatchingCubeGrids()
   // ///////////////////////////////////////////
 
   testCoupling(glue);
-#else
-    #warning Not testing, because psurface backend is not available.
-#endif
+
+  // ///////////////////////////////////////////
+  //   Setup sub domain GFS
+  // ///////////////////////////////////////////
+
+  // constants and types
+  typedef typename GlueType::ctype DF;
+  typedef double RF;
+
+  // make finite element map
+  typedef Dune::PDELab::Q1LocalFiniteElementMap<DF,RF,dim> FEM;
+  FEM fem;
+
+  // backends
+  typedef Dune::PDELab::ConformingDirichletConstraints CON;
+  typedef Dune::PDELab::ISTLVectorBackend<> Backend;
+
+  // Dom GFS
+  typedef Dune::PDELab::GridFunctionSpace<DomGridView,FEM,CON,Backend> GFSDOM;
+  GFSDOM gfsdom(glue.template gridView<0>(),fem);
+  gfsdom.name("dom");
+
+  // Tar GFS
+  typedef Dune::PDELab::GridFunctionSpace<TarGridView,FEM,CON,Backend> GFSTAR;
+  GFSTAR gfstar(glue.template gridView<1>(),fem);
+  gfstar.name("tar");
+
+  // GridGlue GFS
+  typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,Backend> GLUEGFS;
+  GLUEGFS gluegfs(glue,gfsdom,gfstar);
 }
 
 int main(int argc, char *argv[]) try

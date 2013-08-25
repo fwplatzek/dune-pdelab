@@ -12,30 +12,9 @@ namespace Dune {
     template<typename GFS,
              typename DI>
     struct GridGlueLocalFunctionSpaceBaseTraits
+      : public LocalFunctionSpaceBaseTraits<GFS,DI>
     {
-      //! \brief Type of the underlying grid function space
-      typedef GFS GridFunctionSpaceType;
-
-      //! \brief Type of the underlying grid function space
-      typedef GFS GridFunctionSpace;
-
-      //! \brief Type of the grid view that the underlying grid function space is defined on.
-      typedef typename GFS::Traits::GridViewType GridViewType;
-
-      //! \brief Type of the grid view that the underlying grid function space is defined on.
-      typedef typename GFS::Traits::GridViewType GridView;
-
-      //! \brief Type to store indices from Backend
-      typedef typename GFS::Traits::SizeType SizeType;
-
-      //! \brief Type of container to store indices
-      typedef typename std::vector<SizeType> IndexContainer;
-
-      //! \brief Type of MultiIndex associated with this LocalFunctionSpace.
-      typedef DI DOFIndex;
-
-      //! \brief Type of container to store multiindices.
-      typedef typename std::vector<DI> DOFIndexContainer;
+      typedef typename GFS::Traits::GridGlue GridGlue;
     };
 
 // #define GRIDGLUELFSMIXIN

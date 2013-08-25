@@ -78,7 +78,7 @@ namespace Dune {
              typename Backend,
              typename OT = LexicographicOrderingTag>
     class GridGlueGridFunctionSpace
-      : public TypeTree::CompositeNode<GFS1,GFS2>
+      : public TypeTree::VariadicCompositeNode<GFS1,GFS2>
       , public GridFunctionSpaceBase<
                  GridGlueGridFunctionSpace<GG,GFS1,GFS2,Backend,OT>,
                  GridGlueGridFunctionSpaceTraits<GG,GFS1,GFS2,Backend,OT>
@@ -90,7 +90,7 @@ namespace Dune {
       typedef GridGlueGridFunctionSpaceTag ImplementationTag;
       typedef OT OrderingTag;
 
-      typedef TypeTree::CompositeNode<GFS1,GFS2> BaseT;
+      typedef TypeTree::VariadicCompositeNode<GFS1,GFS2> BaseT;
 
     private:
 

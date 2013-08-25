@@ -47,11 +47,11 @@ namespace Dune {
     template<typename GFS, typename DOFIndex, typename LFS0, typename LFS1>
     class GridGlueLocalFunctionSpaceNode :
       // TODO: Mixin RemoteLFSes
-      public TypeTree::CompositeNode<LFS0,LFS1>
+      public TypeTree::VariadicCompositeNode<LFS0,LFS1>
       , public LocalFunctionSpaceBaseNode<GFS,DOFIndex>
     {
       typedef LocalFunctionSpaceBaseNode<GFS,DOFIndex> BaseT;
-      typedef TypeTree::CompositeNode<LFS0,LFS1> TreeNode;
+      typedef TypeTree::VariadicCompositeNode<LFS0,LFS1> TreeNode;
 
       template<typename>
       friend struct PropagateGlobalStorageVisitor;
@@ -89,12 +89,37 @@ namespace Dune {
         , BaseT(stackobject_to_shared_ptr(gfs))
       {}
 
+      // //! \brief initialize with grid function space
+      // template<typename Transformation, typename... DUMMY>
+      // GridGlueLocalFunctionSpaceNode (shared_ptr<const GFS> gfs,
+      //                                 const Transformation& t,
+      //                                 Dune::shared_ptr<LFS0> lfs0,
+      //                                 Dune::shared_ptr<LFS1> lfs1,
+      //                                 DUMMY&... other)
+      //   : TreeNode(lfs0,lfs1)
+      //   , BaseT(gfs)
+      // {}
+
+      // template<typename Transformation, typename... DUMMY>
+      // GridGlueLocalFunctionSpaceNode (const GFS& gfs,
+      //                                 const Transformation& t,
+      //                                 Dune::shared_ptr<LFS0> lfs0,
+      //                                 Dune::shared_ptr<LFS1> lfs1,
+      //                                 DUMMY&... other)
+      //   : TreeNode(lfs0,lfs1)
+      //   , BaseT(stackobject_to_shared_ptr(gfs))
+      // {}
+
     public:
       //! \brief bind local function space to one of the GridGlue contextes (sub-domain cell or remote intersection)
       template<typename Context>
       void bind(const Context & c) const
       {
-        this->bind(*this, c);
+        this->bind(*this, this->template child<0>(), c);
+        this->bind(*this, this->template child<1>(), c);
+        // These are the RemoteLocalFunctionSpace sub-trees
+        // this->bind(*this, this->template child<2>(), c);
+        // this->bind(*this, this->template child<3>(), c);
       }
 
     private:
@@ -102,10 +127,8 @@ namespace Dune {
       typedef integral_constant<int,0> Patch0Tag;
       typedef integral_constant<int,1> Patch1Tag;
       typedef typename GridGlue::Intersection CouplingIntersection;
-      typedef typename GFS::template Child<0>::type::Traits::GridView::Traits::template Codim<0>::Entity Patch0Cell;
-      typedef typename GFS::template Child<1>::type::Traits::GridView::Traits::template Codim<0>::Entity Patch1Cell;
-      template<typename NodeType>
-      void bind (NodeType& node,
+      template<typename NodeType, typename ChildNodeType>
+      void bind (NodeType& node, ChildNodeType& child,
         const CouplingIntersection& rit)
       {
         assert(&node == this);
@@ -113,17 +136,23 @@ namespace Dune {
         RemoteLFSComputeSizeVisitor<CouplingIntersection> csv(rit);
         TypeTree::applyToTree(node,csv);
       }
-      template<typename NodeType>
-      void bind (NodeType& node,
-        const Patch0Cell& rit, Patch0Tag)
+      template<typename NodeType, typename ChildNodeType>
+      void bind (NodeType& node, ChildNodeType& child,
+        const typename ChildNodeType::Traits::Element& e)
       {
+#if 0
         assert(&node == this);
-      }
-      template<typename NodeType>
-      void bind (NodeType& node,
-        const Patch1Cell& rit, Patch1Tag)
-      {
-        assert(&node == this);
+
+        typedef typename Traits::Element Elementy;
+
+        // compute sizes
+        ComputeSizeVisitor<Element> csv(e);
+        TypeTree::applyToTree(node,csv);
+
+        // initialize iterators and fill indices
+        FillIndicesVisitor<Element> fiv(e);
+        TypeTree::applyToTree(node,fiv);
+#endif
       }
     };
 
@@ -144,16 +173,16 @@ namespace Dune {
         typedef shared_ptr<type> storage_type;
       };
 
-      template<typename TC0, typename TC1>
+      template<typename TC0, typename TC1, typename... DUMMY>
       static typename result<TC0,TC1>::type transform(const GridGlueGridFunctionSpace& s,
-        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1)
+        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1, DUMMY&&...)
       {
         return typename result<TC0,TC1>::type(s,t,c0,c1);
       }
 
-      template<typename TC0, typename TC1>
+      template<typename TC0, typename TC1, typename... DUMMY>
       static typename result<TC0,TC1>::storage_type transform_storage(shared_ptr<const GridGlueGridFunctionSpace> s,
-        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1)
+        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1, DUMMY&&...)
       {
         return make_shared<typename result<TC0,TC1>::type>(s,t,c0,c1);
       }

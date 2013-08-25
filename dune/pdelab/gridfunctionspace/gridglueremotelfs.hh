@@ -1,18 +1,22 @@
 #ifndef DUNE_PDELAB_GRIDGLUEGRIDREMOTELFS_HH
 #define DUNE_PDELAB_GRIDGLUEGRIDREMOTELFS_HH
 
+#include <dune/common/nullptr.hh>
+#include <dune/localfunctions/monom.hh>
+
 namespace Dune {
   namespace PDELab {
 
-    struct NoGFS {};
-    struct NoIndex {};
-    struct gfs_to_remote_lfs {};
+    struct NoObject {};
+
+    struct gfs_to_remote_lfs {
+    };
 
     template<>
-    struct gfs_to_lfs<NoGFS> {
+    struct gfs_to_lfs<NoObject> {
       //! The MultiIndex type that will be used in the resulting LocalFunctionSpace tree.
       //typedef Dune::PDELab::MultiIndex<std::size_t,TypeTree::TreeInfo<GFS>::depth> MultiIndex;
-      typedef NoIndex DOFIndex;
+      typedef NoObject DOFIndex;
     };
 
     template<typename Element>
@@ -25,43 +29,72 @@ namespace Dune {
       void leaf(Node& node, TreePath treePath)
       {
         node.offset = this->offset;
-        // Node::FESwitch::setStore(node.pfe, node.finiteElement());
-        // node.n = Node::FESwitch::basis(*node.pfe).size();
+        node.pfe = nullptr;
+        node.n = Node::FESwitch::basis(node.finiteElement()).size();
         this->offset += node.n;
       }
 
-      RemoteLFSComputeSizeVisitor(const Entity& entity, std::size_t offset = 0) :
-        ComputeSizeVisitor<Element>(entity,offset)
+      RemoteLFSComputeSizeVisitor(std::size_t offset = 0) :
+        ComputeSizeVisitor<NoObject>(NoObject(),offset)
       {}
     };
 
-    template<typename LFS /*, typename GG */>
+    template<typename LFS>
     class RemoteLFS : public LFS
     {
     public:
       template <typename... T>
-      RemoteLFS(T&&... t) : LFS(std::forward<T>(t)...) {}
+      RemoteLFS(T&&... t) :
+        LFS(std::forward<T>(t)...)
+      {}
 
       size_t maxLocalSize () { return this->localSize(); };
 
-      void bind() const;
+      template<typename>
+      friend struct ComputeSizeVisitor;
 
-      /*
-      DGFEM finiteElement() const { ... };
-
-    private:
-      template<>
-      void bind (NodeType& node,
-        const typename GG:RemoteIntersection& e)
+      /** \todo extract RIT from GG
+       */
+      template<typename RIT>
+      void bind(const RIT & rit) const
       {
-        typedef typename LocalFunctionSpaceBaseNode<GFS,DOFIndex>::Traits::Element Element;
+        this->bind(*this, rit);
+      }
+    private:
+      template<typename NodeType, typename RIT>
+      void bind (NodeType& node,
+        const RIT& rit)
+      {
         assert(&node == this);
 
         // compute sizes
-        RemoteLFSComputeSizeVisitor<Element> csv(e);
+        RemoteLFSComputeSizeVisitor<RIT> csv(rit);
         TypeTree::applyToTree(node,csv);
       }
-      */
+    };
+
+    //! traits for single component local function space
+    template<typename LFS /*, typename GG */>
+    struct RemoteLeafLocalFunctionSpaceTraits :
+      public LFS::Traits
+    {
+      typedef typename LFS::Traits::GridFunctionSpace RemoteGridFunctionSpace;
+      typedef typename LFS::Traits::FiniteElementType RemoteFiniteElementType;
+      typedef typename LFS::FESwitch RemoteFESwitch;
+      typedef BasisInterfaceSwitch<RemoteFESwitch> RemoteBasisSwitch;
+      typedef typename RemoteBasisSwitch::Domain DomainType;
+      typedef typename RemoteBasisSwitch::Range RangeType;
+      enum { dim = RemoteGridFunctionSpace::GridView::dimension-1 };
+      enum { order = 3 };
+      enum { diffOrder = 1 };
+
+      //! Type of local finite element
+      typedef MonomLocalFiniteElement<DomainType, RangeType, dim, order, diffOrder> FiniteElementType;
+      typedef FiniteElementType FiniteElement;
+
+      //! \brief Type of constraints engine
+      typedef NoConstraints ConstraintsType;
+      typedef ConstraintsType Constraints;
     };
 
     // Register LeafGFS -> RemoteLFS transformation
@@ -69,7 +102,7 @@ namespace Dune {
     Dune::PDELab::TypeTree::GenericLeafNodeTransformation<
       GridFunctionSpace,
       gfs_to_remote_lfs,
-      RemoteLFS<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<NoGFS> >::Type>
+      RemoteLFS<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<NoObject> >::Type>
       >
     registerNodeTransformation(GridFunctionSpace* gfs, gfs_to_remote_lfs* t, LeafGridFunctionSpaceTag* tag);
 
@@ -80,7 +113,7 @@ namespace Dune {
       template<typename TC>
       struct result
       {
-        typedef RemoteLFS< PowerLocalFunctionSpaceNode<SourceNode,NoIndex,TC,SourceNode::CHILDREN> > type;
+        typedef RemoteLFS< PowerLocalFunctionSpaceNode<SourceNode,NoObject,TC,SourceNode::CHILDREN> > type;
       };
     };
 
@@ -99,7 +132,7 @@ namespace Dune {
       template<typename... TC>
       struct result
       {
-        typedef RemoteLFS< CompositeLocalFunctionSpaceNode<SourceNode,NoIndex,TC...> > type;
+        typedef RemoteLFS< CompositeLocalFunctionSpaceNode<SourceNode,NoObject,TC...> > type;
       };
     };
 

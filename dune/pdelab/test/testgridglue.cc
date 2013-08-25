@@ -42,6 +42,7 @@
 #include "../localoperator/poisson.hh"
 #include "../gridfunctionspace/vtk.hh"
 #include <dune/pdelab/gridfunctionspace/gridgluegridfunctionspace.hh>
+#include <dune/pdelab/gridfunctionspace/gridgluelocalfunctionspace.hh>
 
 using namespace Dune;
 

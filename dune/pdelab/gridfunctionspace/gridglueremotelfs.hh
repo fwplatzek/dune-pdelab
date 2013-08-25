@@ -36,8 +36,8 @@ namespace Dune {
         this->offset += node.n;
       }
 
-      RemoteLFSComputeSizeVisitor(std::size_t offset = 0) :
-        ComputeSizeVisitor<NoObject>(NoObject(),offset)
+      RemoteLFSComputeSizeVisitor(const Element& e,std::size_t offset = 0) :
+        ComputeSizeVisitor<Element>(e,offset)
       {}
     };
 
@@ -55,24 +55,24 @@ namespace Dune {
       template<typename>
       friend struct ComputeSizeVisitor;
 
-      /** \todo extract RIT from GG
-       */
-      template<typename RIT>
-      void bind(const RIT & rit) const
-      {
-        this->bind(*this, rit);
-      }
-    private:
-      template<typename NodeType, typename RIT>
-      void bind (NodeType& node,
-        const RIT& rit)
-      {
-        assert(&node == this);
+    //   /** \todo extract RIT from GG
+    //    */
+    //   template<typename RIT>
+    //   void bind(const RIT & rit) const
+    //   {
+    //     this->bind(*this, rit);
+    //   }
+    // private:
+    //   template<typename NodeType, typename RIT>
+    //   void bind (NodeType& node,
+    //     const RIT& rit)
+    //   {
+    //     assert(&node == this);
 
-        // compute sizes
-        RemoteLFSComputeSizeVisitor<RIT> csv(rit);
-        TypeTree::applyToTree(node,csv);
-      }
+    //     // compute sizes
+    //     RemoteLFSComputeSizeVisitor<RIT> csv(rit);
+    //     TypeTree::applyToTree(node,csv);
+    //   }
     };
 
     //! traits for single component local function space
@@ -104,7 +104,7 @@ namespace Dune {
     Dune::PDELab::TypeTree::GenericLeafNodeTransformation<
       GridFunctionSpace,
       gfs_to_remote_lfs,
-      RemoteLFS<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<NoObject> >::Type>
+      RemoteLFS<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<GridFunctionSpace> >::Type>
       >
     registerNodeTransformation(GridFunctionSpace* gfs, gfs_to_remote_lfs* t, LeafGridFunctionSpaceTag* tag);
 
@@ -146,6 +146,49 @@ namespace Dune {
       variadic_composite_gfs_to_remote_lfs_template<CompositeGridFunctionSpace,gfs_to_remote_lfs>::template result
       >
     registerNodeTransformation(CompositeGridFunctionSpace* cgfs, gfs_to_remote_lfs* t, CompositeGridFunctionSpaceTag* tag);
+
+  }
+}
+
+
+namespace Dune {
+  namespace PDELab{
+
+    // register GridGlueGFS -> LocalFunctionSpace transformation (variadic version)
+    template<typename GridGlueGridFunctionSpace, typename Params>
+    struct GridGlueGridFunctionSpaceToRemoteLocalFunctionSpaceNodeTransformation
+    {
+      typedef gfs_to_lfs<Params> Transformation;
+
+      static const bool recursive = true;
+
+      template<typename TC0, typename TC1, typename... DUMMY>
+      struct result
+      {
+        typedef RemoteLFS< GridGlueLocalFunctionSpaceNode<GridGlueGridFunctionSpace,
+                                                          typename Transformation::DOFIndex,
+                                                          TC0,TC1> > type;
+        typedef shared_ptr<type> storage_type;
+      };
+
+      template<typename TC0, typename TC1, typename... DUMMY>
+      static typename result<TC0,TC1>::type transform(const GridGlueGridFunctionSpace& s,
+        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1, DUMMY&&...)
+      {
+        return typename result<TC0,TC1>::type(s,t,c0,c1);
+      }
+
+      template<typename TC0, typename TC1, typename... DUMMY>
+      static typename result<TC0,TC1>::storage_type transform_storage(shared_ptr<const GridGlueGridFunctionSpace> s,
+        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1, DUMMY&&...)
+      {
+        return make_shared<typename result<TC0,TC1>::type>(s,t,c0,c1);
+      }
+
+    };
+    template<typename GridGlueGridFunctionSpace, typename Params>
+    GridGlueGridFunctionSpaceToLocalFunctionSpaceNodeTransformation<GridGlueGridFunctionSpace, Params>
+    registerNodeTransformation(GridGlueGridFunctionSpace* cgfs, gfs_to_remote_lfs* t, GridGlueGridFunctionSpaceTag* tag);
 
   } // end namespace PDELab
 } // end namespace Dune

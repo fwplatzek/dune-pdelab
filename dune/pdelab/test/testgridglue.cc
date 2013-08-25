@@ -168,6 +168,12 @@ void testNonMatchingCubeGrids()
     typedef typename Trafo::Type RemoteLFS;
     RemoteLFS remotelfs = Trafo::transform(gfstar, trafo);
   }
+  {
+    typedef typename Dune::PDELab::TypeTree::TransformTree<GlueGFS,Dune::PDELab::gfs_to_remote_lfs> Trafo;
+    Dune::PDELab::gfs_to_remote_lfs trafo;
+    typedef typename Trafo::Type RemoteLFS;
+    RemoteLFS remotelfs = Trafo::transform(gluegfs, trafo);
+  }
 }
 
 int main(int argc, char *argv[]) try

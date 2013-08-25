@@ -3,6 +3,8 @@
 
 #include <dune/common/nullptr.hh>
 #include <dune/localfunctions/monom.hh>
+#include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
+#include <dune/pdelab/gridfunctionspace/utility.hh>
 
 namespace Dune {
   namespace PDELab {

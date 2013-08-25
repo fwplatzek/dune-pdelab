@@ -25,7 +25,7 @@ namespace Dune {
     //! \ingroup PDELab
     //! \{
 
-    struct GridGlueGridFunctionSpaceTag {};
+    struct GridGlueGridFunctionSpaceTag : public CompositeGridFunctionSpaceTag {};
 
     //! Trait class for the GridGlue grid function space
     template<typename GG, typename GFS1, typename GFS2, typename B, typename O>
@@ -76,18 +76,19 @@ namespace Dune {
              typename GFS1,
              typename GFS2,
              typename Backend,
-             typename OrderingTag = LexicographicOrderingTag>
+             typename OT = LexicographicOrderingTag>
     class GridGlueGridFunctionSpace
       : public TypeTree::CompositeNode<GFS1,GFS2>
       , public GridFunctionSpaceBase<
-                 GridGlueGridFunctionSpace<GG,GFS1,GFS2,Backend,OrderingTag>,
-                 GridGlueGridFunctionSpaceTraits<GG,GFS1,GFS2,Backend,OrderingTag>
+                 GridGlueGridFunctionSpace<GG,GFS1,GFS2,Backend,OT>,
+                 GridGlueGridFunctionSpaceTraits<GG,GFS1,GFS2,Backend,OT>
                  >
 //      , public DataHandleProvider< GridGlueGridFunctionSpace<GFS1,GFS2,Backend,OrderingTag> >
     {
     public:
 
       typedef GridGlueGridFunctionSpaceTag ImplementationTag;
+      typedef OT OrderingTag;
 
       typedef TypeTree::CompositeNode<GFS1,GFS2> BaseT;
 
@@ -100,10 +101,6 @@ namespace Dune {
 
       template<typename,typename>
       friend class GridFunctionSpaceBase;
-
-      // typedef TypeTree::TransformTree<GridGlueGridFunctionSpace,
-      //                                 gfs_to_ordering<GridGlueGridFunctionSpace>
-      //                                 > ordering_transformation;
 
     public:
 
@@ -120,7 +117,13 @@ namespace Dune {
         , _glue(glue)
       {}
 
-#if 0
+#if 1
+    private:
+      typedef TypeTree::TransformTree<GridGlueGridFunctionSpace,
+                                      gfs_to_ordering<GridGlueGridFunctionSpace>
+                                      > ordering_transformation;
+    public:
+
       typedef typename ordering_transformation::Type Ordering;
 
       //! Direct access to the DOF ordering.

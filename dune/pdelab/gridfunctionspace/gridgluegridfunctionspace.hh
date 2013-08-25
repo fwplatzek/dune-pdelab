@@ -76,7 +76,7 @@ namespace Dune {
              typename GFS1,
              typename GFS2,
              typename Backend,
-             typename OrderingTag>
+             typename OrderingTag = LexicographicOrderingTag>
     class GridGlueGridFunctionSpace
       : public TypeTree::CompositeNode<GFS1,GFS2>
       , public GridFunctionSpaceBase<
@@ -101,24 +101,27 @@ namespace Dune {
       template<typename,typename>
       friend class GridFunctionSpaceBase;
 
-      typedef TypeTree::TransformTree<GridGlueGridFunctionSpace,
-                                      gfs_to_ordering<GridGlueGridFunctionSpace>
-                                      > ordering_transformation;
+      // typedef TypeTree::TransformTree<GridGlueGridFunctionSpace,
+      //                                 gfs_to_ordering<GridGlueGridFunctionSpace>
+      //                                 > ordering_transformation;
 
     public:
-
-      typedef typename ordering_transformation::Type Ordering;
 
       //! export traits class
       typedef typename ImplementationBase::Traits Traits;
 
-      GridGlueGridFunctionSpace (GFS1& c0,
+      GridGlueGridFunctionSpace (GG& glue,
+                                 GFS1& c0,
                                  GFS2& c1,
                                  const Backend& backend = Backend(),
                                  const OrderingTag ordering_tag = OrderingTag())
         : BaseT(c0,c1)
         , ImplementationBase(backend,ordering_tag)
+        , _glue(glue)
       {}
+
+#if 0
+      typedef typename ordering_transformation::Type Ordering;
 
       //! Direct access to the DOF ordering.
       const Ordering &ordering() const
@@ -174,6 +177,11 @@ namespace Dune {
       }
 
       mutable shared_ptr<Ordering> _ordering;
+
+#endif
+
+    private:
+      GG& _glue;
 
     };
 

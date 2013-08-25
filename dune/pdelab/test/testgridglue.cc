@@ -158,6 +158,8 @@ void testNonMatchingCubeGrids()
   // GridGlue GFS
   typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,Backend> GLUEGFS;
   GLUEGFS gluegfs(glue,gfsdom,gfstar);
+
+  Dune::PDELab::LocalFunctionSpace<GLUEGFS> gluelfs(gluegfs);
 }
 
 int main(int argc, char *argv[]) try

@@ -2,17 +2,12 @@
 #define DUNE_PDELAB_GRIDGLUELFS_HH
 
 #include "localfunctionspace.hh"
+#include "gridgluetags.hh"
 #include "gridgluegridfunctionspace.hh"
 #include <dune/grid-glue/adapter/gridglue.hh>
 
 namespace Dune {
   namespace PDELab {
-
-    // template<typename GG>
-    // struct gfs_to_remote_lfs {
-    //   typedef GG GridGlue;
-    //   GridGlue _gridGlue;
-    // };
 
     template<typename GFS,
              typename DI>

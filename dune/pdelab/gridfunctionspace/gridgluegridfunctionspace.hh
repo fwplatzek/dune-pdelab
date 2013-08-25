@@ -4,8 +4,6 @@
 #ifndef DUNE_PDELAB_GRIDGLUEGRIDFUNTIONSPACE_HH
 #define DUNE_PDELAB_GRIDGLUEGRIDFUNTIONSPACE_HH
 
-#include "gridglueremotelfs.hh"
-
 #include <dune/common/shared_ptr.hh>
 
 #include <dune/pdelab/common/typetree/compositenodemacros.hh>
@@ -13,6 +11,8 @@
 #include <dune/pdelab/gridfunctionspace/powercompositegridfunctionspacebase.hh>
 #include <dune/pdelab/gridfunctionspace/datahandleprovider.hh>
 #include <dune/pdelab/gridfunctionspace/tags.hh>
+
+#include "gridgluetags.hh"
 
 namespace Dune {
   namespace PDELab {
@@ -24,8 +24,6 @@ namespace Dune {
     //! \addtogroup GridFunctionSpace grid function space
     //! \ingroup PDELab
     //! \{
-
-    struct GridGlueGridFunctionSpaceTag : public CompositeGridFunctionSpaceTag {};
 
     //! Trait class for the GridGlue grid function space
     template<typename GG, typename GFS1, typename GFS2, typename B, typename O>
@@ -192,5 +190,8 @@ namespace Dune {
 
   } // namespace PDELab
 } // namespace Dune
+
+#include "gridgluelocalfunctionspace.hh"
+#include "gridglueremotelfs.hh"
 
 #endif // DUNE_PDELAB_GRIDGLUEGRIDFUNTIONSPACE_HH

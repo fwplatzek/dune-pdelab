@@ -5,14 +5,14 @@
 #include <dune/localfunctions/monom.hh>
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
 #include <dune/pdelab/gridfunctionspace/utility.hh>
+#include <dune/pdelab/gridfunctionspace/gridgluelocalfunctionspace.hh>
+
+#include "gridgluetags.hh"
 
 namespace Dune {
   namespace PDELab {
 
     struct NoObject {};
-
-    struct gfs_to_remote_lfs {
-    };
 
     template<>
     struct gfs_to_lfs<NoObject> {

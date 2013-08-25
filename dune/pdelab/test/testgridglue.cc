@@ -156,10 +156,18 @@ void testNonMatchingCubeGrids()
   gfstar.name("tar");
 
   // GridGlue GFS
-  typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,Backend> GLUEGFS;
-  GLUEGFS gluegfs(glue,gfsdom,gfstar);
+  typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,Backend> GlueGFS;
+  GlueGFS gluegfs(glue,gfsdom,gfstar);
 
-  Dune::PDELab::LocalFunctionSpace<GLUEGFS> gluelfs(gluegfs);
+  typedef Dune::PDELab::LocalFunctionSpace<GlueGFS> GlueLFS;
+  GlueLFS gluelfs(gluegfs);
+
+  {
+    typedef typename Dune::PDELab::TypeTree::TransformTree<GFSTAR,Dune::PDELab::gfs_to_remote_lfs> Trafo;
+    Dune::PDELab::gfs_to_remote_lfs trafo;
+    typedef typename Trafo::Type RemoteLFS;
+    RemoteLFS remotelfs = Trafo::transform(gfstar, trafo);
+  }
 }
 
 int main(int argc, char *argv[]) try

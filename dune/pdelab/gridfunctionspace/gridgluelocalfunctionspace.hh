@@ -159,39 +159,21 @@ namespace Dune {
     };
 
     // register GridGlueGFS -> LocalFunctionSpace transformation (variadic version)
-    template<typename GridGlueGridFunctionSpace, typename Params>
-    struct GridGlueGridFunctionSpaceToLocalFunctionSpaceNodeTransformation
+    template<typename SourceNode, typename Transformation>
+    struct gridglue_gfs_to_lfs_template
     {
-      typedef gfs_to_lfs<Params> Transformation;
-
-      static const bool recursive = true;
-
       template<typename TC0, typename TC1, typename... DUMMY>
       struct result
       {
-        typedef GridGlueLocalFunctionSpaceNode<GridGlueGridFunctionSpace,
-                                               typename Transformation::DOFIndex,
-                                               TC0,TC1> type;
-        typedef shared_ptr<type> storage_type;
+        typedef GridGlueLocalFunctionSpaceNode<SourceNode,typename Transformation::DOFIndex,TC0,TC1> type;
       };
-
-      template<typename TC0, typename TC1, typename... DUMMY>
-      static typename result<TC0,TC1>::type transform(const GridGlueGridFunctionSpace& s,
-        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1, DUMMY&&...)
-      {
-        return typename result<TC0,TC1>::type(s,t,c0,c1);
-      }
-
-      template<typename TC0, typename TC1, typename... DUMMY>
-      static typename result<TC0,TC1>::storage_type transform_storage(shared_ptr<const GridGlueGridFunctionSpace> s,
-        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1, DUMMY&&...)
-      {
-        return make_shared<typename result<TC0,TC1>::type>(s,t,c0,c1);
-      }
-
     };
     template<typename GridGlueGridFunctionSpace, typename Params>
-    GridGlueGridFunctionSpaceToLocalFunctionSpaceNodeTransformation<GridGlueGridFunctionSpace, Params>
+    Dune::PDELab::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
+      GridGlueGridFunctionSpace,
+      gfs_to_lfs<Params>,
+      gridglue_gfs_to_lfs_template< GridGlueGridFunctionSpace,gfs_to_lfs<Params> >::template result
+      >
     registerNodeTransformation(GridGlueGridFunctionSpace* cgfs, gfs_to_lfs<Params>* t, GridGlueGridFunctionSpaceTag* tag);
 
   } // end PDELab

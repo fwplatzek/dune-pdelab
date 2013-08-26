@@ -147,47 +147,22 @@ namespace Dune {
       >
     registerNodeTransformation(CompositeGridFunctionSpace* cgfs, gfs_to_remote_lfs* t, CompositeGridFunctionSpaceTag* tag);
 
-  }
-}
-
-
-namespace Dune {
-  namespace PDELab{
-
     // register GridGlueGFS -> LocalFunctionSpace transformation (variadic version)
-    template<typename GridGlueGridFunctionSpace, typename Params>
-    struct GridGlueGridFunctionSpaceToRemoteLocalFunctionSpaceNodeTransformation
+    template<typename SourceNode, typename Transformation>
+    struct gridglue_gfs_to_remote_lfs_template
     {
-      typedef gfs_to_lfs<Params> Transformation;
-
-      static const bool recursive = true;
-
       template<typename TC0, typename TC1, typename... DUMMY>
       struct result
       {
-        typedef RemoteLFS< GridGlueLocalFunctionSpaceNode<GridGlueGridFunctionSpace,
-                                                          typename Transformation::DOFIndex,
-                                                          TC0,TC1> > type;
-        typedef shared_ptr<type> storage_type;
+        typedef RemoteLFS< GridGlueLocalFunctionSpaceNode<SourceNode,NoObject,TC0,TC1> > type;
       };
-
-      template<typename TC0, typename TC1, typename... DUMMY>
-      static typename result<TC0,TC1>::type transform(const GridGlueGridFunctionSpace& s,
-        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1, DUMMY&&...)
-      {
-        return typename result<TC0,TC1>::type(s,t,c0,c1);
-      }
-
-      template<typename TC0, typename TC1, typename... DUMMY>
-      static typename result<TC0,TC1>::storage_type transform_storage(shared_ptr<const GridGlueGridFunctionSpace> s,
-        const Transformation& t, shared_ptr<TC0> c0, shared_ptr<TC1> c1, DUMMY&&...)
-      {
-        return make_shared<typename result<TC0,TC1>::type>(s,t,c0,c1);
-      }
-
     };
-    template<typename GridGlueGridFunctionSpace, typename Params>
-    GridGlueGridFunctionSpaceToLocalFunctionSpaceNodeTransformation<GridGlueGridFunctionSpace, Params>
+    template<typename GridGlueGridFunctionSpace>
+    Dune::PDELab::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
+      GridGlueGridFunctionSpace,
+      gfs_to_remote_lfs,
+      gridglue_gfs_to_remote_lfs_template<GridGlueGridFunctionSpace,gfs_to_remote_lfs>::template result
+      >
     registerNodeTransformation(GridGlueGridFunctionSpace* cgfs, gfs_to_remote_lfs* t, GridGlueGridFunctionSpaceTag* tag);
 
   } // end namespace PDELab

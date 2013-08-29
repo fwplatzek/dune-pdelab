@@ -33,11 +33,20 @@ struct test<2> {
   template<class GFS>
   static void testremotelfs(GFS & gfs)
   {
-    typedef typename Dune::PDELab::TypeTree::TransformTree<GFS,Dune::PDELab::gfs_to_remote_lfs<GFS> > Trafo;
-    Dune::PDELab::gfs_to_remote_lfs<GFS> trafo;
-    typedef typename Trafo::Type RemoteLFS;
-    RemoteLFS rlfs = Trafo::transform(gfs, trafo);
-    Trafo::transform_storage(Dune::stackobject_to_shared_ptr(gfs), trafo);
+    {
+      typedef typename Dune::PDELab::TypeTree::TransformTree<GFS,Dune::PDELab::gfs_to_remote_lfs<GFS> > Trafo;
+      Dune::PDELab::gfs_to_remote_lfs<GFS> trafo;
+      typedef typename Trafo::Type RemoteLFS;
+      RemoteLFS rlfs = Trafo::transform(gfs, trafo);
+      Trafo::transform_storage(Dune::stackobject_to_shared_ptr(gfs), trafo);
+    }
+    {
+      typedef typename Dune::PDELab::TypeTree::TransformTree<GFS,Dune::PDELab::gfs_to_remote_lfs<Dune::PDELab::NoObject> > Trafo;
+      Dune::PDELab::gfs_to_remote_lfs<Dune::PDELab::NoObject> trafo;
+      typedef typename Trafo::Type RemoteLFS;
+      RemoteLFS rlfs = Trafo::transform(gfs, trafo);
+      Trafo::transform_storage(Dune::stackobject_to_shared_ptr(gfs), trafo);
+    }
   }
 
   template<class GV>

@@ -327,6 +327,8 @@ namespace Dune {
     template<typename GFS>
     struct gfs_to_lfs {
 
+      typedef GFS Params;
+
       //! The MultiIndex type that will be used in the resulting LocalFunctionSpace tree.
       //typedef Dune::PDELab::MultiIndex<std::size_t,TypeTree::TreeInfo<GFS>::depth> MultiIndex;
       typedef typename build_dof_index_type<GFS>::type DOFIndex;

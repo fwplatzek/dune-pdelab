@@ -19,7 +19,7 @@ namespace Dune {
 
 // #define GRIDGLUELFSMIXIN
     // local function space for a power grid function space
-    template<typename GFS, typename DOFIndex, typename LFS0, typename LFS1>
+    template<typename GFS, typename RootGFS, typename LFS0, typename LFS1>
     class GridGlueLocalFunctionSpaceNode :
       public TypeTree::VariadicCompositeNode<LFS0,
                                              LFS1
@@ -27,23 +27,24 @@ namespace Dune {
                                              ,
                                              // Mixin RemoteLFSes
                                              typename Dune::PDELab::TypeTree::TransformTree<typename GFS::template Child<0>::Type,
-                                                                                            Dune::PDELab::gfs_to_remote_lfs>::Type,
+                                                                                            Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type,
                                              typename Dune::PDELab::TypeTree::TransformTree<typename GFS::template Child<1>::Type,
-                                                                                            Dune::PDELab::gfs_to_remote_lfs>::Type
+                                                                                            Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type
 #endif
                                              >
-      , public LocalFunctionSpaceBaseNode<GFS,DOFIndex>
+      , public LocalFunctionSpaceBaseNode<GFS,typename gfs_to_lfs<RootGFS>::DOFIndex>
     {
-      typedef GridGlueLocalFunctionSpaceNode<GFS, DOFIndex, LFS0, LFS1> This;
+      typedef GridGlueLocalFunctionSpaceNode<GFS, RootGFS, LFS0, LFS1> This;
+      typedef typename gfs_to_lfs<RootGFS>::DOFIndex DOFIndex;
       typedef LocalFunctionSpaceBaseNode<GFS,DOFIndex> BaseT;
       typedef TypeTree::VariadicCompositeNode<LFS0,
                                               LFS1
 #ifdef GRIDGLUELFSMIXIN
                                               ,
                                               typename Dune::PDELab::TypeTree::TransformTree<typename GFS::template Child<0>::Type,
-                                                                                             Dune::PDELab::gfs_to_remote_lfs>::Type,
+                                                                                             Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type,
                                               typename Dune::PDELab::TypeTree::TransformTree<typename GFS::template Child<1>::Type,
-                                                                                             Dune::PDELab::gfs_to_remote_lfs>::Type
+                                                                                             Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type
 #endif
                                               > TreeNode;
 
@@ -61,11 +62,11 @@ namespace Dune {
 
       template<typename ChildGFS>
       static
-      Dune::shared_ptr<typename Dune::PDELab::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_lfs>::Type>
+      Dune::shared_ptr<typename Dune::PDELab::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type>
       createRemoteLocalFunctionSpace(Dune::shared_ptr<const ChildGFS> cgfs)
       {
-        Dune::PDELab::gfs_to_remote_lfs trafo;
-        return Dune::PDELab::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_lfs>::transform_storage(cgfs, trafo);
+        Dune::PDELab::gfs_to_remote_lfs<RootGFS> trafo;
+        return Dune::PDELab::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::transform_storage(cgfs, trafo);
       }
 
     public:
@@ -159,20 +160,20 @@ namespace Dune {
     };
 
     // register GridGlueGFS -> LocalFunctionSpace transformation (variadic version)
-    template<typename SourceNode, typename Transformation>
+    template<typename SourceNode, typename RootGFS>
     struct gridglue_gfs_to_lfs_template
     {
       template<typename TC0, typename TC1, typename... DUMMY>
       struct result
       {
-        typedef GridGlueLocalFunctionSpaceNode<SourceNode,typename Transformation::DOFIndex,TC0,TC1> type;
+        typedef GridGlueLocalFunctionSpaceNode<SourceNode,RootGFS,TC0,TC1> type;
       };
     };
     template<typename GridGlueGridFunctionSpace, typename Params>
     Dune::PDELab::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
       GridGlueGridFunctionSpace,
       gfs_to_lfs<Params>,
-      gridglue_gfs_to_lfs_template< GridGlueGridFunctionSpace,gfs_to_lfs<Params> >::template result
+      gridglue_gfs_to_lfs_template< GridGlueGridFunctionSpace,Params>::template result
       >
     registerNodeTransformation(GridGlueGridFunctionSpace* cgfs, gfs_to_lfs<Params>* t, GridGlueGridFunctionSpaceTag* tag);
 

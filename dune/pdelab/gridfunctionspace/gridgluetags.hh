@@ -13,7 +13,10 @@ namespace Dune
     //   typedef GG GridGlue;
     //   GridGlue _gridGlue;
     // };
-    struct gfs_to_remote_lfs {};
+    template<typename GFS>
+    struct gfs_to_remote_lfs {
+      typedef GFS GridFunctionSpace;
+    };
 
     struct GridGlueGridFunctionSpaceTag : public CompositeGridFunctionSpaceTag {};
 

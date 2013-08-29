@@ -16,6 +16,7 @@ namespace Dune {
 
     template<>
     struct gfs_to_lfs<NoObject> {
+      typedef NoObject Params;
       //! The MultiIndex type that will be used in the resulting LocalFunctionSpace tree.
       //typedef Dune::PDELab::MultiIndex<std::size_t,TypeTree::TreeInfo<GFS>::depth> MultiIndex;
       typedef NoObject DOFIndex;
@@ -100,70 +101,70 @@ namespace Dune {
     };
 
     // Register LeafGFS -> RemoteLFS transformation
-    template<typename GridFunctionSpace>
+    template<typename GridFunctionSpace, typename Params>
     Dune::PDELab::TypeTree::GenericLeafNodeTransformation<
       GridFunctionSpace,
-      gfs_to_remote_lfs,
-      RemoteLFS<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<GridFunctionSpace> >::Type>
+      gfs_to_remote_lfs<Params>,
+      RemoteLFS<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<Params> >::Type>
       >
-    registerNodeTransformation(GridFunctionSpace* gfs, gfs_to_remote_lfs* t, LeafGridFunctionSpaceTag* tag);
+    registerNodeTransformation(GridFunctionSpace* gfs, gfs_to_remote_lfs<Params>* t, LeafGridFunctionSpaceTag* tag);
 
-    // transformation template, we need a custom template in order to inject the DOFIndex type into the LocalFunctionSpace
+    // register PowerGFS -> RemoteLocalFunctionSpace transformation
     template<typename SourceNode, typename Transformation>
     struct power_gfs_to_remote_lfs_template
     {
+      typedef typename Transformation::GridFunctionSpace Params;
       template<typename TC>
       struct result
       {
-        typedef RemoteLFS< PowerLocalFunctionSpaceNode<SourceNode,NoObject,TC,SourceNode::CHILDREN> > type;
+        typedef RemoteLFS< PowerLocalFunctionSpaceNode<SourceNode,typename gfs_to_lfs<Params>::DOFIndex,TC,SourceNode::CHILDREN> > type;
       };
     };
-
-    template<typename PowerGridFunctionSpace>
+    template<typename PowerGridFunctionSpace, typename Params>
     Dune::PDELab::TypeTree::TemplatizedGenericPowerNodeTransformation<
       PowerGridFunctionSpace,
-      gfs_to_remote_lfs,
-      power_gfs_to_remote_lfs_template<PowerGridFunctionSpace,gfs_to_remote_lfs>::template result
+      gfs_to_remote_lfs<Params>,
+      power_gfs_to_remote_lfs_template<PowerGridFunctionSpace,gfs_to_remote_lfs<Params> >::template result
       >
-    registerNodeTransformation(PowerGridFunctionSpace* pgfs, gfs_to_remote_lfs* t, PowerGridFunctionSpaceTag* tag);
+    registerNodeTransformation(PowerGridFunctionSpace* pgfs, gfs_to_remote_lfs<Params>* t, PowerGridFunctionSpaceTag* tag);
 
-    // transformation template, we need a custom template in order to inject the MultiIndex type into the LocalFunctionSpace
+    // register CompositeGFS -> RemoteLocalFunctionSpace transformation (variadic version)
     template<typename SourceNode, typename Transformation>
     struct variadic_composite_gfs_to_remote_lfs_template
     {
+      typedef typename Transformation::GridFunctionSpace Params;
       template<typename... TC>
       struct result
       {
-        typedef RemoteLFS< CompositeLocalFunctionSpaceNode<SourceNode,NoObject,TC...> > type;
+        typedef RemoteLFS< CompositeLocalFunctionSpaceNode<SourceNode,typename gfs_to_lfs<Params>::DOFIndex,TC...> > type;
       };
     };
-
-    // register CompositeGFS -> LocalFunctionSpace transformation (variadic version)
-    template<typename CompositeGridFunctionSpace>
+    template<typename CompositeGridFunctionSpace, typename Params>
     Dune::PDELab::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
       CompositeGridFunctionSpace,
-      gfs_to_remote_lfs,
-      variadic_composite_gfs_to_remote_lfs_template<CompositeGridFunctionSpace,gfs_to_remote_lfs>::template result
+      gfs_to_remote_lfs<Params>,
+      variadic_composite_gfs_to_remote_lfs_template<CompositeGridFunctionSpace,gfs_to_remote_lfs<Params> >::template result
       >
-    registerNodeTransformation(CompositeGridFunctionSpace* cgfs, gfs_to_remote_lfs* t, CompositeGridFunctionSpaceTag* tag);
+    registerNodeTransformation(CompositeGridFunctionSpace* cgfs, gfs_to_remote_lfs<Params>* t, CompositeGridFunctionSpaceTag* tag);
 
-    // register GridGlueGFS -> LocalFunctionSpace transformation (variadic version)
+    // register GridGlueGFS -> RemoteLocalFunctionSpace transformation (variadic version)
     template<typename SourceNode, typename Transformation>
     struct gridglue_gfs_to_remote_lfs_template
     {
+      typedef typename Transformation::GridFunctionSpace Params;
       template<typename TC0, typename TC1, typename... DUMMY>
       struct result
       {
-        typedef RemoteLFS< GridGlueLocalFunctionSpaceNode<SourceNode,NoObject,TC0,TC1> > type;
+        typedef RemoteLFS< GridGlueLocalFunctionSpaceNode<SourceNode,Params,TC0,TC1> > type;
       };
     };
-    template<typename GridGlueGridFunctionSpace>
+    template<typename GridGlueGridFunctionSpace, typename Params>
     Dune::PDELab::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
       GridGlueGridFunctionSpace,
-      gfs_to_remote_lfs,
-      gridglue_gfs_to_remote_lfs_template<GridGlueGridFunctionSpace,gfs_to_remote_lfs>::template result
+      gfs_to_remote_lfs<Params>,
+      gridglue_gfs_to_remote_lfs_template<GridGlueGridFunctionSpace,gfs_to_remote_lfs<Params> >::template result
       >
-    registerNodeTransformation(GridGlueGridFunctionSpace* cgfs, gfs_to_remote_lfs* t, GridGlueGridFunctionSpaceTag* tag);
+    registerNodeTransformation(GridGlueGridFunctionSpace* cgfs, gfs_to_remote_lfs<Params>* t, GridGlueGridFunctionSpaceTag* tag);
 
   } // end namespace PDELab
 } // end namespace Dune

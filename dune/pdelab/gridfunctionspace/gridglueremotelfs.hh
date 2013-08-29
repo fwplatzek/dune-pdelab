@@ -12,16 +12,6 @@
 namespace Dune {
   namespace PDELab {
 
-    struct NoObject {};
-
-    template<>
-    struct gfs_to_lfs<NoObject> {
-      typedef NoObject Params;
-      //! The MultiIndex type that will be used in the resulting LocalFunctionSpace tree.
-      //typedef Dune::PDELab::MultiIndex<std::size_t,TypeTree::TreeInfo<GFS>::depth> MultiIndex;
-      typedef NoObject DOFIndex;
-    };
-
     template<typename Element>
     struct RemoteLFSComputeSizeVisitor :
       public ComputeSizeVisitor<Element>

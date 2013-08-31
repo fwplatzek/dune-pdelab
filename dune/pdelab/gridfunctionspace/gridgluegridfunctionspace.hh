@@ -105,7 +105,7 @@ namespace Dune {
       //! export traits class
       typedef typename ImplementationBase::Traits Traits;
 
-      GridGlueGridFunctionSpace (GG& glue,
+      GridGlueGridFunctionSpace (const GG& glue,
                                  GFS1& c0,
                                  GFS2& c1,
                                  const Backend& backend = Backend(),
@@ -115,7 +115,6 @@ namespace Dune {
         , _glue(glue)
       {}
 
-#if 1
     private:
       typedef TypeTree::TransformTree<GridGlueGridFunctionSpace,
                                       gfs_to_ordering<GridGlueGridFunctionSpace>
@@ -168,6 +167,11 @@ namespace Dune {
         return _ordering;
       }
 
+      const typename Traits::GridGlue & gridGlue() const
+      {
+        return _glue;
+      }
+
     private:
 
       // This method here is to avoid a double update of the Ordering when the user calls
@@ -178,11 +182,7 @@ namespace Dune {
       }
 
       mutable shared_ptr<Ordering> _ordering;
-
-#endif
-
-    private:
-      GG& _glue;
+      const GG& _glue;
 
     };
 

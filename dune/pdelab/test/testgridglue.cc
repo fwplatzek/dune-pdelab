@@ -96,6 +96,8 @@ void testlfs(LFS & lfs, const GG & gg)
                 << lfs.template child<1>().size() << "\t"
                 << lfs.template child<2>().size() << "\t"
                 << lfs.template child<3>().size() << "\n";
+      for (unsigned int i=0; i<lfs.size(); i++)
+        std::cout << lfs.dofIndex(i) << "\n";
     }
   }
 
@@ -116,6 +118,8 @@ void testlfs(LFS & lfs, const GG & gg)
                 << lfs.template child<1>().size() << "\t"
                 << lfs.template child<2>().size() << "\t"
                 << lfs.template child<3>().size() << "\n";
+      for (unsigned int i=0; i<lfs.size(); i++)
+        std::cout << lfs.dofIndex(i) << "\n";
     }
   }
 
@@ -137,6 +141,8 @@ void testlfs(LFS & lfs, const GG & gg)
                 << lfs.template child<1>().size() << "\t"
                 << lfs.template child<2>().size() << "\t"
                 << lfs.template child<3>().size() << "\n";
+      for (unsigned int i=0; i<lfs.size(); i++)
+        std::cout << lfs.dofIndex(i) << "\n";
     }
   }
 
@@ -156,6 +162,8 @@ void testlfs(LFS & lfs, const GG & gg)
                 << lfs.template child<1>().size() << "\t"
                 << lfs.template child<2>().size() << "\t"
                 << lfs.template child<3>().size() << "\n";
+      for (unsigned int i=0; i<lfs.size(); i++)
+        std::cout << lfs.dofIndex(i) << "\n";
     }
   }
 

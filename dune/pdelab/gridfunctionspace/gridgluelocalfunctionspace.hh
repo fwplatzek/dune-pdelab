@@ -9,6 +9,26 @@
 namespace Dune {
   namespace PDELab {
 
+    template<typename Element>
+    struct RemoteLFSComputeSizeVisitor :
+      public ComputeSizeVisitor<Element>
+    {
+      typedef typename ComputeSizeVisitor<Element>::Entity Entity;
+
+      template<typename Node, typename TreePath>
+      void leaf(Node& node, TreePath treePath)
+      {
+        node.offset = this->offset;
+        node.pfe = nullptr;
+        node.n = Node::FESwitch::basis(node.finiteElement()).size();
+        this->offset += node.n;
+      }
+
+      RemoteLFSComputeSizeVisitor(const Element& e,std::size_t offset = 0) :
+        ComputeSizeVisitor<Element>(e,offset)
+      {}
+    };
+
     template<typename GFS,
              typename DI>
     struct GridGlueLocalFunctionSpaceBaseTraits

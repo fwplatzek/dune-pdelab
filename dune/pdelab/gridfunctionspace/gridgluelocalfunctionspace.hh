@@ -20,7 +20,7 @@ namespace Dune {
     template<typename Context, GridGlueContextTag t>
     struct GridGlueContext
     {
-      GridGlueContext(Context & c) : context(c) {}
+      GridGlueContext(const Context & c) : context(c) {}
       const Context & context;
       enum { tag = t };
     };

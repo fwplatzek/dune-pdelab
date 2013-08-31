@@ -73,6 +73,26 @@ private:
   double sliceCoord_;
 };
 
+template<typename LFS, typename GV0, typename GV1, typename GG>
+void testlfs(LFS & lfs, const GV0 & gv0, const GV1 & gv1, const GG & gg)
+{
+  typedef typename GV0::template Codim<0>::Entity Element0;
+  typedef typename GV0::template Codim<0>::Iterator ElementIt0;
+  for (ElementIt0 eit = gv0.template begin<0>();
+       eit != gv0.template end<0>(); ++eit)
+  {
+    lfs.bind(Dune::PDELab::GridGlueContext<Element0,Dune::PDELab::GFS_DOM0>(*eit));
+  }
+
+  typedef typename GV1::template Codim<0>::Entity Element1;
+  typedef typename GV1::template Codim<0>::Iterator ElementIt1;
+  for (ElementIt1 eit = gv1.template begin<0>();
+       eit != gv1.template end<0>(); ++eit)
+  {
+    lfs.bind(Dune::PDELab::GridGlueContext<Element1,Dune::PDELab::GFS_DOM1>(*eit));
+  }
+}
+
 template <int dim>
 void testNonMatchingCubeGrids()
 {
@@ -180,6 +200,8 @@ void testNonMatchingCubeGrids()
     typedef typename Trafo::Type RemoteLFS;
     RemoteLFS remotelfs = Trafo::transform(gluegfs, trafo);
   }
+
+  testlfs(gluelfs, cubeGrid0.levelView(0), cubeGrid1.levelView(0), glue);
 }
 
 int main(int argc, char *argv[]) try

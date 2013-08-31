@@ -24,26 +24,7 @@ namespace Dune {
       size_t maxLocalSize () { return this->localSize(); };
 
       template<typename>
-      friend struct ComputeSizeVisitor;
-
-    //   /** \todo extract RIT from GG
-    //    */
-    //   template<typename RIT>
-    //   void bind(const RIT & rit) const
-    //   {
-    //     this->bind(*this, rit);
-    //   }
-    // private:
-    //   template<typename NodeType, typename RIT>
-    //   void bind (NodeType& node,
-    //     const RIT& rit)
-    //   {
-    //     assert(&node == this);
-
-    //     // compute sizes
-    //     RemoteLFSComputeSizeVisitor<RIT> csv(rit);
-    //     TypeTree::applyToTree(node,csv);
-    //   }
+      friend struct RemoteLFSComputeSizeVisitor;
     };
 
     //! traits for single component local function space
@@ -53,16 +34,20 @@ namespace Dune {
     {
       typedef typename LFS::Traits::GridFunctionSpace RemoteGridFunctionSpace;
       typedef typename LFS::Traits::FiniteElementType RemoteFiniteElementType;
-      typedef typename LFS::FESwitch RemoteFESwitch;
-      typedef BasisInterfaceSwitch<RemoteFESwitch> RemoteBasisSwitch;
-      typedef typename RemoteBasisSwitch::Domain DomainType;
-      typedef typename RemoteBasisSwitch::Range RangeType;
-      enum { dim = RemoteGridFunctionSpace::GridView::dimension-1 };
-      enum { order = 3 };
+      typedef FiniteElementInterfaceSwitch<
+        RemoteFiniteElementType> RemoteFESwitch;
+      typedef BasisInterfaceSwitch<
+        typename RemoteFESwitch::Basis> RemoteBasisSwitch;
+      // TODO extract DF from GridGlue
+      typedef typename RemoteBasisSwitch::DomainField DomainField;
+      typedef typename RemoteBasisSwitch::RangeField RangeField;
+      // TODO extract dimension from GridGlue
+      enum { dim = RemoteGridFunctionSpace::Traits::GridView::dimension-1 };
+      enum { order = 1 };
       enum { diffOrder = 1 };
 
       //! Type of local finite element
-      typedef MonomLocalFiniteElement<DomainType, RangeType, dim, order, diffOrder> FiniteElementType;
+      typedef MonomLocalFiniteElement<DomainField, RangeField, dim, order, diffOrder> FiniteElementType;
       typedef FiniteElementType FiniteElement;
 
       //! \brief Type of constraints engine
@@ -70,12 +55,103 @@ namespace Dune {
       typedef ConstraintsType Constraints;
     };
 
+    template<typename LFS /*, typename GG */>
+    struct RemoteLeafLocalFunctionSpace
+      : public LFS
+      // : public LocalFunctionSpaceBaseNode<GG,DOFIndex>
+      // , public TypeTree::LeafNode
+    {
+    public:
+      template<typename>
+      friend struct RemoteLFSComputeSizeVisitor;
+
+      typedef RemoteLeafLocalFunctionSpaceTraits<LFS /*, GG*/> Traits;
+      typedef FiniteElementInterfaceSwitch<
+        typename Traits::FiniteElementType
+        > FESwitch;
+
+      template <typename... T>
+      RemoteLeafLocalFunctionSpace(T&&... t)
+        : LFS(std::forward<T>(t)...)
+        , gt(GeometryType::simplex, Traits::dim)
+        , fem(gt)
+      {}
+
+      //! get finite element
+      const typename Traits::FiniteElementType& finiteElement () const
+      {
+        return fem;
+      }
+
+      //! \brief get local finite element
+      const typename Traits::FiniteElementType& localFiniteElement () const
+        DUNE_DEPRECATED
+      {
+        return fem;
+      }
+
+      //! \brief get constraints engine
+      const typename Traits::ConstraintsType& constraints () const
+      {
+        // TODO return empty CC
+//        return this->pgfs->constraints();
+      }
+
+      //! Calculates the multiindices associated with the given entity.
+      template<typename Entity, typename DOFIndexIterator>
+      void dofIndices(const Entity& e, DOFIndexIterator it, DOFIndexIterator endit)
+      {
+        // get layout of entity
+        const typename FESwitch::Coefficients &coeffs =
+          FESwitch::coefficients(fem);
+
+        // evaluate consecutive index of remote intersection
+        // typename GG::IndexType index = e.index();
+        std::size_t index = e.index();
+
+        for (std::size_t i = 0; i < std::size_t(coeffs.size()); ++i, ++it)
+        {
+          // store data
+          typedef typename Traits::GridFunctionSpace GFS;
+          GFS::Ordering::Traits::DOFIndexAccessor::store(*it,gt,index,i);
+
+          // make sure we don't write past the end of the iterator range
+          assert(it != endit);
+        }
+      }
+
+      template<typename GC, typename LC>
+      void insert_constraints (const LC& lc, GC& gc) const
+      {
+        // // LC and GC are maps of maps
+        // typedef typename LC::const_iterator local_col_iterator;
+        // typedef typename LC::value_type::second_type::const_iterator local_row_iterator;
+        // typedef typename GC::iterator global_col_iterator;
+        // typedef typename GC::value_type::second_type global_row_type;
+
+        // for (local_col_iterator cit=lc.begin(); cit!=lc.end(); ++cit)
+        // {
+
+        //   // look up entry in global map, if not found, insert an empty one.
+        //   global_col_iterator gcit = gc.insert(std::make_pair(std::ref(this->dofIndex(cit->first)),global_row_type())).first;
+
+        //   // copy row to global container with transformed indices
+        //   for (local_row_iterator rit=(cit->second).begin(); rit!=(cit->second).end(); ++rit)
+        //     gcit->second[this->dofIndex(rit->first)] = rit->second;
+        // }
+      }
+
+    protected:
+      GeometryType gt;
+      typename Traits::FiniteElementType fem;
+    };
+
     // Register LeafGFS -> RemoteLFS transformation
     template<typename GridFunctionSpace, typename Params>
     Dune::PDELab::TypeTree::GenericLeafNodeTransformation<
       GridFunctionSpace,
       gfs_to_remote_lfs<Params>,
-      RemoteLFS<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<Params> >::Type>
+      RemoteLeafLocalFunctionSpace<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<Params> >::Type>
       >
     registerNodeTransformation(GridFunctionSpace* gfs, gfs_to_remote_lfs<Params>* t, LeafGridFunctionSpaceTag* tag);
 

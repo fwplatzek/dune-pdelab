@@ -159,19 +159,19 @@ namespace Dune {
 #ifdef GRIDGLUELFSMIXIN
       void bind (const GridGlueContext<Grid0Intersection,TRACE_DOM0>& c)
       {
-        bind(*this,this->template child<2>(), c.context);
+        bind(*this,this->template child<2>(), c.context, 2);
       }
       void bind (const GridGlueContext<Grid1Intersection,TRACE_DOM1>& c)
       {
-        bind(*this,this->template child<3>(), c.context);
+        bind(*this,this->template child<3>(), c.context, 3);
       }
       void bind (const Grid0Intersection& c)
       {
-        bind(*this,this->template child<2>(), c);
+        bind(*this,this->template child<2>(), c, 2);
       }
       void bind (const Grid1Intersection& c)
       {
-        bind(*this,this->template child<3>(), c);
+        bind(*this,this->template child<3>(), c, 3);
       }
 #endif
     private:
@@ -183,15 +183,17 @@ namespace Dune {
         TypeTree::applyToTree(node,csv);
       };
 
-      template<typename NodeType, typename ChildNodeType, typename Intersection>
+      template<typename NodeType, typename ChildNodeType, typename P0, typename P1, int in, int out>
       void bind (NodeType& node, ChildNodeType& child,
-        const Intersection& is)
+        const ::Dune::GridGlue::Intersection<P0,P1,in,out>& is,
 //        const typename ChildNodeType::Traits::Element& is)
+        int childIndex)
       {
         clear(node);
 
         assert(&node == this);
 
+        typedef ::Dune::GridGlue::Intersection<P0,P1,in,out> Intersection;
 //        typedef typename ChildNodeType::Traits::Element Intersection;
 
         // compute sizes
@@ -199,6 +201,11 @@ namespace Dune {
         csv.pre(node,0);
         TypeTree::applyToTree(child,csv);
         csv.post(node,0);
+
+        // initialize iterators and fill indices
+        FillIndicesVisitor<Intersection> fiv(is);
+        TypeTree::applyToTree(child,fiv);
+        fiv.afterChild(node,child,0,childIndex);
       }
       template<typename NodeType, typename ChildNodeType>
       void bind (NodeType& node, ChildNodeType& child,

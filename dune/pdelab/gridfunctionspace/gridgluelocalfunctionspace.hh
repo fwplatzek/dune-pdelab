@@ -9,6 +9,22 @@
 namespace Dune {
   namespace PDELab {
 
+    enum GridGlueContextTag
+    {
+      GFS_DOM0,
+      GFS_DOM1,
+      TRACE_DOM0,
+      TRACE_DOM1
+    };
+
+    template<typename Context, GridGlueContextTag t>
+    struct GridGlueContext
+    {
+      GridGlueContext(Context & c) : context(c) {}
+      const Context & context;
+      enum { tag = t };
+    };
+
     template<typename Element>
     struct RemoteLFSComputeSizeVisitor :
       public ComputeSizeVisitor<Element>
@@ -37,7 +53,7 @@ namespace Dune {
       typedef typename GFS::Traits::GridGlue GridGlue;
     };
 
-// #define GRIDGLUELFSMIXIN
+#define GRIDGLUELFSMIXIN
     // local function space for a power grid function space
     template<typename GFS, typename RootGFS, typename LFS0, typename LFS1>
     class GridGlueLocalFunctionSpaceNode :
@@ -91,8 +107,11 @@ namespace Dune {
 
     public:
       typedef GridGlueLocalFunctionSpaceBaseTraits<GFS,DOFIndex> Traits;
-
       typedef PowerLocalFunctionSpaceTag ImplementationTag;
+      typedef typename GFS::Traits::GridGlue GridGlue;
+      typedef typename GridGlue::Grid0Patch::GridView::template Codim<0>::Entity Patch0Element;
+      typedef typename GridGlue::Grid1Patch::GridView::template Codim<0>::Entity Patch1Element;
+      typedef typename GridGlue::Intersection CouplingIntersection;
 
       //! \brief initialize with grid function space
       template<typename Transformation>
@@ -129,53 +148,58 @@ namespace Dune {
         , BaseT(stackobject_to_shared_ptr(gfs))
       {}
 
-    public:
       //! \brief bind local function space to one of the GridGlue contextes (sub-domain cell or remote intersection)
-      template<typename Context>
-      void bind(const Context & c) const
+      // explicitly state the different options for the context definitions, so that we are sure to create the correct spaces
+      void bind (const GridGlueContext<Patch0Element,GFS_DOM0>& c)
       {
-        this->bind(*this, this->template child<0>(), c);
-        this->bind(*this, this->template child<1>(), c);
-#ifdef GRIDGLUELFSMIXIN
-        // These are the RemoteLocalFunctionSpace sub-trees
-        this->bind(*this, this->template child<2>(), c);
-        this->bind(*this, this->template child<3>(), c);
-#endif
+        bind(*this,this->template child<0>(), c.context, 0);
       }
-
+      void bind (const GridGlueContext<Patch1Element,GFS_DOM1>& c)
+      {
+        bind(*this,this->template child<1>(), c.context, 1);
+      }
+#ifdef GRIDGLUELFSMIXIN
+      void bind (const GridGlueContext<CouplingIntersection,TRACE_DOM0>& c)
+      {
+        bind(*this,this->template child<2>(), c.context);
+      }
+      void bind (const GridGlueContext<CouplingIntersection,TRACE_DOM1>& c)
+      {
+        bind(*this,this->template child<3>(), c.context);
+      }
+#endif
     private:
-      typedef typename GFS::Traits::GridGlue GridGlue;
-      typedef integral_constant<int,0> Patch0Tag;
-      typedef integral_constant<int,1> Patch1Tag;
-      typedef typename GridGlue::Intersection CouplingIntersection;
-      template<typename NodeType, typename ChildNodeType>
+
+      template<typename NodeType, typename ChildNodeType, GridGlueContextTag t>
       void bind (NodeType& node, ChildNodeType& child,
         const CouplingIntersection& rit)
       {
-#if 0
         assert(&node == this);
         // compute sizes
         RemoteLFSComputeSizeVisitor<CouplingIntersection> csv(rit);
-        TypeTree::applyToTree(node,csv);
-#endif
+        csv.pre(node,0);
+        TypeTree::applyToTree(child,csv);
+        csv.post(node,0);
       }
       template<typename NodeType, typename ChildNodeType>
       void bind (NodeType& node, ChildNodeType& child,
-        const typename ChildNodeType::Traits::Element& e)
+        const typename ChildNodeType::Traits::Element& e,
+        int childIndex)
       {
-#if 0
         assert(&node == this);
 
-        typedef typename Traits::Element Elementy;
+        typedef typename ChildNodeType::Traits::Element Element;
 
         // compute sizes
         ComputeSizeVisitor<Element> csv(e);
-        TypeTree::applyToTree(node,csv);
+        csv.pre(node,0);
+        TypeTree::applyToTree(child,csv);
+        csv.post(node,0);
 
         // initialize iterators and fill indices
         FillIndicesVisitor<Element> fiv(e);
-        TypeTree::applyToTree(node,fiv);
-#endif
+        TypeTree::applyToTree(child,fiv);
+        fiv.afterChild(node,child,0,childIndex);
       }
     };
 

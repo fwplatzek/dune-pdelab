@@ -25,23 +25,20 @@ namespace Dune {
       enum { tag = t };
     };
 
-    template<typename Element>
+    template<typename Intersection>
     struct RemoteLFSComputeSizeVisitor :
-      public ComputeSizeVisitor<Element>
+      public ComputeSizeVisitor<Intersection>
     {
-      typedef typename ComputeSizeVisitor<Element>::Entity Entity;
-
       template<typename Node, typename TreePath>
       void leaf(Node& node, TreePath treePath)
       {
         node.offset = this->offset;
-        node.pfe = nullptr;
         node.n = Node::FESwitch::basis(node.finiteElement()).size();
         this->offset += node.n;
       }
 
-      RemoteLFSComputeSizeVisitor(const Element& e,std::size_t offset = 0) :
-        ComputeSizeVisitor<Element>(e,offset)
+      RemoteLFSComputeSizeVisitor(const Intersection& i,std::size_t offset = 0) :
+        ComputeSizeVisitor<Intersection>(i,offset)
       {}
     };
 
@@ -109,9 +106,10 @@ namespace Dune {
       typedef GridGlueLocalFunctionSpaceBaseTraits<GFS,DOFIndex> Traits;
       typedef PowerLocalFunctionSpaceTag ImplementationTag;
       typedef typename GFS::Traits::GridGlue GridGlue;
-      typedef typename GridGlue::Grid0Patch::GridView::template Codim<0>::Entity Patch0Element;
-      typedef typename GridGlue::Grid1Patch::GridView::template Codim<0>::Entity Patch1Element;
-      typedef typename GridGlue::Intersection CouplingIntersection;
+      typedef typename GridGlue::Grid0Patch::GridView::template Codim<0>::Entity Grid0Element;
+      typedef typename GridGlue::Grid1Patch::GridView::template Codim<0>::Entity Grid1Element;
+      typedef typename GridGlue::Grid0IntersectionIterator::Intersection Grid0Intersection;
+      typedef typename GridGlue::Grid1IntersectionIterator::Intersection Grid1Intersection;
 
       //! \brief initialize with grid function space
       template<typename Transformation>
@@ -150,33 +148,54 @@ namespace Dune {
 
       //! \brief bind local function space to one of the GridGlue contextes (sub-domain cell or remote intersection)
       // explicitly state the different options for the context definitions, so that we are sure to create the correct spaces
-      void bind (const GridGlueContext<Patch0Element,GFS_DOM0>& c)
+      void bind (const GridGlueContext<Grid0Element,GFS_DOM0>& c)
       {
         bind(*this,this->template child<0>(), c.context, 0);
       }
-      void bind (const GridGlueContext<Patch1Element,GFS_DOM1>& c)
+      void bind (const GridGlueContext<Grid1Element,GFS_DOM1>& c)
       {
         bind(*this,this->template child<1>(), c.context, 1);
       }
 #ifdef GRIDGLUELFSMIXIN
-      void bind (const GridGlueContext<CouplingIntersection,TRACE_DOM0>& c)
+      void bind (const GridGlueContext<Grid0Intersection,TRACE_DOM0>& c)
       {
         bind(*this,this->template child<2>(), c.context);
       }
-      void bind (const GridGlueContext<CouplingIntersection,TRACE_DOM1>& c)
+      void bind (const GridGlueContext<Grid1Intersection,TRACE_DOM1>& c)
       {
         bind(*this,this->template child<3>(), c.context);
+      }
+      void bind (const Grid0Intersection& c)
+      {
+        bind(*this,this->template child<2>(), c);
+      }
+      void bind (const Grid1Intersection& c)
+      {
+        bind(*this,this->template child<3>(), c);
       }
 #endif
     private:
 
-      template<typename NodeType, typename ChildNodeType, GridGlueContextTag t>
-      void bind (NodeType& node, ChildNodeType& child,
-        const CouplingIntersection& rit)
+      template<typename NodeType>
+      void clear (NodeType& node)
       {
+        ClearSizeVisitor<> csv(0);
+        TypeTree::applyToTree(node,csv);
+      };
+
+      template<typename NodeType, typename ChildNodeType, typename Intersection>
+      void bind (NodeType& node, ChildNodeType& child,
+        const Intersection& is)
+//        const typename ChildNodeType::Traits::Element& is)
+      {
+        clear(node);
+
         assert(&node == this);
+
+//        typedef typename ChildNodeType::Traits::Element Intersection;
+
         // compute sizes
-        RemoteLFSComputeSizeVisitor<CouplingIntersection> csv(rit);
+        RemoteLFSComputeSizeVisitor<Intersection> csv(is);
         csv.pre(node,0);
         TypeTree::applyToTree(child,csv);
         csv.post(node,0);
@@ -186,6 +205,8 @@ namespace Dune {
         const typename ChildNodeType::Traits::Element& e,
         int childIndex)
       {
+        clear(node);
+
         assert(&node == this);
 
         typedef typename ChildNodeType::Traits::Element Element;

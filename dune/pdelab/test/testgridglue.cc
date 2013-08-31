@@ -73,24 +73,92 @@ private:
   double sliceCoord_;
 };
 
-template<typename LFS, typename GV0, typename GV1, typename GG>
-void testlfs(LFS & lfs, const GV0 & gv0, const GV1 & gv1, const GG & gg)
+template<typename LFS, typename GG>
+void testlfs(LFS & lfs, const GG & gg)
 {
-  typedef typename GV0::template Codim<0>::Entity Element0;
-  typedef typename GV0::template Codim<0>::Iterator ElementIt0;
-  for (ElementIt0 eit = gv0.template begin<0>();
-       eit != gv0.template end<0>(); ++eit)
+  typedef typename GG::Grid0Patch Patch0;
+  typedef typename GG::Grid1Patch Patch1;
+
   {
-    lfs.bind(Dune::PDELab::GridGlueContext<Element0,Dune::PDELab::GFS_DOM0>(*eit));
+    typedef typename Patch0::GridView GridView;
+    typedef typename GridView::template Codim<0>::Entity Element;
+    typedef typename GridView::template Codim<0>::Iterator ElementIt;
+    for (ElementIt eit = gg.template gridView<0>().template begin<0>();
+         eit != gg.template gridView<0>().template end<0>(); ++eit)
+    {
+      lfs.bind(Dune::PDELab::GridGlueContext<Element,Dune::PDELab::GFS_DOM0>(*eit));
+      assert(lfs.template child<0>().size() != 0);
+      assert(lfs.template child<1>().size() == 0);
+      assert(lfs.template child<2>().size() == 0);
+      assert(lfs.template child<3>().size() == 0);
+      std::cout << "GFS0\t"
+                << lfs.template child<0>().size() << "\t"
+                << lfs.template child<1>().size() << "\t"
+                << lfs.template child<2>().size() << "\t"
+                << lfs.template child<3>().size() << "\n";
+    }
   }
 
-  typedef typename GV1::template Codim<0>::Entity Element1;
-  typedef typename GV1::template Codim<0>::Iterator ElementIt1;
-  for (ElementIt1 eit = gv1.template begin<0>();
-       eit != gv1.template end<0>(); ++eit)
   {
-    lfs.bind(Dune::PDELab::GridGlueContext<Element1,Dune::PDELab::GFS_DOM1>(*eit));
+    typedef typename Patch1::GridView GridView;
+    typedef typename GridView::template Codim<0>::Entity Element;
+    typedef typename GridView::template Codim<0>::Iterator ElementIt;
+    for (ElementIt eit = gg.template gridView<1>().template begin<0>();
+         eit != gg.template gridView<1>().template end<0>(); ++eit)
+    {
+      lfs.bind(Dune::PDELab::GridGlueContext<Element,Dune::PDELab::GFS_DOM1>(*eit));
+      assert(lfs.template child<0>().size() == 0);
+      assert(lfs.template child<1>().size() != 0);
+      assert(lfs.template child<2>().size() == 0);
+      assert(lfs.template child<3>().size() == 0);
+      std::cout << "GFS1\t"
+                << lfs.template child<0>().size() << "\t"
+                << lfs.template child<1>().size() << "\t"
+                << lfs.template child<2>().size() << "\t"
+                << lfs.template child<3>().size() << "\n";
+    }
   }
+
+  typedef GridGlueView<Patch0,Patch1,0> GGView0; // from 0 to 1
+  typedef GridGlueView<Patch0,Patch1,1> GGView1; // from 1 to 0
+  {
+    typedef typename GGView0::IntersectionIterator IntersectionIterator;
+    typedef typename IntersectionIterator::Intersection Intersection;
+    for (IntersectionIterator iit = gg.template ibegin<0>();
+         iit != gg.template iend<0>(); ++iit)
+    {
+      lfs.bind(Dune::PDELab::GridGlueContext<Intersection,Dune::PDELab::TRACE_DOM0>(*iit));
+      assert(lfs.template child<0>().size() == 0);
+      assert(lfs.template child<1>().size() == 0);
+      assert(lfs.template child<2>().size() != 0);
+      assert(lfs.template child<3>().size() == 0);
+      std::cout << "TRACE0\t"
+                << lfs.template child<0>().size() << "\t"
+                << lfs.template child<1>().size() << "\t"
+                << lfs.template child<2>().size() << "\t"
+                << lfs.template child<3>().size() << "\n";
+    }
+  }
+
+  {
+    typedef typename GGView1::IntersectionIterator IntersectionIterator;
+    typedef typename IntersectionIterator::Intersection Intersection;
+    for (IntersectionIterator iit = gg.template ibegin<1>();
+         iit != gg.template iend<1>(); ++iit)
+    {
+      lfs.bind(Dune::PDELab::GridGlueContext<Intersection,Dune::PDELab::TRACE_DOM1>(*iit));
+      assert(lfs.template child<0>().size() == 0);
+      assert(lfs.template child<1>().size() == 0);
+      assert(lfs.template child<2>().size() == 0);
+      assert(lfs.template child<3>().size() != 0);
+      std::cout << "TRACE1\t"
+                << lfs.template child<0>().size() << "\t"
+                << lfs.template child<1>().size() << "\t"
+                << lfs.template child<2>().size() << "\t"
+                << lfs.template child<3>().size() << "\n";
+    }
+  }
+
 }
 
 template <int dim>
@@ -109,7 +177,7 @@ void testNonMatchingCubeGrids()
 
   GridType cubeGrid0(elements, lower, upper);
 
-  elements = 4;
+  elements = 3;
   lower[0] += 1;
   upper[0] += 1;
 
@@ -201,7 +269,7 @@ void testNonMatchingCubeGrids()
     RemoteLFS remotelfs = Trafo::transform(gluegfs, trafo);
   }
 
-  testlfs(gluelfs, cubeGrid0.levelView(0), cubeGrid1.levelView(0), glue);
+  testlfs(gluelfs, glue);
 }
 
 int main(int argc, char *argv[]) try

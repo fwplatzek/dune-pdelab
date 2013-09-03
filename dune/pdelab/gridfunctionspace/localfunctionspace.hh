@@ -768,6 +768,8 @@ namespace Dune {
     };
 
     // specialization for AnySpaceTag
+    // WARNING: If you modify this class, make sure to also fix the specialization in
+    // subspacelocalfunctionspace.hh!
     template <typename GFS>
     class LocalFunctionSpace<GFS, AnySpaceTag> :
       public Dune::PDELab::TypeTree::TransformTree<GFS,gfs_to_lfs<GFS> >::Type

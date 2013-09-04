@@ -21,36 +21,12 @@ namespace Dune{
       const CU & cu_;
       const CV & cv_;
 
-      typedef TypeTree::TreePath<0> Path0;
-      typedef TypeTree::TreePath<1> Path1;
-      typedef GridFunctionSubSpace<GFSU,Path0> GFSU0;
-      typedef GridFunctionSubSpace<GFSV,Path0> GFSV0;
-      typedef GridFunctionSubSpace<GFSU,Path1> GFSU1;
-      typedef GridFunctionSubSpace<GFSV,Path1> GFSV1;
-
-      GFSU0 gfsu0_;
-      GFSV0 gfsv0_;
-      GFSU1 gfsu1_;
-      GFSV1 gfsv1_;
-
-      typedef DefaultAssembler<GFSU0,GFSV0,CU,CV> Patch0Asm;
-      typedef DefaultAssembler<GFSU1,GFSV1,CU,CV> Patch1Asm;
-
-      Patch0Asm patch0asm_;
-      Patch1Asm patch1asm_;
-
     public:
       GridGlueAssembler (const GFSU& gfsu, const GFSV& gfsv, const CU& cu, const CV& cv)
         : gfsu_(gfsu)
         , gfsv_(gfsv)
         , cu_(cu)
         , cv_(cv)
-        , gfsu0_(gfsu)
-        , gfsv0_(gfsv)
-        , gfsu1_(gfsu)
-        , gfsv1_(gfsv)
-        , patch0asm_(gfsu0_,gfsv0_,cu_,cv_)
-        , patch1asm_(gfsu1_,gfsv1_,cu_,cv_)
       {}
 
       //! Get the trial grid function space
@@ -73,8 +49,8 @@ namespace Dune{
         LocalFunctionSpace<GFSU> rlfsu(gfsu_);
         LocalFunctionSpace<GFSV> rlfsv(gfsv_);
 
-        patch0asm_.assemble(assembler_engine);
-        patch1asm_.assemble(assembler_engine);
+        assemble<GFS_DOM0>(assembler_engine, gfsv_.gridGlue().template gridView<0>());
+        assemble<GFS_DOM1>(assembler_engine, gfsv_.gridGlue().template gridView<1>());
 
         assert(& gfsu_.gridGlue() == & gfsv_.gridGlue());
 
@@ -111,6 +87,220 @@ namespace Dune{
         //     coupling_1_from_0(lfsu.template child<1>(),lfsv.template child<1>(),
         //         rlfsu.template child<0>(),rlfsv.template child<0>());
         // }
+      }
+
+    private:
+      template<GridGlueContextTag TAG, class LocalAssemblerEngine, typename GV>
+      void assemble(LocalAssemblerEngine & assembler_engine, const GV & gv) const
+      {
+        typedef typename GV::Traits::template Codim<0>::Entity Element;
+        typedef typename GV::Traits::template Codim<0>::Iterator ElementIterator;
+        typedef typename GV::Traits::template Codim<0>::Entity Element;
+        typedef typename GV::IntersectionIterator IntersectionIterator;
+        typedef typename IntersectionIterator::Intersection Intersection;
+
+        typedef LocalFunctionSpace<GFSU> LFSU;
+        typedef LocalFunctionSpace<GFSV> LFSV;
+        LFSU lfsu(gfsu_);
+        LFSV lfsv(gfsv_);
+        LFSU lfsun(gfsu_);
+        LFSV lfsvn(gfsv_);
+
+        typedef typename std::conditional<
+          LocalAssemblerEngine::needs_constraints_caching,
+          LFSIndexCache<LFSU,CU>,
+          LFSIndexCache<LFSU,EmptyTransformation>
+          >::type LFSUCache;
+
+        typedef typename std::conditional<
+          LocalAssemblerEngine::needs_constraints_caching,
+          LFSIndexCache<LFSV,CV>,
+          LFSIndexCache<LFSV,EmptyTransformation>
+          >::type LFSVCache;
+
+        LFSUCache lfsu_cache(lfsu,cu_);
+        LFSVCache lfsv_cache(lfsv,cv_);
+        LFSUCache lfsun_cache(lfsun,cu_);
+        LFSVCache lfsvn_cache(lfsvn,cv_);
+
+        // Notify assembler engine about oncoming assembly
+        assembler_engine.preAssembly();
+
+        // Map each cell to unique id
+        ElementMapper<GV> cell_mapper(gv);
+
+        // Extract integration requirements from the local assembler
+        const bool require_uv_skeleton = assembler_engine.requireUVSkeleton();
+        const bool require_v_skeleton = assembler_engine.requireVSkeleton();
+        const bool require_uv_boundary = assembler_engine.requireUVBoundary();
+        const bool require_v_boundary = assembler_engine.requireVBoundary();
+        const bool require_uv_processor = assembler_engine.requireUVBoundary();
+        const bool require_v_processor = assembler_engine.requireVBoundary();
+        const bool require_uv_post_skeleton = assembler_engine.requireUVVolumePostSkeleton();
+        const bool require_v_post_skeleton = assembler_engine.requireVVolumePostSkeleton();
+        const bool require_skeleton_two_sided = assembler_engine.requireSkeletonTwoSided();
+
+        // Traverse grid view
+        for (ElementIterator it = gv.template begin<0>();
+             it!=gv.template end<0>(); ++it)
+          {
+            // Compute unique id
+            const typename GV::IndexSet::IndexType ids = cell_mapper.map(*it);
+
+            ElementGeometry<Element> eg(*it);
+            GridGlueContext<Element,TAG> ctx(*it);
+
+            if(assembler_engine.assembleCell(eg))
+              continue;
+
+            // Bind local test function space to element
+            lfsv.bind( ctx );
+            lfsv_cache.update();
+
+            // Notify assembler engine about bind
+            assembler_engine.onBindLFSV(eg,lfsv_cache);
+
+            // Volume integration
+            assembler_engine.assembleVVolume(eg,lfsv_cache);
+
+            // Bind local trial function space to element
+            lfsu.bind( ctx );
+            lfsu_cache.update();
+
+            // Notify assembler engine about bind
+            assembler_engine.onBindLFSUV(eg,lfsu_cache,lfsv_cache);
+
+            // Load coefficients of local functions
+            assembler_engine.loadCoefficientsLFSUInside(lfsu_cache);
+
+            // Volume integration
+            assembler_engine.assembleUVVolume(eg,lfsu_cache,lfsv_cache);
+
+            // Skip if no intersection iterator is needed
+            if (require_uv_skeleton || require_v_skeleton ||
+                require_uv_boundary || require_v_boundary ||
+                require_uv_processor || require_v_processor)
+              {
+                // Traverse intersections
+                unsigned int intersection_index = 0;
+                IntersectionIterator endit = gv.iend(*it);
+                IntersectionIterator iit = gv.ibegin(*it);
+                for(; iit!=endit; ++iit, ++intersection_index)
+                  {
+
+                    IntersectionGeometry<Intersection> ig(*iit,intersection_index);
+
+                    switch (IntersectionType::get(*iit))
+                      {
+                      case IntersectionType::skeleton:
+                        // the specific ordering of the if-statements in the old code caused periodic
+                        // boundary intersection to be handled the same as skeleton intersections
+                      case IntersectionType::periodic:
+                        if (require_uv_skeleton || require_v_skeleton)
+                          {
+                            // compute unique id for neighbor
+
+                            const typename GV::IndexSet::IndexType idn = cell_mapper.map(*(iit->outside()));
+
+                            // Visit face if id is bigger
+                            bool visit_face = ids > idn || require_skeleton_two_sided;
+
+                            // unique vist of intersection
+                            if (visit_face)
+                              {
+                                // Bind local test space to neighbor element
+                                GridGlueContext<Element,TAG> ctxn(*(iit->outside()));
+                                lfsvn.bind(ctxn);
+                                lfsvn_cache.update();
+
+                                // Notify assembler engine about binds
+                                assembler_engine.onBindLFSVOutside(ig,lfsv_cache,lfsvn_cache);
+
+                                // Skeleton integration
+                                assembler_engine.assembleVSkeleton(ig,lfsv_cache,lfsvn_cache);
+
+                                if(require_uv_skeleton){
+
+                                  // Bind local trial space to neighbor element
+                                  lfsun.bind(ctxn);
+                                  lfsun_cache.update();
+
+                                  // Notify assembler engine about binds
+                                  assembler_engine.onBindLFSUVOutside(ig,
+                                                                      lfsu_cache,lfsv_cache,
+                                                                      lfsun_cache,lfsvn_cache);
+
+                                  // Load coefficients of local functions
+                                  assembler_engine.loadCoefficientsLFSUOutside(lfsun_cache);
+
+                                  // Skeleton integration
+                                  assembler_engine.assembleUVSkeleton(ig,lfsu_cache,lfsv_cache,lfsun_cache,lfsvn_cache);
+
+                                  // Notify assembler engine about unbinds
+                                  assembler_engine.onUnbindLFSUVOutside(ig,
+                                                                        lfsu_cache,lfsv_cache,
+                                                                        lfsun_cache,lfsvn_cache);
+                                }
+
+                                // Notify assembler engine about unbinds
+                                assembler_engine.onUnbindLFSVOutside(ig,lfsv_cache,lfsvn_cache);
+                              }
+                          }
+                        break;
+
+                      case IntersectionType::boundary:
+                        if(require_uv_boundary || require_v_boundary )
+                          {
+
+                            // Boundary integration
+                            assembler_engine.assembleVBoundary(ig,lfsv_cache);
+
+                            if(require_uv_boundary){
+                              // Boundary integration
+                              assembler_engine.assembleUVBoundary(ig,lfsu_cache,lfsv_cache);
+                            }
+                          }
+                        break;
+
+                      case IntersectionType::processor:
+                        if(require_uv_processor || require_v_processor )
+                          {
+
+                            // Processor integration
+                            assembler_engine.assembleVProcessor(ig,lfsv_cache);
+
+                            if(require_uv_processor){
+                              // Processor integration
+                              assembler_engine.assembleUVProcessor(ig,lfsu_cache,lfsv_cache);
+                            }
+                          }
+                        break;
+                      } // switch
+
+                  } // iit
+              } // do skeleton
+
+            if(require_uv_post_skeleton || require_v_post_skeleton){
+              // Volume integration
+              assembler_engine.assembleVVolumePostSkeleton(eg,lfsv_cache);
+
+              if(require_uv_post_skeleton){
+                // Volume integration
+                assembler_engine.assembleUVVolumePostSkeleton(eg,lfsu_cache,lfsv_cache);
+              }
+            }
+
+            // Notify assembler engine about unbinds
+            assembler_engine.onUnbindLFSUV(eg,lfsu_cache,lfsv_cache);
+
+            // Notify assembler engine about unbinds
+            assembler_engine.onUnbindLFSV(eg,lfsv_cache);
+
+          } // it
+
+        // Notify assembler engine that assembly is finished
+        assembler_engine.postAssembly(gfsu_,gfsv_);
+
       }
     };
 

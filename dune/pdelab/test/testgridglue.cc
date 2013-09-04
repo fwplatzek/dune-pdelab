@@ -395,6 +395,7 @@ void testNonMatchingCubeGrids()
 
   typedef typename GridOperator::Traits::Jacobian M;
   std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
+  M mat(gridoperator);
 }
 
 int main(int argc, char *argv[]) try

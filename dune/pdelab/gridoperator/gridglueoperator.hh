@@ -2,6 +2,7 @@
 #define DUNE_PDELAB_GRIDGLUEOPERATOR_HH
 
 #include "default/assembler.hh"
+#include <dune/pdelab/gridfunctionspace/subspace.hh>
 
 // #include <dune/pdelab/gridoperator/common/gridoperatorutilities.hh>
 // #include <dune/pdelab/gridoperator/common/borderdofexchanger.hh>
@@ -24,10 +25,17 @@ namespace Dune{
       LocalFunctionSpace<GFSU> rlfsu_;
       LocalFunctionSpace<GFSV> rlfsv_;
 
-      typedef typename GFSU::template Child<0> GFSU0;
-      typedef typename GFSV::template Child<0> GFSV0;
-      typedef typename GFSU::template Child<1> GFSU1;
-      typedef typename GFSV::template Child<1> GFSV1;
+      typedef TypeTree::TreePath<0> Path0;
+      typedef TypeTree::TreePath<1> Path1;
+      typedef GridFunctionSubSpace<GFSU,Path0> GFSU0;
+      typedef GridFunctionSubSpace<GFSV,Path0> GFSV0;
+      typedef GridFunctionSubSpace<GFSU,Path1> GFSU1;
+      typedef GridFunctionSubSpace<GFSV,Path1> GFSV1;
+
+      GFSU0 gfsu0_;
+      GFSV0 gfsv0_;
+      GFSU1 gfsu1_;
+      GFSV1 gfsv1_;
 
       typedef DefaultAssembler<GFSU0,GFSV0,CU,CV> Patch0Asm;
       typedef DefaultAssembler<GFSU1,GFSV1,CU,CV> Patch1Asm;
@@ -45,8 +53,12 @@ namespace Dune{
         , lfsv_(gfsv)
         , rlfsu_(gfsu)
         , rlfsv_(gfsv)
-        , patch0asm_(gfsu_.template child<0>(),gfsv_.template child<0>(),cu_,cv_)
-        , patch1asm_(gfsu_.template child<1>(),gfsv_.template child<1>(),cu_,cv_)
+        , gfsu0_(gfsu)
+        , gfsv0_(gfsv)
+        , gfsu1_(gfsu)
+        , gfsv1_(gfsv)
+        , patch0asm_(gfsu0_,gfsv0_,cu_,cv_)
+        , patch1asm_(gfsu1_,gfsv1_,cu_,cv_)
       {}
 
       template<class LocalAssemblerEngine>

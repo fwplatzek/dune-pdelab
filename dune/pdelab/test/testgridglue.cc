@@ -299,6 +299,10 @@ void testNonMatchingCubeGrids()
   std::cout << "====================== GlueLFS1 ================\n";
   testlfs<LFSSubCheck<Dune::PDELab::GFS_DOM1> >(gluelfs1, glue);
   std::cout << "====================== done ====================\n";
+
+  Dune::PDELab::EmptyTransformation constraints;
+  Dune::PDELab::GridGlueAssembler<GlueGFS,GlueGFS,Dune::PDELab::EmptyTransformation,Dune::PDELab::EmptyTransformation>
+    assembler(gluegfs,gluegfs,constraints,constraints);
 }
 
 int main(int argc, char *argv[]) try

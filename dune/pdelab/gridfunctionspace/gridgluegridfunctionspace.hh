@@ -172,6 +172,25 @@ namespace Dune {
         return _glue;
       }
 
+      // TODO: Do not just use constraints from child 0!
+      //! extract type for storing constraints
+      template<typename E>
+      struct ConstraintsContainer
+      {
+        typedef typename SelectType<
+          is_same<
+            typename BaseT::template Child<0>::type::template ConstraintsContainer<E>::Type,
+            EmptyTransformation
+            >::value,
+          EmptyTransformation,
+          ConstraintsTransformation<
+            typename ImplementationBase::Ordering::Traits::DOFIndex,
+            typename ImplementationBase::Ordering::Traits::ContainerIndex,
+            E
+            >
+          >::Type Type;
+      };
+
     private:
 
       // This method here is to avoid a double update of the Ordering when the user calls

@@ -139,7 +139,7 @@ struct test<2> {
 template<typename Params, class GFS>
 void test<2>::_testremotelfs(GFS & gfs)
 {
-  typedef typename Dune::PDELab::TypeTree::TransformTree<GFS,Dune::PDELab::gfs_to_remote_lfs<Params> > Trafo;
+  typedef typename Dune::TypeTree::TransformTree<GFS,Dune::PDELab::gfs_to_remote_lfs<Params> > Trafo;
   Dune::PDELab::gfs_to_remote_lfs<Params> trafo;
   typedef typename Trafo::Type RemoteLFS;
   RemoteLFS rlfs = Trafo::transform(gfs, trafo);

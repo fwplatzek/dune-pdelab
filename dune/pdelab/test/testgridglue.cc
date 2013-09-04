@@ -258,27 +258,27 @@ void testNonMatchingCubeGrids()
 
   // try creating remoteLFS
   {
-    typedef typename Dune::PDELab::TypeTree::TransformTree<GFSTAR,Dune::PDELab::gfs_to_remote_lfs<GlueGFS> > Trafo;
+    typedef typename Dune::TypeTree::TransformTree<GFSTAR,Dune::PDELab::gfs_to_remote_lfs<GlueGFS> > Trafo;
     Dune::PDELab::gfs_to_remote_lfs<GlueGFS> trafo;
     typedef typename Trafo::Type RemoteLFS;
     RemoteLFS remotelfs = Trafo::transform(gfstar, trafo);
   }
   {
-    typedef typename Dune::PDELab::TypeTree::TransformTree<GlueGFS,Dune::PDELab::gfs_to_remote_lfs<GlueGFS> > Trafo;
+    typedef typename Dune::TypeTree::TransformTree<GlueGFS,Dune::PDELab::gfs_to_remote_lfs<GlueGFS> > Trafo;
     Dune::PDELab::gfs_to_remote_lfs<GlueGFS> trafo;
     typedef typename Trafo::Type RemoteLFS;
     RemoteLFS remotelfs = Trafo::transform(gluegfs, trafo);
   }
   {
-    typedef typename Dune::PDELab::TypeTree::TransformTree<GlueGFS,Dune::PDELab::gfs_to_remote_lfs<Dune::PDELab::NoObject> > Trafo;
+    typedef typename Dune::TypeTree::TransformTree<GlueGFS,Dune::PDELab::gfs_to_remote_lfs<Dune::PDELab::NoObject> > Trafo;
     Dune::PDELab::gfs_to_remote_lfs<Dune::PDELab::NoObject> trafo;
     typedef typename Trafo::Type RemoteLFS;
     RemoteLFS remotelfs = Trafo::transform(gluegfs, trafo);
   }
 
   // try getting subspaces
-  typedef Dune::PDELab::TypeTree::TreePath<0> Path0;
-  typedef Dune::PDELab::TypeTree::TreePath<1> Path1;
+  typedef Dune::TypeTree::TreePath<0> Path0;
+  typedef Dune::TypeTree::TreePath<1> Path1;
   typedef Dune::PDELab::GridFunctionSubSpace<GlueGFS, Path0> GlueGFS0;
   typedef Dune::PDELab::GridFunctionSubSpace<GlueGFS, Path1> GlueGFS1;
   typedef Dune::PDELab::LocalFunctionSpace<GlueGFS0> GlueLFS0;

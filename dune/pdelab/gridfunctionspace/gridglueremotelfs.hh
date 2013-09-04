@@ -148,7 +148,7 @@ namespace Dune {
 
     // Register LeafGFS -> RemoteLFS transformation
     template<typename GridFunctionSpace, typename Params>
-    Dune::PDELab::TypeTree::GenericLeafNodeTransformation<
+    Dune::TypeTree::GenericLeafNodeTransformation<
       GridFunctionSpace,
       gfs_to_remote_lfs<Params>,
       RemoteLeafLocalFunctionSpace<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<Params> >::Type>
@@ -167,7 +167,7 @@ namespace Dune {
       };
     };
     template<typename PowerGridFunctionSpace, typename Params>
-    Dune::PDELab::TypeTree::TemplatizedGenericPowerNodeTransformation<
+    Dune::TypeTree::TemplatizedGenericPowerNodeTransformation<
       PowerGridFunctionSpace,
       gfs_to_remote_lfs<Params>,
       power_gfs_to_remote_lfs_template<PowerGridFunctionSpace,gfs_to_remote_lfs<Params> >::template result
@@ -186,7 +186,7 @@ namespace Dune {
       };
     };
     template<typename CompositeGridFunctionSpace, typename Params>
-    Dune::PDELab::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
+    Dune::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
       CompositeGridFunctionSpace,
       gfs_to_remote_lfs<Params>,
       variadic_composite_gfs_to_remote_lfs_template<CompositeGridFunctionSpace,gfs_to_remote_lfs<Params> >::template result
@@ -205,7 +205,7 @@ namespace Dune {
       };
     };
     template<typename GridGlueGridFunctionSpace, typename Params>
-    Dune::PDELab::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
+    Dune::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
       GridGlueGridFunctionSpace,
       gfs_to_remote_lfs<Params>,
       gridglue_gfs_to_remote_lfs_template<GridGlueGridFunctionSpace,gfs_to_remote_lfs<Params> >::template result

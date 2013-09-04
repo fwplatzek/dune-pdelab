@@ -59,9 +59,9 @@ namespace Dune {
 #ifdef GRIDGLUELFSMIXIN
                                              ,
                                              // Mixin RemoteLFSes
-                                             typename Dune::PDELab::TypeTree::TransformTree<typename GFS::template Child<0>::Type,
+                                             typename Dune::TypeTree::TransformTree<typename GFS::template Child<0>::Type,
                                                                                             Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type,
-                                             typename Dune::PDELab::TypeTree::TransformTree<typename GFS::template Child<1>::Type,
+                                             typename Dune::TypeTree::TransformTree<typename GFS::template Child<1>::Type,
                                                                                             Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type
 #endif
                                              >
@@ -74,9 +74,9 @@ namespace Dune {
                                               LFS1
 #ifdef GRIDGLUELFSMIXIN
                                               ,
-                                              typename Dune::PDELab::TypeTree::TransformTree<typename GFS::template Child<0>::Type,
+                                              typename Dune::TypeTree::TransformTree<typename GFS::template Child<0>::Type,
                                                                                              Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type,
-                                              typename Dune::PDELab::TypeTree::TransformTree<typename GFS::template Child<1>::Type,
+                                              typename Dune::TypeTree::TransformTree<typename GFS::template Child<1>::Type,
                                                                                              Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type
 #endif
                                               > TreeNode;
@@ -95,11 +95,11 @@ namespace Dune {
 
       template<typename ChildGFS>
       static
-      Dune::shared_ptr<typename Dune::PDELab::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type>
+      Dune::shared_ptr<typename Dune::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type>
       createRemoteLocalFunctionSpace(Dune::shared_ptr<const ChildGFS> cgfs)
       {
         Dune::PDELab::gfs_to_remote_lfs<RootGFS> trafo;
-        return Dune::PDELab::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::transform_storage(cgfs, trafo);
+        return Dune::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::transform_storage(cgfs, trafo);
       }
 
     public:
@@ -242,7 +242,7 @@ namespace Dune {
       };
     };
     template<typename GridGlueGridFunctionSpace, typename Params>
-    Dune::PDELab::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
+    Dune::TypeTree::TemplatizedGenericVariadicCompositeNodeTransformation<
       GridGlueGridFunctionSpace,
       gfs_to_lfs<Params>,
       gridglue_gfs_to_lfs_template< GridGlueGridFunctionSpace,Params>::template result

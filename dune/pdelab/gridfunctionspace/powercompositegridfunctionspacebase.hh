@@ -7,14 +7,14 @@
 #include <functional>
 #include <vector>
 
-#include <dune/pdelab/common/typetree/fixedcapacitystack.hh>
-#include <dune/pdelab/common/typetree/traversal.hh>
-#include <dune/pdelab/common/typetree/traversalutilities.hh>
-#include <dune/pdelab/common/typetree/utility.hh>
-#include <dune/pdelab/common/typetree/transformation.hh>
-#include <dune/pdelab/common/typetree/visitor.hh>
-#include <dune/pdelab/constraints/common/constraintstransformation.hh>
+#include <dune/typetree/fixedcapacitystack.hh>
+#include <dune/typetree/traversal.hh>
+#include <dune/typetree/traversalutilities.hh>
+#include <dune/typetree/utility.hh>
+#include <dune/typetree/transformation.hh>
+#include <dune/typetree/visitor.hh>
 
+#include <dune/pdelab/constraints/common/constraintstransformation.hh>
 #include <dune/pdelab/gridfunctionspace/tags.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspacebase.hh>
 #include <dune/pdelab/gridfunctionspace/utility.hh>
@@ -101,7 +101,7 @@ namespace Dune {
       template<typename E>
       struct ConstraintsContainer
       {
-        typedef typename SelectType<
+        typedef typename conditional<
           is_same<
             typename GridFunctionSpace::template Child<0>::type::template ConstraintsContainer<E>::Type,
             EmptyTransformation
@@ -112,7 +112,7 @@ namespace Dune {
             typename GridFunctionSpace::Ordering::Traits::ContainerIndex,
             E
             >
-          >::Type Type;
+          >::type Type;
       };
 
       //! get grid view

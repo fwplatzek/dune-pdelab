@@ -4,7 +4,8 @@
 #ifndef DUNE_PDELAB_ORDERING_GRIDVIEWORDERING_HH
 #define DUNE_PDELAB_ORDERING_GRIDVIEWORDERING_HH
 
-#include <dune/pdelab/common/typetree.hh>
+#include <dune/typetree/typetree.hh>
+
 #include <dune/pdelab/ordering/utility.hh>
 #include <dune/pdelab/ordering/localorderingbase.hh>
 #include <dune/pdelab/ordering/orderingbase.hh>
@@ -198,11 +199,11 @@ namespace Dune {
 
       collect_used_geometry_types_from_cell(const Cell& cell_)
         : cell(cell_)
-        , ref_el(Dune::GenericReferenceElements<typename Cell::ctype,Cell::dimension>::general(cell_.type()))
+        , ref_el(Dune::ReferenceElements<typename Cell::ctype,Cell::dimension>::general(cell_.type()))
       {}
 
       const Cell& cell;
-      const Dune::GenericReferenceElement<typename Cell::ctype,Cell::dimension>& ref_el;
+      const Dune::ReferenceElement<typename Cell::ctype,Cell::dimension>& ref_el;
 
     };
 
@@ -294,12 +295,12 @@ namespace Dune {
       void set_cell(const Cell& cell_)
       {
         cell = &cell_;
-        ref_el = &(Dune::GenericReferenceElements<typename GV::ctype,dim>::general(cell_.type()));
+        ref_el = &(Dune::ReferenceElements<typename GV::ctype,dim>::general(cell_.type()));
       }
 
       GV gv;
       const Cell* cell;
-      const Dune::GenericReferenceElement<typename GV::ctype,dim>* ref_el;
+      const Dune::ReferenceElement<typename GV::ctype,dim>* ref_el;
       std::vector<size_type> gt_sizes;
 
     };

@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#include <dune/pdelab/common/typetree/nodetags.hh>
+#include <dune/typetree/nodetags.hh>
 
 #include "function.hh"
 
@@ -176,7 +176,7 @@ namespace Dune {
         , size(count())
       {}
 #endif // DOXYGEN
-        
+
 	  inline void evaluate (const typename Traits::ElementType& e,
 							const typename Traits::DomainType& x,
 							typename Traits::RangeType& y) const
@@ -201,7 +201,7 @@ namespace Dune {
 		return f0.getGridView();
 	  }
     };
-      
+
     //! syntactic sugar for easy creation of PointwiseGridFunctionAdapter
     //! objects
     template<typename Engine, typename F0>
@@ -422,7 +422,7 @@ namespace Dune {
           out += in[i];
       }
     };
- 
+
     //! \} Function
 
   } // namespace PDELab

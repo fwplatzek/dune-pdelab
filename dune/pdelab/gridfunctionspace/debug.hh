@@ -20,8 +20,9 @@
 #include <dune/localfunctions/common/interfaceswitch.hh>
 #include <dune/localfunctions/common/localkey.hh>
 
-#include <dune/pdelab/common/typetree/traversal.hh>
-#include <dune/pdelab/common/typetree/visitor.hh>
+#include <dune/typetree/traversal.hh>
+#include <dune/typetree/visitor.hh>
+
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
 #include <dune/pdelab/gridfunctionspace/localvector.hh>
 
@@ -186,8 +187,8 @@ namespace Dune {
       void bind(const typename GV::template Codim<0>::Entity &e) {
         ep = EP(e);
 
-        const GenericReferenceElement<DF, dim> &refelem =
-          GenericReferenceElements<DF, dim>::general(e.type());
+        const ReferenceElement<DF, dim> &refelem =
+          ReferenceElements<DF, dim>::general(e.type());
 
         // partition for codim 0
         partitions[0][0] = e.partitionType();
@@ -243,8 +244,8 @@ namespace Dune {
       std::string label(std::size_t codim, std::size_t subEntity,
                         const CV &dofValues) const
       {
-        const GenericReferenceElement<DF, dim> &refelem =
-          GenericReferenceElements<DF, dim>::general(ep->type());
+        const ReferenceElement<DF, dim> &refelem =
+          ReferenceElements<DF, dim>::general(ep->type());
 
         std::ostringstream stream;
         stream << refelem.type(subEntity, codim) << "@("

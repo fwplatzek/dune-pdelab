@@ -282,7 +282,7 @@ namespace Dune{
       }
 
       void make_consistent(Jacobian& a) const {
-        dof_exchanger->accumulateBorderEntries(*this,a);
+        // we assume to work on consistent meshes
       }
 
     private:

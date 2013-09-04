@@ -79,7 +79,7 @@ namespace Dune{
         patch0asm_.assemble(assembler_engine);
         patch1asm_.assemble(assembler_engine);
 
-        assert(gfsu_.gridGlue() == gfsv_.gridGlue());
+        assert(& gfsu_.gridGlue() == & gfsv_.gridGlue());
 
         for (auto iit = gfsu_.gridGlue().template ibegin<0>();
              iit != gfsu_.gridGlue().template iend<0>();

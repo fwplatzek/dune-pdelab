@@ -42,6 +42,7 @@
 #include "../gridfunctionspace/vtk.hh"
 #include <dune/pdelab/gridfunctionspace/gridgluegridfunctionspace.hh>
 #include <dune/pdelab/gridfunctionspace/gridgluelocalfunctionspace.hh>
+#include <dune/pdelab/gridfunctionspace/subspace.hh>
 
 using namespace Dune;
 
@@ -73,7 +74,48 @@ private:
   double sliceCoord_;
 };
 
-template<typename LFS, typename GG>
+struct LFSCheck {
+  template<Dune::PDELab::GridGlueContextTag TAG, typename LFS, typename CTX>
+  static void check(LFS & lfs, const CTX & c, std::string info)
+  {
+    lfs.bind(Dune::PDELab::GridGlueContext<CTX,TAG>(c));
+    assert((TAG == Dune::PDELab::GFS_DOM0   && lfs.template child<0>().size() != 0) || lfs.template child<0>().size() == 0);
+    assert((TAG == Dune::PDELab::GFS_DOM1   && lfs.template child<1>().size() != 0) || lfs.template child<1>().size() == 0);
+    assert((TAG == Dune::PDELab::TRACE_DOM0 && lfs.template child<2>().size() != 0) || lfs.template child<2>().size() == 0);
+    assert((TAG == Dune::PDELab::TRACE_DOM1 && lfs.template child<3>().size() != 0) || lfs.template child<3>().size() == 0);
+    std::cout << info << "\t"
+              << lfs.template child<0>().size() << "\t"
+              << lfs.template child<1>().size() << "\t"
+              << lfs.template child<2>().size() << "\t"
+              << lfs.template child<3>().size() << "\n";
+    // if (TAG == Dune::PDELab::TRACE_DOM0 || TAG == Dune::PDELab::TRACE_DOM1)
+      for (unsigned int i=0; i<lfs.size(); i++)
+        std::cout << lfs.dofIndex(i) << "\n";
+  }
+};
+
+template<Dune::PDELab::GridGlueContextTag MAINTAG>
+struct LFSSubCheck {
+  template<Dune::PDELab::GridGlueContextTag TAG, typename LFS, typename CTX>
+  static typename enable_if<TAG!=MAINTAG>::type
+  check(LFS & lfs, const CTX & c, std::string info)
+  {
+    std::cout << info << "\t"
+              << "skipped" << "\n";
+  }
+  template<Dune::PDELab::GridGlueContextTag TAG, typename LFS, typename CTX>
+  static typename enable_if<TAG==MAINTAG>::type
+  check(LFS & lfs, const CTX & c, std::string info)
+  {
+    lfs.bind(c);
+    std::cout << info << "\t"
+              << lfs.size() << "\n";
+    for (unsigned int i=0; i<lfs.size(); i++)
+      std::cout << lfs.dofIndex(i) << "\n";
+  }
+};
+
+template<typename ContextOperator, typename LFS, typename GG>
 void testlfs(LFS & lfs, const GG & gg)
 {
   typedef typename GG::Grid0Patch Patch0;
@@ -86,18 +128,7 @@ void testlfs(LFS & lfs, const GG & gg)
     for (ElementIt eit = gg.template gridView<0>().template begin<0>();
          eit != gg.template gridView<0>().template end<0>(); ++eit)
     {
-      lfs.bind(Dune::PDELab::GridGlueContext<Element,Dune::PDELab::GFS_DOM0>(*eit));
-      assert(lfs.template child<0>().size() != 0);
-      assert(lfs.template child<1>().size() == 0);
-      assert(lfs.template child<2>().size() == 0);
-      assert(lfs.template child<3>().size() == 0);
-      std::cout << "GFS0\t"
-                << lfs.template child<0>().size() << "\t"
-                << lfs.template child<1>().size() << "\t"
-                << lfs.template child<2>().size() << "\t"
-                << lfs.template child<3>().size() << "\n";
-      for (unsigned int i=0; i<lfs.size(); i++)
-        std::cout << lfs.dofIndex(i) << "\n";
+      ContextOperator::template check<Dune::PDELab::GFS_DOM0>(lfs,*eit,"GFS0");
     }
   }
 
@@ -108,18 +139,7 @@ void testlfs(LFS & lfs, const GG & gg)
     for (ElementIt eit = gg.template gridView<1>().template begin<0>();
          eit != gg.template gridView<1>().template end<0>(); ++eit)
     {
-      lfs.bind(Dune::PDELab::GridGlueContext<Element,Dune::PDELab::GFS_DOM1>(*eit));
-      assert(lfs.template child<0>().size() == 0);
-      assert(lfs.template child<1>().size() != 0);
-      assert(lfs.template child<2>().size() == 0);
-      assert(lfs.template child<3>().size() == 0);
-      std::cout << "GFS1\t"
-                << lfs.template child<0>().size() << "\t"
-                << lfs.template child<1>().size() << "\t"
-                << lfs.template child<2>().size() << "\t"
-                << lfs.template child<3>().size() << "\n";
-      for (unsigned int i=0; i<lfs.size(); i++)
-        std::cout << lfs.dofIndex(i) << "\n";
+      ContextOperator::template check<Dune::PDELab::GFS_DOM1>(lfs,*eit,"GFS1");
     }
   }
 
@@ -131,18 +151,7 @@ void testlfs(LFS & lfs, const GG & gg)
     for (IntersectionIterator iit = gg.template ibegin<0>();
          iit != gg.template iend<0>(); ++iit)
     {
-      lfs.bind(Dune::PDELab::GridGlueContext<Intersection,Dune::PDELab::TRACE_DOM0>(*iit));
-      assert(lfs.template child<0>().size() == 0);
-      assert(lfs.template child<1>().size() == 0);
-      assert(lfs.template child<2>().size() != 0);
-      assert(lfs.template child<3>().size() == 0);
-      std::cout << "TRACE0\t"
-                << lfs.template child<0>().size() << "\t"
-                << lfs.template child<1>().size() << "\t"
-                << lfs.template child<2>().size() << "\t"
-                << lfs.template child<3>().size() << "\n";
-      for (unsigned int i=0; i<lfs.size(); i++)
-        std::cout << lfs.dofIndex(i) << "\n";
+      ContextOperator::template check<Dune::PDELab::TRACE_DOM0>(lfs,*iit,"TRACE0");
     }
   }
 
@@ -152,18 +161,7 @@ void testlfs(LFS & lfs, const GG & gg)
     for (IntersectionIterator iit = gg.template ibegin<1>();
          iit != gg.template iend<1>(); ++iit)
     {
-      lfs.bind(Dune::PDELab::GridGlueContext<Intersection,Dune::PDELab::TRACE_DOM1>(*iit));
-      assert(lfs.template child<0>().size() == 0);
-      assert(lfs.template child<1>().size() == 0);
-      assert(lfs.template child<2>().size() == 0);
-      assert(lfs.template child<3>().size() != 0);
-      std::cout << "TRACE1\t"
-                << lfs.template child<0>().size() << "\t"
-                << lfs.template child<1>().size() << "\t"
-                << lfs.template child<2>().size() << "\t"
-                << lfs.template child<3>().size() << "\n";
-      for (unsigned int i=0; i<lfs.size(); i++)
-        std::cout << lfs.dofIndex(i) << "\n";
+      ContextOperator::template check<Dune::PDELab::TRACE_DOM1>(lfs,*iit,"TRACE1");
     }
   }
 
@@ -258,6 +256,7 @@ void testNonMatchingCubeGrids()
   typedef Dune::PDELab::LocalFunctionSpace<GlueGFS> GlueLFS;
   GlueLFS gluelfs(gluegfs);
 
+  // try creating remoteLFS
   {
     typedef typename Dune::PDELab::TypeTree::TransformTree<GFSTAR,Dune::PDELab::gfs_to_remote_lfs<GlueGFS> > Trafo;
     Dune::PDELab::gfs_to_remote_lfs<GlueGFS> trafo;
@@ -277,7 +276,28 @@ void testNonMatchingCubeGrids()
     RemoteLFS remotelfs = Trafo::transform(gluegfs, trafo);
   }
 
-  testlfs(gluelfs, glue);
+  // try getting subspaces
+  typedef Dune::PDELab::TypeTree::TreePath<0> Path0;
+  typedef Dune::PDELab::TypeTree::TreePath<1> Path1;
+  typedef Dune::PDELab::GridFunctionSubSpace<GlueGFS, Path0> GlueGFS0;
+  typedef Dune::PDELab::GridFunctionSubSpace<GlueGFS, Path1> GlueGFS1;
+  typedef Dune::PDELab::LocalFunctionSpace<GlueGFS0> GlueLFS0;
+  typedef Dune::PDELab::LocalFunctionSpace<GlueGFS1> GlueLFS1;
+  GlueGFS0 gluegfs0(gluegfs);
+  GlueGFS1 gluegfs1(gluegfs);
+  GlueLFS0 gluelfs0(gluegfs0);
+  GlueLFS1 gluelfs1(gluegfs1);
+
+  // test the features of the local function space
+  std::cout << "====================== GlueLFS =================\n";
+  testlfs<LFSCheck>(gluelfs, glue);
+  std::cout << "====================== done ====================\n";
+  std::cout << "====================== GlueLFS0 ================\n";
+  testlfs<LFSSubCheck<Dune::PDELab::GFS_DOM0> >(gluelfs0, glue);
+  std::cout << "====================== done ====================\n";
+  std::cout << "====================== GlueLFS1 ================\n";
+  testlfs<LFSSubCheck<Dune::PDELab::GFS_DOM1> >(gluelfs1, glue);
+  std::cout << "====================== done ====================\n";
 }
 
 int main(int argc, char *argv[]) try

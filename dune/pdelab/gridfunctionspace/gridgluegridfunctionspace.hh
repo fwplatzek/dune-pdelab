@@ -184,8 +184,8 @@ namespace Dune {
             >::value,
           EmptyTransformation,
           ConstraintsTransformation<
-            typename ImplementationBase::Ordering::Traits::DOFIndex,
-            typename ImplementationBase::Ordering::Traits::ContainerIndex,
+            typename Ordering::Traits::DOFIndex,
+            typename Ordering::Traits::ContainerIndex,
             E
             >
           >::Type Type;

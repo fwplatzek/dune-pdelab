@@ -309,6 +309,15 @@ void testNonMatchingCubeGrids()
   Dune::PDELab::EmptyTransformation constraints;
   Dune::PDELab::GridGlueAssembler<GlueGFS,GlueGFS,Dune::PDELab::EmptyTransformation,Dune::PDELab::EmptyTransformation>
     assembler(gluegfs,gluegfs,constraints,constraints);
+
+  // make constraints map and initialize it from a function
+  typedef double RF;
+  typedef typename GlueGFS::template ConstraintsContainer<RF>::Type C;
+  C cc;
+  cc.clear();
+  ConstraintsParameters constraintsparameters;
+  Dune::PDELab::constraints(constraintsparameters,gluegfs0,cc);
+  Dune::PDELab::constraints(constraintsparameters,gluegfs1,cc);
 }
 
 int main(int argc, char *argv[]) try

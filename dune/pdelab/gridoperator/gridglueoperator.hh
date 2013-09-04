@@ -20,10 +20,6 @@ namespace Dune{
       GFSV gfsv_;
       const CU & cu_;
       const CV & cv_;
-      LocalFunctionSpace<GFSU> lfsu_;
-      LocalFunctionSpace<GFSV> lfsv_;
-      LocalFunctionSpace<GFSU> rlfsu_;
-      LocalFunctionSpace<GFSV> rlfsv_;
 
       typedef TypeTree::TreePath<0> Path0;
       typedef TypeTree::TreePath<1> Path1;
@@ -49,10 +45,6 @@ namespace Dune{
         , gfsv_(gfsv)
         , cu_(cu)
         , cv_(cv)
-        , lfsu_(gfsu)
-        , lfsv_(gfsv)
-        , rlfsu_(gfsu)
-        , rlfsv_(gfsv)
         , gfsu0_(gfsu)
         , gfsv0_(gfsv)
         , gfsu1_(gfsu)
@@ -76,6 +68,11 @@ namespace Dune{
       template<class LocalAssemblerEngine>
       void assemble(LocalAssemblerEngine & assembler_engine) const
       {
+        LocalFunctionSpace<GFSU> lfsu(gfsu_);
+        LocalFunctionSpace<GFSV> lfsv(gfsv_);
+        LocalFunctionSpace<GFSU> rlfsu(gfsu_);
+        LocalFunctionSpace<GFSV> rlfsv(gfsv_);
+
         patch0asm_.assemble(assembler_engine);
         patch1asm_.assemble(assembler_engine);
 
@@ -85,17 +82,23 @@ namespace Dune{
              iit != gfsu_.gridGlue().template iend<0>();
              ++iit)
         {
-          lfsu_.bind(iit->inside());
-          rlfsu_.bind(*iit);
-          lfsv_.bind(iit->inside());
-          rlfsv_.bind(*iit);
+          typedef typename GFSU::Traits::GridGlue::Grid0Patch::GridView::template Codim<0>::Entity Grid0Element;
+          typedef typename GFSU::Traits::GridGlue::Grid1Patch::GridView::template Codim<0>::Entity Grid1Element;
+          typedef GridGlueContext<Grid0Element,GFS_DOM0> Ctx0;
+          typedef GridGlueContext<Grid1Element,GFS_DOM1> Ctx1;
+          Ctx0 ctx0(*iit->inside());
+          Ctx1 ctx1(*iit->outside());
+          lfsu.bind(ctx0);
+          rlfsu.bind(*iit);
+          lfsv.bind(ctx0);
+          rlfsv.bind(*iit);
 
-          // coupling_0_to_1(lfsu_.template child<0>(),lfsv_.template child<0>(),
-          //     rlfsu_.template child<1>(),rlfsv_.template child<1>());
+          // coupling_0_to_1(lfsu.template child<0>(),lfsv.template child<0>(),
+          //     rlfsu.template child<1>(),rlfsv.template child<1>());
 
-          lfsu_.bind(iit->outside());
-          // coupling_1_to_0(lfsu_.template child<1>(),lfsv_.template child<1>(),
-          //     rlfsu_.template child<0>(),rlfsv_.template child<0>());
+          lfsu.bind(ctx1);
+          // coupling_1_to_0(lfsu.template child<1>(),lfsv.template child<1>(),
+          //     rlfsu.template child<0>(),rlfsv.template child<0>());
         }
 
         // communicate();
@@ -103,10 +106,10 @@ namespace Dune{
         // for (auto iit = gfsu.gridGlue().template ibegin<1>();
         //      iit != gfsu.gridGlue().template iend<1>();
         //      ++iit)
-        //     coupling_0_from_1(lfsu_.template child<0>(),lfsv_.template child<0>(),
-        //         rlfsu_.template child<1>(),rlfsv_.template child<1>());
-        //     coupling_1_from_0(lfsu_.template child<1>(),lfsv_.template child<1>(),
-        //         rlfsu_.template child<0>(),rlfsv_.template child<0>());
+        //     coupling_0_from_1(lfsu.template child<0>(),lfsv.template child<0>(),
+        //         rlfsu.template child<1>(),rlfsv.template child<1>());
+        //     coupling_1_from_0(lfsu.template child<1>(),lfsv.template child<1>(),
+        //         rlfsu.template child<0>(),rlfsv.template child<0>());
         // }
       }
     };

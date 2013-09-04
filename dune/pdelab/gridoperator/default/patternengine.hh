@@ -229,13 +229,15 @@ namespace Dune{
       }
 
 
-      void postAssembly(const GFSU& gfsu, const GFSV& gfsv){
+      template<typename GFSUx, typename GFSVx>
+      void postAssembly(const GFSUx& gfsu, const GFSVx& gfsv){
         post_border_pattern_assembly(integral_constant<bool,LocalAssembler::isNonOverlapping>(),
                                      gfsu,
                                      gfsv);
       }
 
-      void post_border_pattern_assembly(true_type, const GFSU& gfsu, const GFSV& gfsv)
+      template<typename GFSUx, typename GFSVx>
+      void post_border_pattern_assembly(true_type, const GFSUx& gfsu, const GFSVx& gfsv)
       {
         if(local_assembler.doPostProcessing &&
            local_assembler.reconstructBorderEntries())
@@ -250,11 +252,11 @@ namespace Dune{
           }
       }
 
-      void post_border_pattern_assembly(false_type, const GFSU& gfsu, const GFSV& gfsv)
+      template<typename GFSUx, typename GFSVx>
+      void post_border_pattern_assembly(false_type, const GFSUx& gfsu, const GFSVx& gfsv)
       {}
 
       //! @}
-
 
     private:
 

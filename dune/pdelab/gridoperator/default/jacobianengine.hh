@@ -176,7 +176,8 @@ namespace Dune{
 
       //! Notifier functions, called immediately before and after assembling
       //! @{
-      void postAssembly(const GFSU& gfsu, const GFSV& gfsv){
+      template<typename GFSUx, typename GFSVx>
+      void postAssembly(const GFSUx& gfsu, const GFSVx& gfsv){
         Jacobian& jacobian = global_a_ss_view.container();
         global_s_s_view.detach();
         global_s_n_view.detach();

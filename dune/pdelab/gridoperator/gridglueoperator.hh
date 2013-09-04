@@ -61,6 +61,18 @@ namespace Dune{
         , patch1asm_(gfsu1_,gfsv1_,cu_,cv_)
       {}
 
+      //! Get the trial grid function space
+      const GFSU& trialGridFunctionSpace() const
+      {
+        return gfsu_;
+      }
+
+      //! Get the test grid function space
+      const GFSV& testGridFunctionSpace() const
+      {
+        return gfsv_;
+      }
+
       template<class LocalAssemblerEngine>
       void assemble(LocalAssemblerEngine & assembler_engine) const
       {

@@ -152,7 +152,10 @@ void testlfs(LFS & lfs, const GG & gg)
     for (IntersectionIterator iit = gg.template ibegin<0>();
          iit != gg.template iend<0>(); ++iit)
     {
+      ContextOperator::template check<Dune::PDELab::GFS_DOM0>(lfs,*iit->inside(),"GFS0");
       ContextOperator::template check<Dune::PDELab::TRACE_DOM0>(lfs,*iit,"TRACE0");
+      if (iit->neighbor())
+        ContextOperator::template check<Dune::PDELab::GFS_DOM1>(lfs,*iit->outside(),"GFS1");
     }
   }
 
@@ -162,7 +165,10 @@ void testlfs(LFS & lfs, const GG & gg)
     for (IntersectionIterator iit = gg.template ibegin<1>();
          iit != gg.template iend<1>(); ++iit)
     {
+      ContextOperator::template check<Dune::PDELab::GFS_DOM1>(lfs,*iit->inside(),"GFS1");
       ContextOperator::template check<Dune::PDELab::TRACE_DOM1>(lfs,*iit,"TRACE1");
+      if (iit->neighbor())
+        ContextOperator::template check<Dune::PDELab::GFS_DOM0>(lfs,*iit->outside(),"GFS0");
     }
   }
 

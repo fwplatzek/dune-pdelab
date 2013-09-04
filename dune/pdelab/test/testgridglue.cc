@@ -174,6 +174,70 @@ void testlfs(LFS & lfs, const GG & gg)
 
 }
 
+namespace Dune {
+  namespace PDELab {
+
+    template<typename A0, typename A1, typename C0, typename C1, typename D0, typename D1>
+    class GridGlueLocalProblem :
+      public NumericalJacobianApplyVolume< GridGlueLocalProblem<A0,A1,C0,C1,D0,D1> >,
+      public NumericalJacobianVolume< GridGlueLocalProblem<A0,A1,C0,C1,D0,D1> >,
+      public FullVolumePattern,
+      public LocalOperatorDefaultFlags
+    {
+    public:
+      // pattern assembly flags
+      enum { doPatternVolume = true };
+
+      // residual assembly flags
+      enum { doAlphaVolume = true };
+      enum { doLambdaVolume = true };
+      enum { doLambdaBoundary = true };
+
+      GridGlueLocalProblem ()
+      {}
+
+      // volume integral depending on test and ansatz functions
+      template<typename EG, typename LFSU, typename X, typename LFSV, typename R>
+      void alpha_volume (const EG& eg, const LFSU& lfsu, const X& x, const LFSV& lfsv, R& r) const
+      {
+      }
+
+      // volume integral depending only on test functions
+      template<typename EG, typename LFSV, typename R>
+      void lambda_volume (const EG& eg, const LFSV& lfsv, R& r) const
+      {
+      }
+
+      // boundary integral independen of ansatz functions
+      template<typename IG, typename LFSV, typename R>
+      void lambda_boundary (const IG& ig, const LFSV& lfsv, R& r) const
+      {
+      }
+    };
+  } // end namespace Dune
+} // end namespace Dune
+
+// boundary grid function selecting boundary conditions
+class ConstraintsParameters
+  : public Dune::PDELab::DirichletConstraintsParameters
+{
+
+public:
+
+  template<typename I>
+  bool isDirichlet(const I & ig, const Dune::FieldVector<typename I::ctype, I::dimension-1> & x) const
+  {
+    return true;
+  }
+
+  template<typename I>
+  bool isNeumann(const I & ig, const Dune::FieldVector<typename I::ctype, I::dimension-1> & x) const
+  {
+    return false;
+  }
+
+};
+
 template <int dim>
 void testNonMatchingCubeGrids()
 {
@@ -318,6 +382,15 @@ void testNonMatchingCubeGrids()
   ConstraintsParameters constraintsparameters;
   Dune::PDELab::constraints(constraintsparameters,gluegfs0,cc);
   Dune::PDELab::constraints(constraintsparameters,gluegfs1,cc);
+
+  // make grid operator
+  typedef Dune::PDELab::GridGlueLocalProblem<int,int,int,int,int,int> LOP;
+  LOP lop;
+  typedef Dune::PDELab::GridGlueOperator<GlueGFS,GlueGFS,LOP,
+                                     Dune::PDELab::ISTLMatrixBackend,
+                                     double,double,double,
+                                     C,C> GridOperator;
+  GridOperator gridoperator(gluegfs,cc,gluegfs,cc,lop);
 }
 
 int main(int argc, char *argv[]) try

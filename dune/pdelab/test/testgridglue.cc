@@ -16,6 +16,7 @@
 #include <iostream>
 
 #include <dune/common/fvector.hh>
+#include <dune/common/classname.hh>
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
 #include <dune/grid/geometrygrid.hh>
@@ -391,6 +392,9 @@ void testNonMatchingCubeGrids()
                                      double,double,double,
                                      C,C> GridOperator;
   GridOperator gridoperator(gluegfs,cc,gluegfs,cc,lop);
+
+  typedef typename GridOperator::Traits::Jacobian M;
+  std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
 }
 
 int main(int argc, char *argv[]) try

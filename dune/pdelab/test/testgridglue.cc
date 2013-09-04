@@ -43,6 +43,7 @@
 #include <dune/pdelab/gridfunctionspace/gridgluegridfunctionspace.hh>
 #include <dune/pdelab/gridfunctionspace/gridgluelocalfunctionspace.hh>
 #include <dune/pdelab/gridfunctionspace/subspace.hh>
+#include "../gridoperator/gridglueoperator.hh"
 
 using namespace Dune;
 

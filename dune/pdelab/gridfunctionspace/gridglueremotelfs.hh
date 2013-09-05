@@ -1,7 +1,6 @@
 #ifndef DUNE_PDELAB_GRIDGLUEGRIDREMOTELFS_HH
 #define DUNE_PDELAB_GRIDGLUEGRIDREMOTELFS_HH
 
-#include <dune/common/nullptr.hh>
 #include <dune/localfunctions/monom.hh>
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
 #include <dune/pdelab/gridfunctionspace/utility.hh>

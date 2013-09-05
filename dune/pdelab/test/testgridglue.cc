@@ -323,8 +323,10 @@ void testNonMatchingCubeGrids()
   gfstar.name("tar");
 
   typedef typename Dune::TypeTree::TransformTree<GFSDOM,
-                                                 Dune::PDELab::gfs_to_remote_gfs<GFSDOM> >::Type RemoteGFSDOM;
-  RemoteGFSDOM remotegfsdom;
+                                                 Dune::PDELab::gfs_to_remote_gfs<GFSDOM> > RemoteGFSTrafo;
+  Dune::PDELab::gfs_to_remote_gfs<GFSDOM> trafo;
+  typedef typename RemoteGFSTrafo::Type RemoteGFSDOM;
+  RemoteGFSDOM remotegfsdom = RemoteGFSTrafo::transform(gfsdom, trafo);
 
   // GridGlue GFS
   typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,BlockingBackend> GlueGFS;
@@ -401,12 +403,14 @@ void testNonMatchingCubeGrids()
   typedef typename GridOperator::Traits::Jacobian M;
   std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
   M mat(gridoperator, 0.0);
+  Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
 
   typedef typename GridOperator::Traits::Domain DV;
   DV x0(gluegfs, 0.0);
-//  gridoperator.jacobian(x0,mat);
+  Dune::printvector(std::cout, x0.base(), "vec", "r");
+  gridoperator.jacobian(x0,mat);
 
-  Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
+//  Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
 }
 
 int main(int argc, char *argv[]) try

@@ -199,6 +199,11 @@ namespace Dune {
             >::type
           > Ordering;
 
+        std::size_t subSpaceDepth() const
+        {
+          return TypeTree::TreePathSize<SubSpacePath>::value;
+        }
+
         //! Returns the ordering associated with this GridFunctionSubSpace.
         const Ordering& ordering() const
         {
@@ -241,7 +246,7 @@ namespace Dune {
       protected:
 
         DefaultSubSpaceFeatures(const GFS& gfs)
-          : _ordering(gfs.orderingStorage(),TreePath())
+          : _ordering(gfs.orderingStorage())
         {}
 
       private:

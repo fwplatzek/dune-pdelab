@@ -310,6 +310,7 @@ void testNonMatchingCubeGrids()
   // backends
   typedef Dune::PDELab::ConformingDirichletConstraints CON;
   typedef Dune::PDELab::ISTLVectorBackend<> Backend;
+  typedef Dune::PDELab::ISTLVectorBackend<Dune::PDELab::ISTLParameters::dynamic_blocking> BlockingBackend;
 
   // Dom GFS
   typedef Dune::PDELab::GridFunctionSpace<DomGridView,FEM,CON,Backend> GFSDOM;
@@ -322,7 +323,7 @@ void testNonMatchingCubeGrids()
   gfstar.name("tar");
 
   // GridGlue GFS
-  typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,Backend> GlueGFS;
+  typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,BlockingBackend> GlueGFS;
   GlueGFS gluegfs(glue,gfsdom,gfstar);
 
   typedef Dune::PDELab::LocalFunctionSpace<GlueGFS> GlueLFS;

@@ -28,6 +28,11 @@ namespace Dune
       typedef GFS GridFunctionSpace;
     };
 
+    template<typename GFS>
+    struct gfs_to_remote_gfs {
+      typedef GFS GridFunctionSpace;
+    };
+
     struct GridGlueGridFunctionSpaceTag : public CompositeGridFunctionSpaceTag {};
 
   } // end PDELab

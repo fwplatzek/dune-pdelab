@@ -13,6 +13,7 @@
 #include <dune/pdelab/gridfunctionspace/tags.hh>
 
 #include "gridgluetags.hh"
+#include "gridglueremotefunctionspace.hh"
 
 namespace Dune {
   namespace PDELab {

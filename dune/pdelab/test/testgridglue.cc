@@ -322,6 +322,10 @@ void testNonMatchingCubeGrids()
   GFSTAR gfstar(glue.template gridView<1>(),fem);
   gfstar.name("tar");
 
+  typedef typename Dune::TypeTree::TransformTree<GFSDOM,
+                                                 Dune::PDELab::gfs_to_remote_gfs<GFSDOM> >::Type RemoteGFSDOM;
+  RemoteGFSDOM remotegfsdom;
+
   // GridGlue GFS
   typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,BlockingBackend> GlueGFS;
   GlueGFS gluegfs(glue,gfsdom,gfstar);

@@ -205,8 +205,7 @@ namespace Dune{
       //! Notifier functions, called immediately before and after assembling
       //! @{
 
-      template<typename GFSUx, typename GFSVx>
-      void postAssembly(const GFSUx& gfsu, const GFSVx& gfsv){
+      void postAssembly(const GFSU& gfsu, const GFSV& gfsv){
         if(local_assembler.doPostProcessing)
           {
             Dune::PDELab::constrain_residual(*(local_assembler.pconstraintsv),global_rl_view.container());

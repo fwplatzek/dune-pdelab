@@ -3,6 +3,8 @@
 
 #include "tags.hh"
 
+#define GRIDGLUELFSMIXIN
+
 namespace Dune
 {
   namespace PDELab

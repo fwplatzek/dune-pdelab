@@ -342,18 +342,6 @@ void testNonMatchingCubeGrids()
     typedef typename Trafo::Type RemoteLFS;
     RemoteLFS remotelfs = Trafo::transform(gfstar, trafo);
   }
-  {
-    typedef typename Dune::TypeTree::TransformTree<GlueGFS,Dune::PDELab::gfs_to_remote_lfs<GlueGFS> > Trafo;
-    Dune::PDELab::gfs_to_remote_lfs<GlueGFS> trafo;
-    typedef typename Trafo::Type RemoteLFS;
-    RemoteLFS remotelfs = Trafo::transform(gluegfs, trafo);
-  }
-  {
-    typedef typename Dune::TypeTree::TransformTree<GlueGFS,Dune::PDELab::gfs_to_remote_lfs<Dune::PDELab::NoObject> > Trafo;
-    Dune::PDELab::gfs_to_remote_lfs<Dune::PDELab::NoObject> trafo;
-    typedef typename Trafo::Type RemoteLFS;
-    RemoteLFS remotelfs = Trafo::transform(gluegfs, trafo);
-  }
 
   // try getting subspaces
   typedef Dune::TypeTree::TreePath<0> Path0;

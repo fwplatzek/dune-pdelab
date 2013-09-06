@@ -162,7 +162,7 @@ namespace Dune {
       template<typename TC>
       struct result
       {
-        typedef RemoteLFS< PowerLocalFunctionSpaceNode<SourceNode,typename gfs_to_lfs<Params>::DOFIndex,TC,SourceNode::CHILDREN> > type;
+        typedef PowerLocalFunctionSpaceNode<SourceNode,typename gfs_to_lfs<Params>::DOFIndex,TC,SourceNode::CHILDREN> type;
       };
     };
     template<typename PowerGridFunctionSpace, typename Params>
@@ -181,7 +181,7 @@ namespace Dune {
       template<typename... TC>
       struct result
       {
-        typedef RemoteLFS< CompositeLocalFunctionSpaceNode<SourceNode,typename gfs_to_lfs<Params>::DOFIndex,TC...> > type;
+        typedef CompositeLocalFunctionSpaceNode<SourceNode,typename gfs_to_lfs<Params>::DOFIndex,TC...> type;
       };
     };
     template<typename CompositeGridFunctionSpace, typename Params>
@@ -196,11 +196,18 @@ namespace Dune {
     template<typename SourceNode, typename Transformation>
     struct gridglue_gfs_to_remote_lfs_template
     {
-      typedef typename Transformation::GridFunctionSpace Params;
-      template<typename TC0, typename TC1, typename... DUMMY>
+      template<typename... TC>
       struct result
       {
-        typedef RemoteLFS< GridGlueLocalFunctionSpaceNode<SourceNode,Params,TC0,TC1> > type;
+        struct type
+        {
+          template<typename... T>
+          type(T&&... t)
+          {
+            dune_static_assert((Dune::AlwaysFalse<SourceNode>::value),
+              "never ever try to create a RemoteLocalFunctionSpace from a GridGlueGridFunctionSpace");
+          }
+        };
       };
     };
     template<typename GridGlueGridFunctionSpace, typename Params>

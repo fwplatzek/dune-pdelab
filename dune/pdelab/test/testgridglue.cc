@@ -323,8 +323,8 @@ void testNonMatchingCubeGrids()
   gfstar.name("tar");
 
   typedef typename Dune::TypeTree::TransformTree<GFSDOM,
-                                                 Dune::PDELab::gfs_to_remote_gfs<GFSDOM> > RemoteGFSTrafo;
-  Dune::PDELab::gfs_to_remote_gfs<GFSDOM> trafo;
+                                                 Dune::PDELab::gfs_to_remote_gfs<void> > RemoteGFSTrafo;
+  Dune::PDELab::gfs_to_remote_gfs<void> trafo;
   typedef typename RemoteGFSTrafo::Type RemoteGFSDOM;
   RemoteGFSDOM remotegfsdom = RemoteGFSTrafo::transform(gfsdom, trafo);
 
@@ -366,6 +366,7 @@ void testNonMatchingCubeGrids()
   testlfs<LFSSubCheck<Dune::PDELab::GFS_DOM1> >(gluelfs1, glue);
   std::cout << "====================== done ====================\n";
 
+#if 0
   Dune::PDELab::EmptyTransformation constraints;
   Dune::PDELab::GridGlueAssembler<GlueGFS,GlueGFS,Dune::PDELab::EmptyTransformation,Dune::PDELab::EmptyTransformation>
     assembler(gluegfs,gluegfs,constraints,constraints);
@@ -399,6 +400,7 @@ void testNonMatchingCubeGrids()
   gridoperator.jacobian(x0,mat);
 
 //  Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
+#endif
 }
 
 int main(int argc, char *argv[]) try

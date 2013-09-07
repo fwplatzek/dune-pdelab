@@ -26,7 +26,7 @@ namespace Dune {
 
       static const bool has_dynamic_ordering_children = false;
 
-      static const bool consume_tree_index = false;
+      static const bool consume_tree_index = true;
 
     protected:
 
@@ -124,7 +124,33 @@ namespace Dune {
       }
 #endif
 
+      void update()
+      {
+        typedef typename Traits::SizeType size_type;
+
+        const size_type gt_size = GRIDGLUE_DOF_SIZE;
+        const size_type gt_entity_count = GRIDGLUE_INDEXSET_SIZE;
+
+        _codim_used.reset();
+        _codim_used[0] = true;
+        _codim_fixed_size.set();
+        _fixed_size = true;
+        _size = _block_count = gt_size * gt_entity_count;
+        _max_local_size = gt_size;
+      }
+
       using BaseT::fixedSize;
+
+    private:
+
+      using BaseT::_container_blocked;
+      using BaseT::_fixed_size;
+      using BaseT::_max_local_size;
+      using BaseT::_size;
+      using BaseT::_block_count;
+      using BaseT::_codim_used;
+      using BaseT::_codim_fixed_size;
+
     };
 
 

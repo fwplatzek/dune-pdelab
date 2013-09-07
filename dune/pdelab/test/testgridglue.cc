@@ -2,6 +2,9 @@
 // vi: set et ts=4 sw=2 sts=2:
 #include "config.h"
 
+unsigned int GRIDGLUE_DOF_SIZE;
+unsigned int GRIDGLUE_INDEXSET_SIZE;
+
 #if ! HAVE_PSURFACE
 #error we need psurface
 #endif
@@ -298,6 +301,10 @@ void testNonMatchingCubeGrids()
   // ///////////////////////////////////////////
   //   Setup sub domain GFS
   // ///////////////////////////////////////////
+
+#warning hack
+  GRIDGLUE_INDEXSET_SIZE = glue.indexSet_size();
+  GRIDGLUE_INDEXSET_SIZE = 2; // first order 1D
 
   // constants and types
   typedef typename GlueType::ctype DF;

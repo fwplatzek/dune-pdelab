@@ -50,7 +50,6 @@ namespace Dune {
       typedef typename GFS::Traits::GridGlue GridGlue;
     };
 
-#define GRIDGLUELFSMIXIN
     // local function space for a power grid function space
     template<typename GFS, typename RootGFS, typename LFS0, typename LFS1>
     class GridGlueLocalFunctionSpaceNode :
@@ -70,14 +69,15 @@ namespace Dune {
       typedef GridGlueLocalFunctionSpaceNode<GFS, RootGFS, LFS0, LFS1> This;
       typedef typename gfs_to_lfs<RootGFS>::DOFIndex DOFIndex;
       typedef LocalFunctionSpaceBaseNode<GFS,DOFIndex> BaseT;
-      typedef TypeTree::VariadicCompositeNode<LFS0,
-                                              LFS1
 #ifdef GRIDGLUELFSMIXIN
-                                              ,
-                                              typename Dune::TypeTree::TransformTree<typename GFS::template Child<0>::Type,
-                                                                                             Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type,
-                                              typename Dune::TypeTree::TransformTree<typename GFS::template Child<1>::Type,
-                                                                                             Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type
+      typedef typename Dune::TypeTree::TransformTree<typename GFS::template Child<0>::Type,
+                                                     Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type RLFS0;
+      typedef typename Dune::TypeTree::TransformTree<typename GFS::template Child<1>::Type,
+                                                     Dune::PDELab::gfs_to_remote_lfs<RootGFS> >::Type RLFS1;
+#endif
+      typedef TypeTree::VariadicCompositeNode<LFS0, LFS1
+#ifdef GRIDGLUELFSMIXIN
+                                              , RLFS0, RLFS1
 #endif
                                               > TreeNode;
 
@@ -119,11 +119,10 @@ namespace Dune {
                                       Dune::shared_ptr<LFS1> lfs1)
         : TreeNode(lfs0,lfs1
 #ifdef GRIDGLUELFSMIXIN
-          ,
-                   createRemoteLocalFunctionSpace(
-                     gfs->template childStorage<0>()),
-                   createRemoteLocalFunctionSpace(
-                     gfs->template childStorage<1>())
+          , createRemoteLocalFunctionSpace(
+            gfs->template childStorage<0>())
+          , createRemoteLocalFunctionSpace(
+            gfs->template childStorage<1>())
 #endif
           )
         , BaseT(gfs)
@@ -136,15 +135,56 @@ namespace Dune {
                                       Dune::shared_ptr<LFS1> lfs1)
         : TreeNode(lfs0,lfs1
 #ifdef GRIDGLUELFSMIXIN
-          ,
-                   createRemoteLocalFunctionSpace(
-                     gfs.template childStorage<0>()),
-                   createRemoteLocalFunctionSpace(
-                     gfs.template childStorage<1>())
+          , createRemoteLocalFunctionSpace(
+            gfs.template childStorage<0>()),
+          createRemoteLocalFunctionSpace(
+            gfs.template childStorage<1>())
 #endif
           )
         , BaseT(stackobject_to_shared_ptr(gfs))
       {}
+
+#ifdef GRIDGLUEGFSMIXIN
+      template<typename Transformation>
+      GridGlueLocalFunctionSpaceNode (shared_ptr<const GFS> gfs,
+                                      const Transformation& t,
+                                      Dune::shared_ptr<LFS0> lfs0,
+                                      Dune::shared_ptr<LFS1> lfs1,
+                                      Dune::shared_ptr<RLFS0> rlfs0,
+                                      Dune::shared_ptr<RLFS1> rlfs1)
+        : TreeNode(lfs0,lfs1
+#ifdef GRIDGLUELFSMIXIN
+          , createRemoteLocalFunctionSpace(
+            gfs->template childStorage<0>())
+          , createRemoteLocalFunctionSpace(
+            gfs->template childStorage<1>())
+#else
+          , rlfs0,rlfs1
+#endif
+          )
+        , BaseT(gfs)
+      {}
+
+      template<typename Transformation>
+      GridGlueLocalFunctionSpaceNode (const GFS& gfs,
+                                      const Transformation& t,
+                                      Dune::shared_ptr<LFS0> lfs0,
+                                      Dune::shared_ptr<LFS1> lfs1,
+                                      Dune::shared_ptr<RLFS0> rlfs0,
+                                      Dune::shared_ptr<RLFS1> rlfs1)
+        : TreeNode(lfs0,lfs1
+#ifdef GRIDGLUELFSMIXIN
+          , createRemoteLocalFunctionSpace(
+            gfs.template childStorage<0>())
+          , createRemoteLocalFunctionSpace(
+            gfs.template childStorage<1>())
+#else
+          , rlfs0,rlfs1
+#endif
+          )
+        , BaseT(stackobject_to_shared_ptr(gfs))
+      {}
+#endif
 
       //! \brief bind local function space to one of the GridGlue contextes (sub-domain cell or remote intersection)
       // explicitly state the different options for the context definitions, so that we are sure to create the correct spaces

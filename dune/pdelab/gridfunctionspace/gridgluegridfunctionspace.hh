@@ -10,7 +10,6 @@
 #include <dune/typetree/utility.hh>
 #include <dune/pdelab/gridfunctionspace/powercompositegridfunctionspacebase.hh>
 #include <dune/pdelab/gridfunctionspace/datahandleprovider.hh>
-#include <dune/pdelab/gridfunctionspace/tags.hh>
 
 #include "gridgluetags.hh"
 #include "gridglueremotefunctionspace.hh"
@@ -77,7 +76,13 @@ namespace Dune {
              typename Backend,
              typename OT = LexicographicOrderingTag>
     class GridGlueGridFunctionSpace
-      : public TypeTree::VariadicCompositeNode<GFS1,GFS2>
+      : public TypeTree::VariadicCompositeNode<GFS1,GFS2
+#ifdef GRIDGLUEGFSMIXIN
+                                               // Mixin RemoteGFSes
+                                               , typename TypeTree::TransformTree<GFS1,gfs_to_remote_gfs<GG> >::Type
+                                               , typename TypeTree::TransformTree<GFS2,gfs_to_remote_gfs<GG> >::Type
+#endif
+                                               >
       , public GridFunctionSpaceBase<
                  GridGlueGridFunctionSpace<GG,GFS1,GFS2,Backend,OT>,
                  GridGlueGridFunctionSpaceTraits<GG,GFS1,GFS2,Backend,OT>
@@ -89,7 +94,13 @@ namespace Dune {
       typedef GridGlueGridFunctionSpaceTag ImplementationTag;
       typedef OT OrderingTag;
 
-      typedef TypeTree::VariadicCompositeNode<GFS1,GFS2> BaseT;
+      typedef TypeTree::VariadicCompositeNode<GFS1,GFS2
+#ifdef GRIDGLUEGFSMIXIN
+                                              // Mixin RemoteGFSes
+                                              , typename TypeTree::TransformTree<GFS1,gfs_to_remote_gfs<GG> >::Type
+                                              , typename TypeTree::TransformTree<GFS2,gfs_to_remote_gfs<GG> >::Type
+#endif
+                                              > BaseT;
 
     private:
 
@@ -101,6 +112,15 @@ namespace Dune {
       template<typename,typename>
       friend class GridFunctionSpaceBase;
 
+      template<typename ChildGFS>
+      static
+      Dune::shared_ptr<typename Dune::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_gfs<GG> >::Type>
+      createRemoteFunctionSpace(Dune::shared_ptr<const ChildGFS> cgfs)
+      {
+        Dune::PDELab::gfs_to_remote_gfs<GG> trafo;
+        return Dune::TypeTree::TransformTree<ChildGFS,Dune::PDELab::gfs_to_remote_gfs<GG> >::transform_storage(cgfs, trafo);
+      }
+
     public:
 
       //! export traits class
@@ -111,7 +131,13 @@ namespace Dune {
                                  GFS2& c1,
                                  const Backend& backend = Backend(),
                                  const OrderingTag ordering_tag = OrderingTag())
-        : BaseT(c0,c1)
+        : BaseT(stackobject_to_shared_ptr(c0)
+          , stackobject_to_shared_ptr(c1)
+#ifdef GRIDGLUEGFSMIXIN
+          , createRemoteFunctionSpace(stackobject_to_shared_ptr<const GFS1>(c0))
+          , createRemoteFunctionSpace(stackobject_to_shared_ptr<const GFS2>(c1))
+#endif
+          )
         , ImplementationBase(backend,ordering_tag)
         , _glue(glue)
       {}
@@ -213,5 +239,6 @@ namespace Dune {
 
 #include "gridgluelocalfunctionspace.hh"
 #include "gridglueremotelfs.hh"
+#include <dune/pdelab/ordering/gridglueremoteordering.hh>
 
 #endif // DUNE_PDELAB_GRIDGLUEGRIDFUNTIONSPACE_HH

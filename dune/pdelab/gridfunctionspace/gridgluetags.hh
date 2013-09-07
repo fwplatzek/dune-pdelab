@@ -3,7 +3,9 @@
 
 #include "tags.hh"
 
+#define GRIDGLUEGFSMIXIN
 #define GRIDGLUELFSMIXIN
+// #define STORE_GRIDGLUE
 
 namespace Dune
 {
@@ -30,11 +32,14 @@ namespace Dune
       typedef GFS GridFunctionSpace;
     };
 
-    template<typename GFS>
+    template<typename GG>
     struct gfs_to_remote_gfs {
-      typedef GFS GridFunctionSpace;
+      // typedef GG GridGlue;
+      // gfs_to_remote_gfs(const GG & gg) : gridglue(gg) {}
+      // const GridGlue & gridglue;
     };
 
+    struct RemoteLeafFunctionSpaceTag : public LeafGridFunctionSpaceTag {};
     struct GridGlueGridFunctionSpaceTag : public CompositeGridFunctionSpaceTag {};
 
   } // end PDELab

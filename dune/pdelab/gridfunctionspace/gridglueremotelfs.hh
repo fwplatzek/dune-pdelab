@@ -69,9 +69,37 @@ namespace Dune {
         typename Traits::FiniteElementType
         > FESwitch;
 
-      template <typename... T>
-      RemoteLeafLocalFunctionSpace(T&&... t)
-        : LFS(std::forward<T>(t)...)
+      // template <typename T, typename Transformation>
+      // RemoteLeafLocalFunctionSpace(T&& t, const Transformation&)
+      //   : LFS(std::forward<T>(t)...)
+      //   , gt(GeometryType::simplex, Traits::dim)
+      //   , fem(gt)
+      // {}
+
+      template <typename GFS, typename Transformation>
+      RemoteLeafLocalFunctionSpace(const GFS& gfs, const Transformation& t)
+        : LFS(gfs,t)
+        , gt(GeometryType::simplex, Traits::dim)
+        , fem(gt)
+      {}
+
+      template <typename GFS, typename Transformation>
+      RemoteLeafLocalFunctionSpace(shared_ptr<const GFS> gfs, const Transformation& t)
+        : LFS(gfs,t)
+        , gt(GeometryType::simplex, Traits::dim)
+        , fem(gt)
+      {}
+
+      template <typename GFS, typename Transformation>
+      RemoteLeafLocalFunctionSpace(const RemoteLeafFunctionSpace<GFS> rgfs, const Transformation& t)
+        : LFS(rgfs.remoteGfs(),t)
+        , gt(GeometryType::simplex, Traits::dim)
+        , fem(gt)
+      {}
+
+      template <typename GFS, typename Transformation>
+      RemoteLeafLocalFunctionSpace(shared_ptr<const RemoteLeafFunctionSpace<GFS> > rgfs, const Transformation& t)
+        : LFS(rgfs->remoteGfs(),t)
         , gt(GeometryType::simplex, Traits::dim)
         , fem(gt)
       {}
@@ -153,6 +181,16 @@ namespace Dune {
       RemoteLeafLocalFunctionSpace<typename TypeTree::TransformTree<GridFunctionSpace, gfs_to_lfs<Params> >::Type>
       >
     registerNodeTransformation(GridFunctionSpace* gfs, gfs_to_remote_lfs<Params>* t, LeafGridFunctionSpaceTag* tag);
+
+    // Register RemoteLeafGFS -> LFS transformation
+    template<typename GridFunctionSpace, typename Params>
+    Dune::TypeTree::GenericLeafNodeTransformation<
+      GridFunctionSpace,
+      gfs_to_lfs<Params>,
+      RemoteLeafLocalFunctionSpace<typename TypeTree::TransformTree<
+                                     typename GridFunctionSpace::Traits::RemoteGridFunctionSpace, gfs_to_lfs<Params> >::Type>
+      >
+    registerNodeTransformation(GridFunctionSpace* gfs, gfs_to_lfs<Params>* t, RemoteLeafFunctionSpaceTag* tag);
 
     // register PowerGFS -> RemoteLocalFunctionSpace transformation
     template<typename SourceNode, typename Transformation>

@@ -16,15 +16,12 @@ namespace Dune {
     class RemoteOrdering
       : public TypeTree::LeafNode
       , public VirtualOrderingBase<typename Transformation::DOFIndex,
-                                   typename Transformation::DOFIndex, // we reuse DOFIndex as GlobalDOFIndex
                                    typename Transformation::ContainerIndex>
       , public OrderingBase<typename Transformation::DOFIndex,
-                            typename Transformation::DOFIndex,
                             typename Transformation::ContainerIndex>
     {
     public:
       typedef OrderingTraits<typename Transformation::DOFIndex,
-                             typename Transformation::DOFIndex,
                              typename Transformation::ContainerIndex> Traits;
 
       static const bool has_dynamic_ordering_children = false;
@@ -36,7 +33,6 @@ namespace Dune {
       typedef TypeTree::LeafNode NodeT;
 
       typedef OrderingBase<typename Transformation::DOFIndex,
-                           typename Transformation::DOFIndex,
                            typename Transformation::ContainerIndex> BaseT;
 
     public:

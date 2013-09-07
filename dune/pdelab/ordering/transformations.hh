@@ -7,6 +7,7 @@
 
 #include <dune/typetree/traversal.hh>
 #include <dune/typetree/accumulate_static.hh>
+#include <dune/typetree/generictransformationdescriptors.hh>
 
 #include <dune/pdelab/common/typetraits.hh>
 #include <dune/pdelab/common/multiindex.hh>
@@ -136,7 +137,7 @@ namespace Dune {
     // };
 
     template<typename GridFunctionSpace, typename Params>
-    Dune::TypeTree::GenericLeafNodeTransformation<
+    TypeTree::GenericLeafNodeTransformation<
       GridFunctionSpace,
       gfs_to_ordering<Params>,
       RemoteOrdering<GridFunctionSpace, gfs_to_ordering<Params> >

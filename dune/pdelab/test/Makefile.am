@@ -309,8 +309,10 @@ testbdmfem_SOURCES = testbdmfem.cc
 
 MOSTLYCLEANFILES += poisson_petsc_*.vtu
 
+if UG
 check_PROGRAMS += testnonoverlapping
 testnonoverlapping_SOURCES = testnonoverlapping.cc
+endif
 
 check_PROGRAMS += testvectoriterator
 testvectoriterator_SOURCES = testvectoriterator.cc

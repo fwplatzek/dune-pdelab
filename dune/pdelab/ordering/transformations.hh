@@ -11,7 +11,7 @@
 #include <dune/pdelab/common/typetraits.hh>
 #include <dune/pdelab/common/multiindex.hh>
 #include <dune/pdelab/gridfunctionspace/tags.hh>
-#include <dune/pdelab/gridfunctionspace/tags.hh>
+#include <dune/pdelab/gridfunctionspace/gridgluetags.hh>
 
 /**
  * \file
@@ -118,6 +118,30 @@ namespace Dune {
       typename GridFunctionSpace::Traits::OrderingTag
       >
     registerNodeTransformation(GridFunctionSpace*, gfs_to_ordering<Params>*, LeafGridFunctionSpaceTag*);
+
+
+    // Declare LeafGFS to ordering descriptor and register transformation
+    template<typename GFS, typename Transformation> struct RemoteOrdering;
+    // template<typename GFS, typename Transformation>
+    // struct remote_gfs_to_ordering_descriptor
+    //   : public TypeTree::meta_function
+    // {
+    //   typedef DUNE_DECLTYPE(
+    //     register_leaf_gfs_to_ordering_descriptor(
+    //       TypeTree::declptr<GFS>(),
+    //       TypeTree::declptr<Transformation>(),
+    //       TypeTree::declptr<OrderingTag>()
+    //       )
+    //     ) type;
+    // };
+
+    template<typename GridFunctionSpace, typename Params>
+    Dune::TypeTree::GenericLeafNodeTransformation<
+      GridFunctionSpace,
+      gfs_to_ordering<Params>,
+      RemoteOrdering<GridFunctionSpace, gfs_to_ordering<Params> >
+      >
+    registerNodeTransformation(GridFunctionSpace*, gfs_to_ordering<Params>*, RemoteLeafFunctionSpaceTag*);
 
 
     // Declare CompositeGFS to ordering descriptor and register transformation

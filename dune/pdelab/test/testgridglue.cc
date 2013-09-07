@@ -375,7 +375,6 @@ void testNonMatchingCubeGrids()
   testlfs<LFSSubCheck<Dune::PDELab::GFS_DOM1> >(gluelfs1, glue);
   std::cout << "====================== done ====================\n";
 
-#if 0
   Dune::PDELab::EmptyTransformation constraints;
   Dune::PDELab::GridGlueAssembler<GlueGFS,GlueGFS,Dune::PDELab::EmptyTransformation,Dune::PDELab::EmptyTransformation>
     assembler(gluegfs,gluegfs,constraints,constraints);
@@ -398,6 +397,7 @@ void testNonMatchingCubeGrids()
                                      C,C> GridOperator;
   GridOperator gridoperator(gluegfs,cc,gluegfs,cc,lop);
 
+#if 0
   typedef typename GridOperator::Traits::Jacobian M;
   std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
   M mat(gridoperator, 0.0);

@@ -250,26 +250,28 @@ void testNonMatchingCubeGrids()
   //   Make two cube grids
   // ///////////////////////////////////////
 
-  typedef SGrid<dim,dim> GridType;
+  typedef YaspGrid<dim> GridType0;
+  typedef SGrid<dim,dim> GridType1;
 
   FieldVector<int, dim> elements(2);
   FieldVector<double,dim> lower(0);
   FieldVector<double,dim> upper(1);
+  FieldVector<bool,dim> periodic(false);
 
-  GridType cubeGrid0(elements, lower, upper);
+  GridType0 cubeGrid0(upper, elements, periodic, 0);
 
   elements = 3;
   lower[0] += 1;
   upper[0] += 1;
 
-  GridType cubeGrid1(elements, lower, upper);
+  GridType1 cubeGrid1(elements, lower, upper);
 
   // ////////////////////////////////////////
   //   Set up coupling at their interface
   // ////////////////////////////////////////
 
-  typedef typename GridType::LevelGridView DomGridView;
-  typedef typename GridType::LevelGridView TarGridView;
+  typedef typename GridType0::LevelGridView DomGridView;
+  typedef typename GridType1::LevelGridView TarGridView;
 
   VerticalFaceDescriptor<DomGridView> domdesc(1);
   VerticalFaceDescriptor<TarGridView> tardesc(1);

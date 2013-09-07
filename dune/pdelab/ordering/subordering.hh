@@ -183,7 +183,7 @@ namespace Dune {
       void mapIndex(typename Traits::DOFIndexView di, typename Traits::ContainerIndex& ci) const
       {
         typename Traits::DOFIndex dof_index(di);
-        complete_dof_index(dof_index);
+//        complete_dof_index(dof_index);
 
         baseOrdering().mapIndex(dof_index.view(),ci);
       }

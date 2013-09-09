@@ -1,6 +1,7 @@
 #ifndef DUNE_PDELAB_GRIDGLUETAGS_HH
 #define DUNE_PDELAB_GRIDGLUETAGS_HH
 
+#include <dune/common/typetraits.hh>
 #include "tags.hh"
 
 #define GRIDGLUEGFSMIXIN
@@ -12,14 +13,12 @@ namespace Dune
   namespace PDELab
   {
 
-    struct NoObject {};
-
     template<>
-    struct gfs_to_lfs<NoObject> {
-      typedef NoObject Params;
+    struct gfs_to_lfs<Empty> {
+      typedef Empty Params;
       //! The MultiIndex type that will be used in the resulting LocalFunctionSpace tree.
       //typedef Dune::PDELab::MultiIndex<std::size_t,TypeTree::TreeInfo<GFS>::depth> MultiIndex;
-      typedef NoObject DOFIndex;
+      typedef Empty DOFIndex;
     };
 
     // template<typename GG>

@@ -150,7 +150,7 @@ template<class GFS>
 void test<2>::testremotelfs(GFS & gfs)
 {
   _testremotelfs<GFS>(gfs);
-  _testremotelfs<Dune::PDELab::NoObject>(gfs);
+  _testremotelfs<Dune::Empty>(gfs);
 }
 
 template<class GV>

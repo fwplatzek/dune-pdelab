@@ -186,11 +186,13 @@ namespace Dune {
       public NumericalJacobianApplyVolume< GridGlueLocalProblem<A0,A1,C0,C1,D0,D1> >,
       public NumericalJacobianVolume< GridGlueLocalProblem<A0,A1,C0,C1,D0,D1> >,
       public FullVolumePattern,
+      public FullSkeletonPattern,
       public LocalOperatorDefaultFlags
     {
     public:
       // pattern assembly flags
       enum { doPatternVolume = true };
+      enum { doPatternSkeleton = true };
 
       // residual assembly flags
       enum { doAlphaVolume = true };
@@ -401,6 +403,16 @@ void testNonMatchingCubeGrids()
   std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
   M mat(gridoperator, 0.0);
   Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
+  std::cout << "Matrix Layout:\n";
+  for (int i=0; i<mat.base().N(); i++)
+  {
+    for (int j=0; j<mat.base()[i].size(); j++)
+      std::cout << "(" << mat.base()[i][j].N()
+                << " x " << mat.base()[i][j].M() << ")  \t";
+    for (int j=mat.base()[i].size(); j<mat.base().M(); j++)
+      std::cout << "(0 x 0)  \t";
+    std::cout << std::endl;
+  }
 
   typedef typename GridOperator::Traits::Domain DV;
   DV x0(gluegfs, 0.0);

@@ -12,6 +12,163 @@
 namespace Dune{
   namespace PDELab{
 
+    //! Wrap intersection
+    /**
+     * \todo Please doc me!
+     */
+    template<typename I>
+    class CouplingGeometry
+    {
+    public:
+      typedef typename I::Geometry Geometry;
+      typedef typename I::InsideLocalGeometry InsideLocalGeometry;
+      typedef typename I::OutsideGeometry OutsideGeometry;
+      typedef typename I::OutsideLocalGeometry OutsideLocalGeometry;
+      typedef typename I::ctype ctype;
+
+      typedef typename I::InsideEntity InsideEntity;
+      typedef typename I::InsideEntityPointer InsideEntityPointer;
+
+      typedef typename I::OutsideEntity OutsideEntity;
+      typedef typename I::OutsideEntityPointer OutsideEntityPointer;
+
+      enum {
+        coorddim = I::coorddim,
+        mydim = I::mydim,
+        insidePatch = I::insidePatch,
+        outsidePatch = I::outsidePatch
+      };
+
+      //! \todo Please doc me!
+      CouplingGeometry (const I& i_)
+        : i(i_)
+      {}
+
+      /*! @brief geometrical information about this intersection in local
+        coordinates of the inside() entity.
+
+        This method returns a Geometry object that provides a mapping from
+        local coordinates of the intersection to local coordinates of the
+        inside() entity.
+      */
+      InsideLocalGeometry geometryInInside () const
+      {
+        return i.geometryInInside();
+      }
+
+      /*! @brief geometrical information about this intersection in local
+        coordinates of the outside() entity.
+
+        This method returns a Geometry object that provides a mapping from
+        local coordinates of the intersection to local coordinates of the
+        outside() entity.
+      */
+      OutsideLocalGeometry geometryInOutside () const
+      {
+        return i.geometryInOutside();
+      }
+
+      /*! @brief geometrical information about this intersection in global coordinates.
+
+        This method returns a Geometry object that provides a mapping from
+        local coordinates of the intersection to global (world) coordinates.
+      */
+      Geometry geometry () const
+      {
+        return i.geometry();
+      }
+
+      OutsideGeometry geometryOutside () const
+      {
+        return i.geometryOutside();
+      }
+
+      //! Local number of codim 1 entity in the inside() Entity where intersection is contained in
+      int indexInInside () const
+      {
+        return i.indexInInside ();
+      }
+
+      //! Local number of codim 1 entity in outside() Entity where intersection is contained in
+      int indexInOutside () const
+      {
+        return i.indexInOutside ();
+      }
+
+      /*! @brief Return an outer normal (length not necessarily 1)
+
+        The returned vector may depend on local position within the intersection.
+      */
+      Dune::FieldVector<ctype, coorddim> outerNormal (const Dune::FieldVector<ctype, mydim>& local) const
+      {
+        return i.outerNormal(local);
+      }
+
+      /*! @brief return outer normal scaled with the integration element
+        @copydoc outerNormal
+        The normal is scaled with the integration element of the intersection. This
+        method is redundant but it may be more efficent to use this function
+        rather than computing the integration element via intersectionGlobal().
+      */
+      Dune::FieldVector<ctype, coorddim> integrationOuterNormal (const Dune::FieldVector<ctype, mydim>& local) const
+      {
+        return i.integrationOuterNormal(local);
+      }
+
+      /*! @brief Return unit outer normal (length == 1)
+
+        The returned vector may depend on the local position within the intersection.
+        It is scaled to have unit length.
+      */
+      Dune::FieldVector<ctype, coorddim> unitOuterNormal (const Dune::FieldVector<ctype, mydim>& local) const
+      {
+        return i.unitOuterNormal(local);
+      }
+
+      /*! @brief Return unit outer normal (length == 1)
+
+        The returned vector may depend on the local position within the intersection.
+        It is scaled to have unit length.
+      */
+      Dune::FieldVector<ctype, coorddim> centerUnitOuterNormal () const
+      {
+        return i.centerUnitOuterNormal();
+      }
+
+      /*! @brief return EntityPointer to the Entity on the inside of this
+        intersection. That is the Entity where we started this .
+      */
+      InsideEntityPointer inside() const
+      {
+        return i.inside();
+      }
+
+      /*! @brief return EntityPointer to the Entity on the outside of this
+        intersection. That is the neighboring Entity.
+
+        @warning Don't call this method if there is no neighboring Entity
+        (neighbor() returns false). In this case the result is undefined.
+      */
+      OutsideEntityPointer outside() const
+      {
+        return i.outside();
+      }
+
+      //! \todo Please doc me!
+      const I& intersection () const
+      {
+        return i;
+      }
+
+      unsigned int intersectionIndex() const
+      {
+        return i.index();
+      }
+
+    private:
+      const I& i;
+    };
+
     template<typename GFSU, typename GFSV,
              typename CU, typename CV>
     class GridGlueAssembler
@@ -44,16 +201,45 @@ namespace Dune{
       template<class LocalAssemblerEngine>
       void assemble(LocalAssemblerEngine & assembler_engine) const
       {
-        LocalFunctionSpace<GFSU> lfsu(gfsu_);
-        LocalFunctionSpace<GFSV> lfsv(gfsv_);
-        LocalFunctionSpace<GFSU> rlfsu(gfsu_);
-        LocalFunctionSpace<GFSV> rlfsv(gfsv_);
-
         assemble<GFS_DOM0>(assembler_engine, gfsv_.gridGlue().template gridView<0>());
         assemble<GFS_DOM1>(assembler_engine, gfsv_.gridGlue().template gridView<1>());
 
         assert(& gfsu_.gridGlue() == & gfsv_.gridGlue());
 
+        typedef LocalFunctionSpace<GFSU> LFSU;
+        typedef LocalFunctionSpace<GFSV> LFSV;
+        LFSU lfsu(gfsu_);
+        LFSV lfsv(gfsv_);
+        LFSU rlfsu(gfsu_);
+        LFSV rlfsv(gfsv_);
+
+        typedef typename std::conditional<
+          LocalAssemblerEngine::needs_constraints_caching,
+          LFSIndexCache<LFSU,CU>,
+          LFSIndexCache<LFSU,EmptyTransformation>
+          >::type LFSUCache;
+
+        typedef typename std::conditional<
+          LocalAssemblerEngine::needs_constraints_caching,
+          LFSIndexCache<LFSV,CV>,
+          LFSIndexCache<LFSV,EmptyTransformation>
+          >::type LFSVCache;
+
+        LFSUCache lfsu_cache(lfsu,cu_);
+        LFSVCache lfsv_cache(lfsv,cv_);
+        LFSUCache rlfsu_cache(rlfsu,cu_);
+        LFSVCache rlfsv_cache(rlfsv,cv_);
+
+        const bool require_uv_skeleton = assembler_engine.requireUVSkeleton();
+        const bool require_v_skeleton = assembler_engine.requireVSkeleton();
+        // TODO
+        // if(assembler_engine.assembleCoupling(...))
+        //   continue;
+
+        // Notify assembler engine about oncoming assembly
+        assembler_engine.preAssembly();
+
+        // Traverse remote intersections
         for (auto iit = gfsu_.gridGlue().template ibegin<0>();
              iit != gfsu_.gridGlue().template iend<0>();
              ++iit)
@@ -64,18 +250,34 @@ namespace Dune{
           typedef GridGlueContext<Grid1Element,GFS_DOM1> Ctx1;
           Ctx0 ctx0(*iit->inside());
           Ctx1 ctx1(*iit->outside());
-          lfsu.bind(ctx0);
-          rlfsu.bind(*iit);
-          lfsv.bind(ctx0);
-          rlfsv.bind(*iit);
 
-          // coupling_0_to_1(lfsu.template child<0>(),lfsv.template child<0>(),
-          //     rlfsu.template child<1>(),rlfsv.template child<1>());
+          // DOM0, Trace0
+          assemble_coupling(
+            assembler_engine,
+            ctx0, *iit,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
 
-          lfsu.bind(ctx1);
-          // coupling_1_to_0(lfsu.template child<1>(),lfsv.template child<1>(),
-          //     rlfsu.template child<0>(),rlfsv.template child<0>());
+          // DOM0, Trace1
+          assemble_coupling(
+            assembler_engine,
+            ctx0, iit->flip(),
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+
+          // DOM1, Trace0
+          assemble_coupling(
+            assembler_engine,
+            ctx1, *iit,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+
+          // DOM1, Trace1
+          assemble_coupling(
+            assembler_engine,
+            ctx1, iit->flip(),
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
         }
+
+        // Notify assembler engine that assembly is finished
+        assembler_engine.postAssembly(gfsu_,gfsv_);
 
         // communicate();
 
@@ -90,6 +292,89 @@ namespace Dune{
       }
 
     private:
+
+      template<typename LocalAssemblerEngine,
+               typename P, typename I,
+               typename LFSV, typename LFSU, typename LFSV_C, typename LFSU_C>
+      void assemble_coupling(
+        LocalAssemblerEngine & assembler_engine,
+        const P & patch_ctx, const I & intersection,
+        LFSU & lfsu, LFSU_C & lfsu_cache,
+        LFSV & lfsv, LFSV_C & lfsv_cache,
+        LFSU & rlfsu, LFSU_C & rlfsu_cache,
+        LFSV & rlfsv, LFSV_C & rlfsv_cache) const
+      {
+        Empty eg;
+        CouplingGeometry<I> ig(intersection);
+
+        // Bind local test function space to element
+        lfsv.bind( patch_ctx );
+        lfsv_cache.update();
+
+        // Notify assembler engine about bind
+        assembler_engine.onBindLFSV(eg,lfsv_cache);
+
+        // Volume integration
+        assembler_engine.assembleVVolume(eg,lfsv_cache);
+
+        // Bind local trial function space to element
+        lfsu.bind( patch_ctx );
+        lfsu_cache.update();
+
+        // Notify assembler engine about bind
+        assembler_engine.onBindLFSUV(eg,lfsu_cache,lfsv_cache);
+
+        // Load coefficients of local functions
+        assembler_engine.loadCoefficientsLFSUInside(lfsu_cache);
+
+        // Volume integration
+        assembler_engine.assembleUVVolume(eg,lfsu_cache,lfsv_cache);
+
+        // Bind local test space to neighbor element
+        rlfsv.bind( intersection );
+        rlfsv_cache.update();
+
+        // Notify assembler engine about binds
+        assembler_engine.onBindLFSVOutside(ig,lfsv_cache,rlfsv_cache);
+
+        // Skeleton integration
+        assembler_engine.assembleVSkeleton(ig,lfsv_cache,rlfsv_cache);
+
+        // TODO
+        // if(require_uv_skeleton)
+        {
+
+          // Bind local trial space to neighbor element
+          rlfsu.bind( intersection );
+          rlfsu_cache.update();
+
+          // Notify assembler engine about binds
+          assembler_engine.onBindLFSUVOutside(ig,
+            lfsu_cache,lfsv_cache,
+            rlfsu_cache,rlfsv_cache);
+
+          // Load coefficients of local functions
+          assembler_engine.loadCoefficientsLFSUOutside(rlfsu_cache);
+
+          // Skeleton integration
+          assembler_engine.assembleUVSkeleton(ig,lfsu_cache,lfsv_cache,rlfsu_cache,rlfsv_cache);
+
+          // Notify assembler engine about unbinds
+          assembler_engine.onUnbindLFSUVOutside(ig,
+            lfsu_cache,lfsv_cache,
+            rlfsu_cache,rlfsv_cache);
+        }
+
+        // Notify assembler engine about unbinds
+        assembler_engine.onUnbindLFSVOutside(ig,lfsv_cache,rlfsv_cache);
+
+        // Notify assembler engine about unbinds
+        assembler_engine.onUnbindLFSUV(eg,lfsu_cache,lfsv_cache);
+
+        // Notify assembler engine about unbinds
+        assembler_engine.onUnbindLFSV(eg,lfsv_cache);
+      }
+
       template<GridGlueContextTag TAG, class LocalAssemblerEngine, typename GV>
       void assemble(LocalAssemblerEngine & assembler_engine, const GV & gv) const
       {
@@ -143,160 +428,160 @@ namespace Dune{
         // Traverse grid view
         for (ElementIterator it = gv.template begin<0>();
              it!=gv.template end<0>(); ++it)
+        {
+          // Compute unique id
+          const typename GV::IndexSet::IndexType ids = cell_mapper.map(*it);
+
+          ElementGeometry<Element> eg(*it);
+          GridGlueContext<Element,TAG> ctx(*it);
+
+          if(assembler_engine.assembleCell(eg))
+            continue;
+
+          // Bind local test function space to element
+          lfsv.bind( ctx );
+          lfsv_cache.update();
+
+          // Notify assembler engine about bind
+          assembler_engine.onBindLFSV(eg,lfsv_cache);
+
+          // Volume integration
+          assembler_engine.assembleVVolume(eg,lfsv_cache);
+
+          // Bind local trial function space to element
+          lfsu.bind( ctx );
+          lfsu_cache.update();
+
+          // Notify assembler engine about bind
+          assembler_engine.onBindLFSUV(eg,lfsu_cache,lfsv_cache);
+
+          // Load coefficients of local functions
+          assembler_engine.loadCoefficientsLFSUInside(lfsu_cache);
+
+          // Volume integration
+          assembler_engine.assembleUVVolume(eg,lfsu_cache,lfsv_cache);
+
+          // Skip if no intersection iterator is needed
+          if (require_uv_skeleton || require_v_skeleton ||
+            require_uv_boundary || require_v_boundary ||
+            require_uv_processor || require_v_processor)
           {
-            // Compute unique id
-            const typename GV::IndexSet::IndexType ids = cell_mapper.map(*it);
+            // Traverse intersections
+            unsigned int intersection_index = 0;
+            IntersectionIterator endit = gv.iend(*it);
+            IntersectionIterator iit = gv.ibegin(*it);
+            for(; iit!=endit; ++iit, ++intersection_index)
+            {
 
-            ElementGeometry<Element> eg(*it);
-            GridGlueContext<Element,TAG> ctx(*it);
+              IntersectionGeometry<Intersection> ig(*iit,intersection_index);
 
-            if(assembler_engine.assembleCell(eg))
-              continue;
-
-            // Bind local test function space to element
-            lfsv.bind( ctx );
-            lfsv_cache.update();
-
-            // Notify assembler engine about bind
-            assembler_engine.onBindLFSV(eg,lfsv_cache);
-
-            // Volume integration
-            assembler_engine.assembleVVolume(eg,lfsv_cache);
-
-            // Bind local trial function space to element
-            lfsu.bind( ctx );
-            lfsu_cache.update();
-
-            // Notify assembler engine about bind
-            assembler_engine.onBindLFSUV(eg,lfsu_cache,lfsv_cache);
-
-            // Load coefficients of local functions
-            assembler_engine.loadCoefficientsLFSUInside(lfsu_cache);
-
-            // Volume integration
-            assembler_engine.assembleUVVolume(eg,lfsu_cache,lfsv_cache);
-
-            // Skip if no intersection iterator is needed
-            if (require_uv_skeleton || require_v_skeleton ||
-                require_uv_boundary || require_v_boundary ||
-                require_uv_processor || require_v_processor)
+              switch (IntersectionType::get(*iit))
               {
-                // Traverse intersections
-                unsigned int intersection_index = 0;
-                IntersectionIterator endit = gv.iend(*it);
-                IntersectionIterator iit = gv.ibegin(*it);
-                for(; iit!=endit; ++iit, ++intersection_index)
+                case IntersectionType::skeleton:
+                  // the specific ordering of the if-statements in the old code caused periodic
+                  // boundary intersection to be handled the same as skeleton intersections
+                case IntersectionType::periodic:
+                  if (require_uv_skeleton || require_v_skeleton)
+                  {
+                    // compute unique id for neighbor
+
+                    const typename GV::IndexSet::IndexType idn = cell_mapper.map(*(iit->outside()));
+
+                    // Visit face if id is bigger
+                    bool visit_face = ids > idn || require_skeleton_two_sided;
+
+                    // unique vist of intersection
+                    if (visit_face)
+                    {
+                      // Bind local test space to neighbor element
+                      GridGlueContext<Element,TAG> ctxn(*(iit->outside()));
+                      lfsvn.bind(ctxn);
+                      lfsvn_cache.update();
+
+                      // Notify assembler engine about binds
+                      assembler_engine.onBindLFSVOutside(ig,lfsv_cache,lfsvn_cache);
+
+                      // Skeleton integration
+                      assembler_engine.assembleVSkeleton(ig,lfsv_cache,lfsvn_cache);
+
+                      if(require_uv_skeleton){
+
+                        // Bind local trial space to neighbor element
+                        lfsun.bind(ctxn);
+                        lfsun_cache.update();
+
+                        // Notify assembler engine about binds
+                        assembler_engine.onBindLFSUVOutside(ig,
+                          lfsu_cache,lfsv_cache,
+                          lfsun_cache,lfsvn_cache);
+
+                        // Load coefficients of local functions
+                        assembler_engine.loadCoefficientsLFSUOutside(lfsun_cache);
+
+                        // Skeleton integration
+                        assembler_engine.assembleUVSkeleton(ig,lfsu_cache,lfsv_cache,lfsun_cache,lfsvn_cache);
+
+                        // Notify assembler engine about unbinds
+                        assembler_engine.onUnbindLFSUVOutside(ig,
+                          lfsu_cache,lfsv_cache,
+                          lfsun_cache,lfsvn_cache);
+                      }
+
+                      // Notify assembler engine about unbinds
+                      assembler_engine.onUnbindLFSVOutside(ig,lfsv_cache,lfsvn_cache);
+                    }
+                  }
+                  break;
+
+                case IntersectionType::boundary:
+                  if(require_uv_boundary || require_v_boundary )
                   {
 
-                    IntersectionGeometry<Intersection> ig(*iit,intersection_index);
+                    // Boundary integration
+                    assembler_engine.assembleVBoundary(ig,lfsv_cache);
 
-                    switch (IntersectionType::get(*iit))
-                      {
-                      case IntersectionType::skeleton:
-                        // the specific ordering of the if-statements in the old code caused periodic
-                        // boundary intersection to be handled the same as skeleton intersections
-                      case IntersectionType::periodic:
-                        if (require_uv_skeleton || require_v_skeleton)
-                          {
-                            // compute unique id for neighbor
+                    if(require_uv_boundary){
+                      // Boundary integration
+                      assembler_engine.assembleUVBoundary(ig,lfsu_cache,lfsv_cache);
+                    }
+                  }
+                  break;
 
-                            const typename GV::IndexSet::IndexType idn = cell_mapper.map(*(iit->outside()));
+                case IntersectionType::processor:
+                  if(require_uv_processor || require_v_processor )
+                  {
 
-                            // Visit face if id is bigger
-                            bool visit_face = ids > idn || require_skeleton_two_sided;
+                    // Processor integration
+                    assembler_engine.assembleVProcessor(ig,lfsv_cache);
 
-                            // unique vist of intersection
-                            if (visit_face)
-                              {
-                                // Bind local test space to neighbor element
-                                GridGlueContext<Element,TAG> ctxn(*(iit->outside()));
-                                lfsvn.bind(ctxn);
-                                lfsvn_cache.update();
+                    if(require_uv_processor){
+                      // Processor integration
+                      assembler_engine.assembleUVProcessor(ig,lfsu_cache,lfsv_cache);
+                    }
+                  }
+                  break;
+              } // switch
 
-                                // Notify assembler engine about binds
-                                assembler_engine.onBindLFSVOutside(ig,lfsv_cache,lfsvn_cache);
+            } // iit
+          } // do skeleton
 
-                                // Skeleton integration
-                                assembler_engine.assembleVSkeleton(ig,lfsv_cache,lfsvn_cache);
+          if(require_uv_post_skeleton || require_v_post_skeleton){
+            // Volume integration
+            assembler_engine.assembleVVolumePostSkeleton(eg,lfsv_cache);
 
-                                if(require_uv_skeleton){
-
-                                  // Bind local trial space to neighbor element
-                                  lfsun.bind(ctxn);
-                                  lfsun_cache.update();
-
-                                  // Notify assembler engine about binds
-                                  assembler_engine.onBindLFSUVOutside(ig,
-                                                                      lfsu_cache,lfsv_cache,
-                                                                      lfsun_cache,lfsvn_cache);
-
-                                  // Load coefficients of local functions
-                                  assembler_engine.loadCoefficientsLFSUOutside(lfsun_cache);
-
-                                  // Skeleton integration
-                                  assembler_engine.assembleUVSkeleton(ig,lfsu_cache,lfsv_cache,lfsun_cache,lfsvn_cache);
-
-                                  // Notify assembler engine about unbinds
-                                  assembler_engine.onUnbindLFSUVOutside(ig,
-                                                                        lfsu_cache,lfsv_cache,
-                                                                        lfsun_cache,lfsvn_cache);
-                                }
-
-                                // Notify assembler engine about unbinds
-                                assembler_engine.onUnbindLFSVOutside(ig,lfsv_cache,lfsvn_cache);
-                              }
-                          }
-                        break;
-
-                      case IntersectionType::boundary:
-                        if(require_uv_boundary || require_v_boundary )
-                          {
-
-                            // Boundary integration
-                            assembler_engine.assembleVBoundary(ig,lfsv_cache);
-
-                            if(require_uv_boundary){
-                              // Boundary integration
-                              assembler_engine.assembleUVBoundary(ig,lfsu_cache,lfsv_cache);
-                            }
-                          }
-                        break;
-
-                      case IntersectionType::processor:
-                        if(require_uv_processor || require_v_processor )
-                          {
-
-                            // Processor integration
-                            assembler_engine.assembleVProcessor(ig,lfsv_cache);
-
-                            if(require_uv_processor){
-                              // Processor integration
-                              assembler_engine.assembleUVProcessor(ig,lfsu_cache,lfsv_cache);
-                            }
-                          }
-                        break;
-                      } // switch
-
-                  } // iit
-              } // do skeleton
-
-            if(require_uv_post_skeleton || require_v_post_skeleton){
+            if(require_uv_post_skeleton){
               // Volume integration
-              assembler_engine.assembleVVolumePostSkeleton(eg,lfsv_cache);
-
-              if(require_uv_post_skeleton){
-                // Volume integration
-                assembler_engine.assembleUVVolumePostSkeleton(eg,lfsu_cache,lfsv_cache);
-              }
+              assembler_engine.assembleUVVolumePostSkeleton(eg,lfsu_cache,lfsv_cache);
             }
+          }
 
-            // Notify assembler engine about unbinds
-            assembler_engine.onUnbindLFSUV(eg,lfsu_cache,lfsv_cache);
+          // Notify assembler engine about unbinds
+          assembler_engine.onUnbindLFSUV(eg,lfsu_cache,lfsv_cache);
 
-            // Notify assembler engine about unbinds
-            assembler_engine.onUnbindLFSV(eg,lfsv_cache);
+          // Notify assembler engine about unbinds
+          assembler_engine.onUnbindLFSV(eg,lfsv_cache);
 
-          } // it
+        } // it
 
         // Notify assembler engine that assembly is finished
         assembler_engine.postAssembly(gfsu_,gfsv_);

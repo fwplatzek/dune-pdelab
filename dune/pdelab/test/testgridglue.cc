@@ -306,7 +306,7 @@ void testNonMatchingCubeGrids()
 
 #warning hack
   GRIDGLUE_INDEXSET_SIZE = glue.indexSet_size();
-  GRIDGLUE_INDEXSET_SIZE = 2; // first order 1D
+  GRIDGLUE_DOF_SIZE = 2; // first order 1D
 
   // constants and types
   typedef typename GlueType::ctype DF;
@@ -397,7 +397,6 @@ void testNonMatchingCubeGrids()
                                      C,C> GridOperator;
   GridOperator gridoperator(gluegfs,cc,gluegfs,cc,lop);
 
-#if 0
   typedef typename GridOperator::Traits::Jacobian M;
   std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
   M mat(gridoperator, 0.0);
@@ -406,10 +405,15 @@ void testNonMatchingCubeGrids()
   typedef typename GridOperator::Traits::Domain DV;
   DV x0(gluegfs, 0.0);
   Dune::printvector(std::cout, x0.base(), "vec", "r");
+  for (int i=0; i<x0.base().size(); i++)
+    std::cout << "Block " << i << " size : " << x0.base()[i].size() << std::endl;
+  std::cout << "CouplingSpace size : "
+            << GRIDGLUE_INDEXSET_SIZE
+            << " * "
+            << GRIDGLUE_DOF_SIZE << std::endl;
   gridoperator.jacobian(x0,mat);
 
-//  Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
-#endif
+  Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
 }
 
 int main(int argc, char *argv[]) try

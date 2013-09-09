@@ -90,7 +90,6 @@ namespace Dune {
         ci.push_back(entity_index);
       }
 
-#if 0
       template<typename ItIn, typename ItOut>
       void map_lfs_indices(const ItIn begin, const ItIn end, ItOut out) const
       {
@@ -105,6 +104,7 @@ namespace Dune {
         }
       }
 
+#if 0
       template<typename CIOutIterator>
       typename Traits::SizeType
       extract_entity_indices(const typename Traits::DOFIndex::EntityIndex& ei,

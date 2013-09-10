@@ -379,7 +379,7 @@ void testNonMatchingCubeGrids()
   typedef typename GridOperator::Traits::Jacobian M;
   std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
   M mat(gridoperator, 0.0);
-  Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
+  Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r", 1, 1);
   std::cout << "Matrix Layout:\n";
   for (int i=0; i<mat.base().N(); i++)
   {

@@ -85,8 +85,6 @@ namespace Dune {
         const typename Traits::SizeType entity_index = Traits::DOFIndexAccessor::entityIndex(di);
         assert (di.treeIndex().size() == 1);
         ci.push_back(di.treeIndex().back() + entity_index * GRIDGLUE_DOF_SIZE);
-
-        std::cout << "map " << di.treeIndex().back() << "/" << entity_index << " to " << ci << std::endl;
       }
 
       template<typename ItIn, typename ItOut>

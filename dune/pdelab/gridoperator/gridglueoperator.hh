@@ -201,6 +201,9 @@ namespace Dune{
       template<class LocalAssemblerEngine>
       void assemble(LocalAssemblerEngine & assembler_engine) const
       {
+        // Notify assembler engine about oncoming assembly
+        assembler_engine.preAssembly();
+
         assemble<GFS_DOM0>(assembler_engine, gfsv_.gridGlue().template gridView<0>());
         assemble<GFS_DOM1>(assembler_engine, gfsv_.gridGlue().template gridView<1>());
 
@@ -235,9 +238,6 @@ namespace Dune{
         // TODO
         // if(assembler_engine.assembleCoupling(...))
         //   continue;
-
-        // Notify assembler engine about oncoming assembly
-        assembler_engine.preAssembly();
 
         // Traverse remote intersections
         for (auto iit = gfsu_.gridGlue().template ibegin<0>();
@@ -479,8 +479,8 @@ namespace Dune{
         LFSUCache lfsun_cache(lfsun,cu_);
         LFSVCache lfsvn_cache(lfsvn,cv_);
 
-        // Notify assembler engine about oncoming assembly
-        assembler_engine.preAssembly();
+        // // Notify assembler engine about oncoming assembly
+        // assembler_engine.preAssembly();
 
         // Map each cell to unique id
         ElementMapper<GV> cell_mapper(gv);
@@ -655,8 +655,8 @@ namespace Dune{
 
         } // it
 
-        // Notify assembler engine that assembly is finished
-        assembler_engine.postAssembly(gfsu_,gfsv_);
+        // // Notify assembler engine that assembly is finished
+        // assembler_engine.postAssembly(gfsu_,gfsv_);
 
       }
     };

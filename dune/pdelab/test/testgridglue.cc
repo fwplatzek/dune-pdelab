@@ -139,28 +139,6 @@ void testlfs(LFS & lfs, const GG & gg)
   typedef typename GG::Grid0Patch Patch0;
   typedef typename GG::Grid1Patch Patch1;
 
-  {
-    typedef typename Patch0::GridView GridView;
-    typedef typename GridView::template Codim<0>::Entity Element;
-    typedef typename GridView::template Codim<0>::Iterator ElementIt;
-    for (ElementIt eit = gg.template gridView<0>().template begin<0>();
-         eit != gg.template gridView<0>().template end<0>(); ++eit)
-    {
-      ContextOperator::template check<Dune::PDELab::GFS_DOM0>(lfs,*eit,"GFS0");
-    }
-  }
-
-  {
-    typedef typename Patch1::GridView GridView;
-    typedef typename GridView::template Codim<0>::Entity Element;
-    typedef typename GridView::template Codim<0>::Iterator ElementIt;
-    for (ElementIt eit = gg.template gridView<1>().template begin<0>();
-         eit != gg.template gridView<1>().template end<0>(); ++eit)
-    {
-      ContextOperator::template check<Dune::PDELab::GFS_DOM1>(lfs,*eit,"GFS1");
-    }
-  }
-
   typedef GridGlueView<Patch0,Patch1,0> GGView0; // from 0 to 1
   typedef GridGlueView<Patch0,Patch1,1> GGView1; // from 1 to 0
   {
@@ -169,26 +147,12 @@ void testlfs(LFS & lfs, const GG & gg)
     for (IntersectionIterator iit = gg.template ibegin<0>();
          iit != gg.template iend<0>(); ++iit)
     {
-      ContextOperator::template check<Dune::PDELab::GFS_DOM0>(lfs,*iit->inside(),"GFS0");
+      ContextOperator::template check<Dune::PDELab::GFS_DOM0>(lfs,*(iit->inside()),"GFS0");
       ContextOperator::template check<Dune::PDELab::TRACE_DOM0>(lfs,*iit,"TRACE0");
-      if (iit->neighbor())
-        ContextOperator::template check<Dune::PDELab::GFS_DOM1>(lfs,*iit->outside(),"GFS1");
+      ContextOperator::template check<Dune::PDELab::GFS_DOM1>(lfs,*(iit->flip().inside()),"GFS1");
+      ContextOperator::template check<Dune::PDELab::TRACE_DOM1>(lfs,iit->flip(),"TRACE1");
     }
   }
-
-  {
-    typedef typename GGView1::IntersectionIterator IntersectionIterator;
-    typedef typename IntersectionIterator::Intersection Intersection;
-    for (IntersectionIterator iit = gg.template ibegin<1>();
-         iit != gg.template iend<1>(); ++iit)
-    {
-      ContextOperator::template check<Dune::PDELab::GFS_DOM1>(lfs,*iit->inside(),"GFS1");
-      ContextOperator::template check<Dune::PDELab::TRACE_DOM1>(lfs,*iit,"TRACE1");
-      if (iit->neighbor())
-        ContextOperator::template check<Dune::PDELab::GFS_DOM0>(lfs,*iit->outside(),"GFS0");
-    }
-  }
-
 }
 
 namespace Dune {

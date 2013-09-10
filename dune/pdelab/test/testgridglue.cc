@@ -94,9 +94,15 @@ struct LFSCheck {
               << lfs.template child<1>().size() << "\t"
               << lfs.template child<2>().size() << "\t"
               << lfs.template child<3>().size() << "\n";
-    // if (TAG == Dune::PDELab::TRACE_DOM0 || TAG == Dune::PDELab::TRACE_DOM1)
-      for (unsigned int i=0; i<lfs.size(); i++)
-        std::cout << lfs.dofIndex(i) << "\n";
+    Dune::PDELab::LFSIndexCache<LFS,Dune::PDELab::EmptyTransformation>
+      lfs_cache(lfs);
+    lfs_cache.update();
+    std::cout << info << "\t"
+              << lfs_cache.size() << "\n";
+    for (unsigned int i=0; i<lfs_cache.size(); i++)
+      std::cout << i << "\t->\t"
+                << lfs_cache.dofIndex(i) << "\t->\t"
+                << lfs_cache.containerIndex(i) << "\n";
   }
 };
 
@@ -114,10 +120,16 @@ struct LFSSubCheck {
   check(LFS & lfs, const CTX & c, std::string info)
   {
     lfs.bind(c);
+    Dune::PDELab::LFSIndexCache<LFS,Dune::PDELab::EmptyTransformation>
+      lfs_cache(lfs);
+    lfs_cache.update();
     std::cout << info << "\t"
-              << lfs.size() << "\n";
-    for (unsigned int i=0; i<lfs.size(); i++)
-      std::cout << lfs.dofIndex(i) << "\n";
+              << lfs_cache.size() << "\n";
+    for (unsigned int i=0; i<lfs_cache.size(); i++)
+      std::cout << i << "\t->\t"
+                << lfs_cache.dofIndex(i) << "\t->\t"
+                << lfs_cache.containerIndex(i) << "\t->\t"
+                << "\n";
   }
 };
 

@@ -50,6 +50,7 @@ unsigned int GRIDGLUE_INDEXSET_SIZE;
 #include "../gridoperator/gridglueoperator.hh"
 
 using namespace Dune;
+using namespace Dune::GridGlue;
 
 template <class GridView>
 class VerticalFaceDescriptor

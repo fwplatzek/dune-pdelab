@@ -274,6 +274,10 @@ namespace Dune{
             assembler_engine,
             ctx1, iit->flip(),
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+
+          assemble_extra_pattern(assembler_engine,
+            ctx0, ctx1, *iit, iit->flip(),
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
         }
 
         // Notify assembler engine that assembly is finished
@@ -292,6 +296,79 @@ namespace Dune{
       }
 
     private:
+
+      template<class LocalAssemblerEngine,
+               typename P0, typename P1, typename I0, typename I1,
+               typename LFSV, typename LFSU, typename LFSV_C, typename LFSU_C>
+      void assemble_extra_pattern(
+        LocalAssemblerEngine & assembler_engine,
+        const P0 & patch_ctx0, const P1 & patch_ctx1,
+        const I0 & intersection0, const I1 & intersection1,
+        LFSU & lfsu, LFSU_C & lfsu_cache,
+        LFSV & lfsv, LFSV_C & lfsv_cache,
+        LFSU & rlfsu, LFSU_C & rlfsu_cache,
+        LFSV & rlfsv, LFSV_C & rlfsv_cache) const
+      {
+      }
+
+      template<typename LA,
+               typename P0, typename P1, typename I0, typename I1,
+               typename LFSV, typename LFSU, typename LFSV_C, typename LFSU_C>
+      void assemble_extra_pattern(
+        DefaultLocalPatternAssemblerEngine<LA> & assembler_engine,
+        const P0 & patch_ctx0, const P1 & patch_ctx1,
+        const I0 & intersection0, const I1 & intersection1,
+        LFSU & lfsu, LFSU_C & lfsu_cache,
+        LFSV & lfsv, LFSV_C & lfsv_cache,
+        LFSU & rlfsu, LFSU_C & rlfsu_cache,
+        LFSV & rlfsv, LFSV_C & rlfsv_cache) const
+      {
+          assemble_extra_pattern(assembler_engine,
+            patch_ctx0, patch_ctx1,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            patch_ctx1, patch_ctx0,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            intersection0, intersection0,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            intersection0, intersection1,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            intersection1, intersection1,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            intersection1, intersection0,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+      }
+
+      template<typename LA,
+               typename C0, typename C1,
+               typename LFSV, typename LFSU, typename LFSV_C, typename LFSU_C>
+      void assemble_extra_pattern(
+        DefaultLocalPatternAssemblerEngine<LA> & assembler_engine,
+        const C0 & ctx0, const C1 & ctx1,
+        LFSU & lfsu, LFSU_C & lfsu_cache,
+        LFSV & lfsv, LFSV_C & lfsv_cache,
+        LFSU & rlfsu, LFSU_C & rlfsu_cache,
+        LFSV & rlfsv, LFSV_C & rlfsv_cache) const
+      {
+        Empty eg;
+        typedef DefaultLocalPatternAssemblerEngine<LA> Engine;
+        typename Engine::LocalPattern pattern;
+
+        // Bind local test function space to element
+        lfsv.bind( ctx0 );
+        lfsv_cache.update();
+        lfsu.bind( ctx1 );
+        lfsu_cache.update();
+
+        pattern.addLink(lfsu,0,lfsv,0);
+        assembler_engine.onBindLFSUV(eg,lfsu_cache,lfsv_cache);
+        assembler_engine.add_pattern(lfsv_cache, lfsu_cache, pattern);
+        assembler_engine.onUnbindLFSUV(eg,lfsu_cache,lfsv_cache);
+      }
 
       template<typename LocalAssemblerEngine,
                typename P, typename I,
@@ -409,8 +486,9 @@ namespace Dune{
         ElementMapper<GV> cell_mapper(gv);
 
         // Extract integration requirements from the local assembler
-        const bool require_uv_skeleton = assembler_engine.requireUVSkeleton();
-        const bool require_v_skeleton = assembler_engine.requireVSkeleton();
+        #warning disable skeleton terms for subdomains
+        const bool require_uv_skeleton = false; // assembler_engine.requireUVSkeleton();
+        const bool require_v_skeleton = false; // assembler_engine.requireVSkeleton();
         const bool require_uv_boundary = assembler_engine.requireUVBoundary();
         const bool require_v_boundary = assembler_engine.requireVBoundary();
         const bool require_uv_processor = assembler_engine.requireUVBoundary();

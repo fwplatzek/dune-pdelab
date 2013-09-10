@@ -314,9 +314,6 @@ namespace Dune{
         // Notify assembler engine about bind
         assembler_engine.onBindLFSV(eg,lfsv_cache);
 
-        // Volume integration
-        assembler_engine.assembleVVolume(eg,lfsv_cache);
-
         // Bind local trial function space to element
         lfsu.bind( patch_ctx );
         lfsu_cache.update();
@@ -326,9 +323,6 @@ namespace Dune{
 
         // Load coefficients of local functions
         assembler_engine.loadCoefficientsLFSUInside(lfsu_cache);
-
-        // Volume integration
-        assembler_engine.assembleUVVolume(eg,lfsu_cache,lfsv_cache);
 
         // Bind local test space to neighbor element
         rlfsv.bind( intersection );

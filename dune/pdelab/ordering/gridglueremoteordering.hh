@@ -82,12 +82,11 @@ namespace Dune {
 
       void mapIndex(typename Traits::DOFIndexView di, typename Traits::ContainerIndex& ci) const
       {
-
-        const typename Traits::SizeType geometry_type_index = Traits::DOFIndexAccessor::geometryType(di);
         const typename Traits::SizeType entity_index = Traits::DOFIndexAccessor::entityIndex(di);
         assert (di.treeIndex().size() == 1);
-        ci.push_back(di.treeIndex().back());
-        ci.push_back(entity_index);
+        ci.push_back(di.treeIndex().back() + entity_index * GRIDGLUE_DOF_SIZE);
+
+        std::cout << "map " << di.treeIndex().back() << "/" << entity_index << " to " << ci << std::endl;
       }
 
       template<typename ItIn, typename ItOut>
@@ -97,10 +96,7 @@ namespace Dune {
 
         for (ItIn in = begin; in != end; ++in, ++out)
         {
-          const size_type entity_index = Traits::DOFIndexAccessor::entityIndex(*in);
-          assert(in->treeIndex().size() == 1);
-          out->push_back(in->treeIndex().back());
-          out->push_back(entity_index);
+          mapIndex(*in,*out);
         }
       }
 

@@ -367,6 +367,11 @@ void testNonMatchingCubeGrids()
   Dune::PDELab::constraints(constraintsparameters,gluegfs0,cc);
   Dune::PDELab::constraints(constraintsparameters,gluegfs1,cc);
 
+  std::cout << "CouplingSpace size : "
+            << GRIDGLUE_INDEXSET_SIZE
+            << " * "
+            << GRIDGLUE_DOF_SIZE << std::endl;
+
   // make grid operator
   typedef Dune::PDELab::GridGlueLocalProblem<int,int,int,int,int,int> LOP;
   LOP lop;
@@ -396,10 +401,6 @@ void testNonMatchingCubeGrids()
   Dune::printvector(std::cout, x0.base(), "vec", "r");
   for (int i=0; i<x0.base().size(); i++)
     std::cout << "Block " << i << " size : " << x0.base()[i].size() << std::endl;
-  std::cout << "CouplingSpace size : "
-            << GRIDGLUE_INDEXSET_SIZE
-            << " * "
-            << GRIDGLUE_DOF_SIZE << std::endl;
   gridoperator.jacobian(x0,mat);
 
   Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");

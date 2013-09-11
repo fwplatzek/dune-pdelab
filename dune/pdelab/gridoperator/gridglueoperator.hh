@@ -275,9 +275,10 @@ namespace Dune{
             ctx1, iit->flip(),
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
 
-          assemble_extra_pattern(assembler_engine,
-            ctx0, ctx1, *iit, iit->flip(),
-            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          if (iit->index() == 0)
+            assemble_extra_pattern(assembler_engine,
+              ctx0, ctx1, *iit, iit->flip(),
+              lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
         }
 
         // Notify assembler engine that assembly is finished

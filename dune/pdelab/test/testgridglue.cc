@@ -19,6 +19,7 @@ unsigned int GRIDGLUE_INDEXSET_SIZE;
 #include <iostream>
 
 #include <dune/common/fvector.hh>
+#include <dune/common/float_cmp.hh>
 #include <dune/common/classname.hh>
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
@@ -399,13 +400,27 @@ public:
   template<typename I>
   bool isDirichlet(const I & ig, const Dune::FieldVector<typename I::ctype, I::dimension-1> & x) const
   {
-    return true;
+    Dune::FieldVector<typename I::ctype,I::dimension>
+      xg = ig.geometry().global(x);
+
+    if (Dune::FloatCmp::le(xg[0], 0.0) || Dune::FloatCmp::gt(xg[0], 2.0))
+    {
+      return true;
+    }
+    return false;
   }
 
   template<typename I>
   bool isNeumann(const I & ig, const Dune::FieldVector<typename I::ctype, I::dimension-1> & x) const
   {
-    return false;
+    Dune::FieldVector<typename I::ctype,I::dimension>
+      xg = ig.geometry().global(x);
+
+    if (Dune::FloatCmp::eq(xg[0], 1.0))
+    {
+      return true;
+    }
+    return ! isDirichlet(ig, x);
   }
 
 };

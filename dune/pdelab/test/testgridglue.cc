@@ -24,6 +24,7 @@ unsigned int GRIDGLUE_INDEXSET_SIZE;
 #include <dune/grid/sgrid.hh>
 #include <dune/grid/yaspgrid.hh>
 #include <dune/grid/geometrygrid.hh>
+#include <dune/grid/io/file/vtk/vtkwriter.hh>
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/grid-glue/extractors/extractorpredicate.hh>
@@ -741,6 +742,21 @@ void testNonMatchingCubeGrids()
 #endif
   gridoperator.jacobian(x0,mat);
   Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
+  // output
+  {
+    typedef Dune::PDELab::DiscreteGridFunction<GlueGFS0,DV> DGF;
+    DGF xdgf(gluegfs0,x);
+    Dune::VTKWriter<DomGridView> vtkwriter(glue.template gridView<0>());
+    vtkwriter.addVertexData(new Dune::PDELab::VTKGridFunctionAdapter<DGF>(xdgf,"u_omega_0"));
+    vtkwriter.write("testgridglue_omega0");
+  }
+  {
+    typedef Dune::PDELab::DiscreteGridFunction<GlueGFS1,DV> DGF;
+    DGF xdgf(gluegfs1,x);
+    Dune::VTKWriter<TarGridView> vtkwriter(glue.template gridView<1>());
+    vtkwriter.addVertexData(new Dune::PDELab::VTKGridFunctionAdapter<DGF>(xdgf,"u_omega_1"));
+    vtkwriter.write("testgridglue_omega1");
+  }
 }
 
 int main(int argc, char *argv[]) try

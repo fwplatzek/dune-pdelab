@@ -251,27 +251,39 @@ namespace Dune{
           Ctx0 ctx0(*iit->inside());
           Ctx1 ctx1(*iit->outside());
 
-          // DOM0, Trace0
+          // / A0 .  .  C1 \  u0
+          // | .  A1 C0 .  |  u1
+          // | B0 .  .  .  |  l0
+          // \ .  B1 .  .  /  l1
+
+          // A0: DOM0 <-> DOM0
+          // A1: DOM1 <-> DOM1
+          // B0: DOM0  -> Trace0
+          // B1: DOM1  -> Trace1
+          // C0: DOM1 <-  Trace0
+          // C1: DOM0 ->  Trace1
+
+          // DOM0 -> Trace0
           assemble_coupling(
-            assembler_engine,
+            assembler_engine, *iit,
             ctx0, *iit,
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
 
           // DOM0, Trace1
           assemble_coupling(
-            assembler_engine,
+            assembler_engine, *iit,
             ctx0, iit->flip(),
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
 
           // DOM1, Trace0
           assemble_coupling(
-            assembler_engine,
+            assembler_engine, *iit,
             ctx1, *iit,
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
 
           // DOM1, Trace1
           assemble_coupling(
-            assembler_engine,
+            assembler_engine, *iit,
             ctx1, iit->flip(),
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
 
@@ -328,8 +340,22 @@ namespace Dune{
             patch_ctx0, patch_ctx1,
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
           assemble_extra_pattern(assembler_engine,
+            patch_ctx0, intersection0,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            patch_ctx0, intersection1,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+
+          assemble_extra_pattern(assembler_engine,
             patch_ctx1, patch_ctx0,
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            patch_ctx1, intersection0,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            patch_ctx1, intersection1,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+
           assemble_extra_pattern(assembler_engine,
             intersection0, intersection0,
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
@@ -337,10 +363,23 @@ namespace Dune{
             intersection0, intersection1,
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
           assemble_extra_pattern(assembler_engine,
+            intersection0, patch_ctx0,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            intersection0, patch_ctx1,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+
+          assemble_extra_pattern(assembler_engine,
             intersection1, intersection1,
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
           assemble_extra_pattern(assembler_engine,
             intersection1, intersection0,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            intersection1, patch_ctx0,
+            lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
+          assemble_extra_pattern(assembler_engine,
+            intersection1, patch_ctx1,
             lfsu, lfsu_cache, lfsv, lfsv_cache, rlfsu, rlfsu_cache, rlfsv, rlfsv_cache);
       }
 
@@ -372,11 +411,12 @@ namespace Dune{
       }
 
       template<typename LocalAssemblerEngine,
-               typename P, typename I,
+               typename I, typename P0, typename P1,
                typename LFSV, typename LFSU, typename LFSV_C, typename LFSU_C>
       void assemble_coupling(
         LocalAssemblerEngine & assembler_engine,
-        const P & patch_ctx, const I & intersection,
+        const I & intersection,
+        const P0 & patch_ctx0, const P1 & patch_ctx1,
         LFSU & lfsu, LFSU_C & lfsu_cache,
         LFSV & lfsv, LFSV_C & lfsv_cache,
         LFSU & rlfsu, LFSU_C & rlfsu_cache,
@@ -386,14 +426,14 @@ namespace Dune{
         CouplingGeometry<I> ig(intersection);
 
         // Bind local test function space to element
-        lfsv.bind( patch_ctx );
+        lfsv.bind( patch_ctx0 );
         lfsv_cache.update();
 
         // Notify assembler engine about bind
         assembler_engine.onBindLFSV(eg,lfsv_cache);
 
         // Bind local trial function space to element
-        lfsu.bind( patch_ctx );
+        lfsu.bind( patch_ctx0 );
         lfsu_cache.update();
 
         // Notify assembler engine about bind
@@ -403,7 +443,7 @@ namespace Dune{
         assembler_engine.loadCoefficientsLFSUInside(lfsu_cache);
 
         // Bind local test space to neighbor element
-        rlfsv.bind( intersection );
+        rlfsv.bind( patch_ctx1 );
         rlfsv_cache.update();
 
         // Notify assembler engine about binds
@@ -417,7 +457,7 @@ namespace Dune{
         {
 
           // Bind local trial space to neighbor element
-          rlfsu.bind( intersection );
+          rlfsu.bind( patch_ctx1 );
           rlfsu_cache.update();
 
           // Notify assembler engine about binds

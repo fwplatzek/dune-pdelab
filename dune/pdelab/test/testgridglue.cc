@@ -183,11 +183,12 @@ namespace Dune {
       C0: u1 <-  l0 (CPL0.coupling_second)
       C1: u0 <-  l1 (CPL1.coupling_second)
     */
-    template<typename A0, typename A1, typename CPL0, typename CPL1>
+    template<typename GG, typename A0, typename A1, typename CPL0, typename CPL1>
     class GridGlueLocalOperator :
 //      public NumericalJacobianApplyVolume< GridGlueLocalOperator<A0,A1,CPL0,CPL1> >,
       public LocalOperatorDefaultFlags
     {
+      enum { u0 = 0, u1 = 1, l0 = 2, l1 = 3 };
     public:
       // pattern assembly flags
       enum { doPatternVolume = true };
@@ -222,12 +223,6 @@ namespace Dune {
         // | .  A1 C0 .  |  u1
         // | B0 .  .  .  |  l0
         // \ .  B1 .  .  /  l1
-        std::cout << "coupling \t"
-                  << lfsu_s.template child<0>().size() << "/" << lfsu_n.template child<0>().size() << "\t"
-                  << lfsu_s.template child<1>().size() << "/" << lfsu_n.template child<1>().size() << "\t"
-                  << lfsu_s.template child<2>().size() << "/" << lfsu_n.template child<2>().size() << "\t"
-                  << lfsu_s.template child<3>().size() << "/" << lfsu_n.template child<3>().size() << "\n";
-        enum { u0 = 0, u1 = 1, l0 = 2, l1 = 3 };
         if (
           /* B0 */ ( lfsv_s.template child<u0>().size() && lfsv_n.template child<l0>().size() ) ||
           /* B1 */ ( lfsv_s.template child<u1>().size() && lfsv_n.template child<l1>().size() )
@@ -258,9 +253,21 @@ namespace Dune {
       ( const IG& ig,
         const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s,
         const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
-        R& r_s, R& r_n)
+        R& r_s, R& r_n) const
       {
-        std::cout << "alpha_skeleton\n";
+        std::cout << "alpha_skeleton" << std::endl;
+        if (/* B0 */ lfsv_s.template child<u0>().size() && lfsv_n.template child<l0>().size())
+          // B0: u0 -> l0 (LFSU_O& lfsu_0, const X& x_0, const LFSV_G& lfsv_g)
+          cpl0_.alpha_coupling_first(ig,lfsu_s.template child<u0>(),x_s,lfsv_n.template child<l0>(),r_n);
+        if (/* B1 */ lfsv_s.template child<u1>().size() && lfsv_n.template child<l1>().size())
+          // B1: u1 -> l1
+          cpl1_.alpha_coupling_first(ig,lfsu_s.template child<u1>(),x_s,lfsv_n.template child<l1>(),r_n);
+        if (/* C0 */ lfsv_s.template child<u1>().size() && lfsv_n.template child<l0>().size())
+          // C0: l0 -> u1
+          cpl0_.alpha_coupling_second(ig,lfsu_n.template child<l0>(),x_n,lfsv_s.template child<u1>(),r_s);
+        if (/* C1 */ lfsv_s.template child<u0>().size() && lfsv_n.template child<l1>().size())
+          // C1: l1 -> u0
+          cpl1_.alpha_coupling_second(ig,lfsu_n.template child<l1>(),x_n,lfsv_s.template child<u0>(),r_s);
       }
 
       // volume integral depending only on test functions
@@ -273,8 +280,8 @@ namespace Dune {
       template<typename IG, typename LFSV, typename R>
       void lambda_boundary (const IG& ig, const LFSV& lfsv, R& r) const
       {
-        a0_.lambda_boundary(ig,lfsv.template child<0>(),r);
-        a1_.lambda_boundary(ig,lfsv.template child<1>(),r);
+        // a0_.lambda_boundary(ig,lfsv.template child<0>(),r);
+        // a1_.lambda_boundary(ig,lfsv.template child<1>(),r);
       }
 
       template<typename EG, typename LFSU, typename X, typename LFSV,
@@ -299,7 +306,6 @@ namespace Dune {
         Jacobian& mat_ss, Jacobian& mat_sn, Jacobian& mat_ns, Jacobian& mat_nn) const
       {
         std::cout << "jacobian_skeleton" << std::endl;
-        enum { u0 = 0, u1 = 1, l0 = 2, l1 = 3 };
         if (/* B0 */ lfsv_s.template child<u0>().size() && lfsv_n.template child<l0>().size())
           // B0: u0 -> l0 (LFSU_O& lfsu_0, const X& x_0, const LFSV_G& lfsv_g)
           cpl0_.jacobian_coupling_first(ig,lfsu_s.template child<u0>(),x_s,lfsv_n.template child<l0>(),mat_ns);
@@ -686,7 +692,7 @@ void testNonMatchingCubeGrids()
   typedef Dune::PDELab::Poisson<F1,ConstraintsParameters,J1> A1; A1 a1(f1,constraintsparameters,j1);
   typedef Dune::PDELab::NoCoupling C0; C0 c0(2,3);
   typedef Dune::PDELab::NoCoupling C1; C1 c1(5,6);
-  typedef Dune::PDELab::GridGlueLocalOperator<A0,A1,C0,C1> LOP;
+  typedef Dune::PDELab::GridGlueLocalOperator<GlueType,A0,A1,C0,C1> LOP;
   LOP lop(a0,a1,c0,c1);
   typedef Dune::PDELab::GridGlueOperator<GlueGFS,GlueGFS,LOP,
                                      Dune::PDELab::ISTLMatrixBackend,

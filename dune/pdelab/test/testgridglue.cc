@@ -158,12 +158,33 @@ void testlfs(LFS & lfs, const GG & gg)
 namespace Dune {
   namespace PDELab {
 
-    template<typename A0, typename A1, typename C0, typename C1, typename D0, typename D1>
+    /*
+        u0 u1 l0 l1
+
+      / A0 .  .  C1 \  u0
+      | .  A1 C0 .  |  u1
+      | B0 .  .  .  |  l0
+      \ .  B1 .  .  /  l1
+
+      bzw.
+
+        u0 l0 l1 u1
+
+      / A0 .  C1 .  \  u0
+      | B0 .  .  .  |  l0
+      | .  .  .  B1 |  l1
+      \ .  C0 .  A1 /  u1
+
+      A0: u0 <-> u0
+      A1: u1 <-> u1
+      B0: u0  -> l0
+      B1: u1  -> l1
+      C0: u1 <-  l0
+      C1: u0 <-  l1
+    */
+    template<typename A0, typename A1, typename B0, typename B1, typename C0, typename C1>
     class GridGlueLocalProblem :
-      public NumericalJacobianApplyVolume< GridGlueLocalProblem<A0,A1,C0,C1,D0,D1> >,
-      public NumericalJacobianVolume< GridGlueLocalProblem<A0,A1,C0,C1,D0,D1> >,
-      public FullVolumePattern,
-      public FullSkeletonPattern,
+      public NumericalJacobianApplyVolume< GridGlueLocalProblem<A0,A1,B0,B1,C0,C1> >,
       public LocalOperatorDefaultFlags
     {
     public:
@@ -173,15 +194,70 @@ namespace Dune {
 
       // residual assembly flags
       enum { doAlphaVolume = true };
+      enum { doAlphaSkeleton = false };
+      enum { doAlphaBoundary = false };
       enum { doLambdaVolume = true };
       enum { doLambdaBoundary = true };
+      enum { doLambdaSkeleton = false };
 
-      GridGlueLocalProblem ()
+      GridGlueLocalProblem (const A0& a0, const A1& a1, const B0& b0, const B1& b1, const C0& c0, const C1& c1)
+        : a0_(a0), a1_(a1), b0_(b0), b1_(b1), c0_(c0), c1_(c1)
       {}
+
+      // define sparsity pattern of operator representation
+      template<typename LFSU, typename LFSV, typename LocalPattern>
+      void pattern_volume (const LFSU& lfsu, const LFSV& lfsv,
+        LocalPattern& pattern) const
+      {
+        a0_.pattern_volume(lfsu.template child<0>(),lfsv.template child<0>(),pattern);
+        a1_.pattern_volume(lfsu.template child<1>(),lfsv.template child<1>(),pattern);
+      }
+
+      template<typename LFSU, typename LFSV, typename LocalPattern>
+      void pattern_skeleton (const LFSU& lfsu_s, const LFSV& lfsv_s, const LFSU& lfsu_n, const LFSV& lfsv_n,
+        LocalPattern& pattern_sn, LocalPattern& pattern_ns) const
+      {
+        // / A0 .  .  C1 \  u0
+        // | .  A1 C0 .  |  u1
+        // | B0 .  .  .  |  l0
+        // \ .  B1 .  .  /  l1
+        std::cout << "coupling \t"
+                  << lfsu_s.template child<0>().size() << "/" << lfsu_n.template child<0>().size() << "\t"
+                  << lfsu_s.template child<1>().size() << "/" << lfsu_n.template child<1>().size() << "\t"
+                  << lfsu_s.template child<2>().size() << "/" << lfsu_n.template child<2>().size() << "\t"
+                  << lfsu_s.template child<3>().size() << "/" << lfsu_n.template child<3>().size() << "\n";
+        enum { u0 = 0, u1 = 1, l0 = 2, l1 = 3 };
+        if (
+          /* B0 */ ( lfsv_s.template child<u0>().size() && lfsv_n.template child<l0>().size() ) ||
+          /* B1 */ ( lfsv_s.template child<u1>().size() && lfsv_n.template child<l1>().size() )
+          )
+          for (unsigned int i=0; i<lfsv_n.size(); ++i)
+            for (unsigned int j=0; j<lfsu_s.size(); ++j)
+              pattern_ns.addLink(lfsv_n,i,lfsu_s,j);
+        if (
+          /* C1 */ ( lfsv_s.template child<u0>().size() && lfsv_n.template child<l1>().size() ) ||
+          /* C0 */ ( lfsv_s.template child<u1>().size() && lfsv_n.template child<l0>().size() )
+          )
+          for (unsigned int i=0; i<lfsv_s.size(); ++i)
+            for (unsigned int j=0; j<lfsu_n.size(); ++j)
+              pattern_sn.addLink(lfsv_s,i,lfsu_n,j);
+      }
 
       // volume integral depending on test and ansatz functions
       template<typename EG, typename LFSU, typename X, typename LFSV, typename R>
       void alpha_volume (const EG& eg, const LFSU& lfsu, const X& x, const LFSV& lfsv, R& r) const
+      {
+        a0_.alpha_volume(eg,lfsu.template child<0>(),x,lfsv.template child<0>(),r);
+        a1_.alpha_volume(eg,lfsu.template child<1>(),x,lfsv.template child<1>(),r);
+      }
+
+      template<typename IG, typename LFSU, typename X, typename LFSV,
+               typename R>
+      void alpha_skeleton
+      ( const IG& ig,
+        const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s,
+        const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
+        R& r_s, R& r_n)
       {
       }
 
@@ -191,14 +267,127 @@ namespace Dune {
       {
       }
 
-      // boundary integral independen of ansatz functions
+      // boundary integral depending only on test functions
       template<typename IG, typename LFSV, typename R>
       void lambda_boundary (const IG& ig, const LFSV& lfsv, R& r) const
       {
+        a0_.lambda_boundary(ig,lfsv.template child<0>(),r);
+        a1_.lambda_boundary(ig,lfsv.template child<1>(),r);
       }
+
+      template<typename EG, typename LFSU, typename X, typename LFSV,
+               typename Jacobian>
+      void jacobian_volume (const EG& eg, const LFSU& lfsu, const X& x, const LFSV& lfsv,
+        Jacobian& mat) const
+      {
+        a0_.jacobian_volume(eg,lfsu.template child<0>(),x,lfsv.template child<0>(),mat);
+        a1_.jacobian_volume(eg,lfsu.template child<1>(),x,lfsv.template child<1>(),mat);
+      }
+
+      template<typename IG, typename LFSU, typename X, typename LFSV, typename Jacobian>
+      void jacobian_boundary (const IG& ig, const LFSU& lfsu, const X& x, const LFSV& lfsv,
+        Jacobian& mat) const
+      {
+        a0_.jacobian_boundary(ig,lfsu.template child<0>(),x,lfsv.template child<0>(),mat);
+        a1_.jacobian_boundary(ig,lfsu.template child<1>(),x,lfsv.template child<1>(),mat);
+      }
+
+      template<typename IG, typename LFSU, typename X, typename LFSV, typename Jacobian>
+      void jacobian_skeleton (const IG& ig, const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s, const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
+        Jacobian& mat_ss, Jacobian& mat_sn, Jacobian& mat_ns, Jacobian& mat_nn) const
+      {
+        // B0: u0 -> l0
+        b0_.jacobian_skeleton(ig,lfsu_s.template child<0>(),x_s,lfsv_s.template child<0>(),
+          lfsu_n.template child<2>(),x_n,lfsv_n.template child<2>(),mat_ss,mat_sn,mat_ns,mat_nn);
+        // B1: u1 -> l1
+        b1_.jacobian_skeleton(ig,lfsu_s.template child<1>(),x_s,lfsv_s.template child<1>(),
+          lfsu_n.template child<3>(),x_n,lfsv_n.template child<3>(),mat_ss,mat_sn,mat_ns,mat_nn);
+        // C0: l0 -> u1
+        c0_.jacobian_skeleton(ig,lfsu_s.template child<2>(),x_s,lfsv_s.template child<2>(),
+          lfsu_n.template child<1>(),x_n,lfsv_n.template child<1>(),mat_ss,mat_sn,mat_ns,mat_nn);
+        // C1: l1 -> u0
+        c1_.jacobian_skeleton(ig,lfsu_s.template child<3>(),x_s,lfsv_s.template child<3>(),
+          lfsu_n.template child<0>(),x_n,lfsv_n.template child<0>(),mat_ss,mat_sn,mat_ns,mat_nn);
+      }
+
+    private:
+      const A0& a0_;
+      const A1& a1_;
+      const B0& b0_;
+      const B1& b1_;
+      const C0& c0_;
+      const C1& c1_;
     };
   } // end namespace Dune
 } // end namespace Dune
+
+class NoCoupling
+{
+public:
+
+  NoCoupling ()
+  {}
+
+  template<typename IG, typename LFSU, typename X, typename LFSV, typename Jacobian>
+  void jacobian_skeleton (const IG& ig, const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s, const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
+    Jacobian& mat_ss, Jacobian& mat_sn, Jacobian& mat_ns, Jacobian& mat_nn) const
+  {
+  }
+
+};
+
+template<typename GV, typename RF>
+class F
+  : public Dune::PDELab::AnalyticGridFunctionBase<Dune::PDELab::AnalyticGridFunctionTraits<GV,RF,1>,
+                                                  F<GV,RF> >
+{
+public:
+  typedef Dune::PDELab::AnalyticGridFunctionTraits<GV,RF,1> Traits;
+  typedef Dune::PDELab::AnalyticGridFunctionBase<Traits,F<GV,RF> > BaseT;
+
+  F (const GV& gv) : BaseT(gv) {}
+  inline void evaluateGlobal (const typename Traits::DomainType& x,
+                              typename Traits::RangeType& y) const
+  {
+    y=0;
+  }
+};
+
+// function for Dirichlet boundary conditions and initialization
+template<typename GV, typename RF>
+class G
+  : public Dune::PDELab::AnalyticGridFunctionBase<Dune::PDELab::AnalyticGridFunctionTraits<GV,RF,1>,
+                                                  G<GV,RF> >
+{
+public:
+  typedef Dune::PDELab::AnalyticGridFunctionTraits<GV,RF,1> Traits;
+  typedef Dune::PDELab::AnalyticGridFunctionBase<Traits,G<GV,RF> > BaseT;
+
+  G (const GV& gv) : BaseT(gv) {}
+  inline void evaluateGlobal (const typename Traits::DomainType& x,
+                              typename Traits::RangeType& y) const
+  {
+    y = x[0];
+  }
+};
+
+// function for defining the flux boundary condition
+template<typename GV, typename RF>
+class J
+  : public Dune::PDELab::AnalyticGridFunctionBase<Dune::PDELab::AnalyticGridFunctionTraits<GV,RF,1>,
+                                                  J<GV,RF> >
+{
+public:
+  typedef Dune::PDELab::AnalyticGridFunctionTraits<GV,RF,1> Traits;
+  typedef Dune::PDELab::AnalyticGridFunctionBase<Traits,J<GV,RF> > BaseT;
+
+  J (const GV& gv) : BaseT(gv) {}
+  inline void evaluateGlobal (const typename Traits::DomainType& x,
+                              typename Traits::RangeType& y) const
+  {
+    y = 0;
+  }
+};
 
 // boundary grid function selecting boundary conditions
 class ConstraintsParameters
@@ -373,8 +562,18 @@ void testNonMatchingCubeGrids()
             << GRIDGLUE_DOF_SIZE << std::endl;
 
   // make grid operator
-  typedef Dune::PDELab::GridGlueLocalProblem<int,int,int,int,int,int> LOP;
-  LOP lop;
+  typedef F<DomGridView,RF> F0; F0 f0(glue.template gridView<0>());
+  typedef F<TarGridView,RF> F1; F1 f1(glue.template gridView<1>());
+  typedef J<DomGridView,RF> J0; J0 j0(glue.template gridView<0>());
+  typedef J<TarGridView,RF> J1; J1 j1(glue.template gridView<1>());
+  typedef Dune::PDELab::Poisson<F0,ConstraintsParameters,J0> A0; A0 a0(f0,constraintsparameters,j0);
+  typedef Dune::PDELab::Poisson<F1,ConstraintsParameters,J1> A1; A1 a1(f1,constraintsparameters,j1);
+  typedef NoCoupling B0; B0 b0;
+  typedef NoCoupling B1; B1 b1;
+  typedef NoCoupling C0; C0 c0;
+  typedef NoCoupling C1; C1 c1;
+  typedef Dune::PDELab::GridGlueLocalProblem<A0,A1,B0,B1,C0,C1> LOP;
+  LOP lop(a0,a1,b0,b1,c0,c1);
   typedef Dune::PDELab::GridGlueOperator<GlueGFS,GlueGFS,LOP,
                                      Dune::PDELab::ISTLMatrixBackend,
                                      double,double,double,

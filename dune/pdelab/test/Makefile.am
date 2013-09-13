@@ -123,10 +123,13 @@ testremotelfs_SOURCES = testremotelfs.cc
 NORMALTESTS += testgridglue
 testgridglue_SOURCES = testgridglue.cc
 testgridglue_CPPFLAGS = $(AM_CPPFLAGS)	\
-	$(PSURFACE_CPPFLAGS)
+	$(PSURFACE_CPPFLAGS)	\
+	$(SUPERLU_CPPFLAGS)
 testgridglue_LDFLAGS = $(AM_LDFLAGS)	\
-	$(PSURFACE_LDFLAGS)
+	$(PSURFACE_LDFLAGS)		\
+	$(SUPERLU_LDFLAGS)
 testgridglue_LDADD =		\
+	$(SUPERLU_LDFLAGS) $(SUPERLU_LIBS)	\
 	$(PSURFACE_LIBS)				\
 	$(LDADD)
 

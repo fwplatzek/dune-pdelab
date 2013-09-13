@@ -706,6 +706,19 @@ void testNonMatchingCubeGrids()
                                      C,C> GridOperator;
   GridOperator gridoperator(gluegfs,cc,gluegfs,cc,lop);
 
+  // initialize vector
+  typedef typename GridOperator::Traits::Domain DV;
+  DV x0(gluegfs, 0.0);
+  Dune::printvector(std::cout, x0.base(), "vec", "r");
+#ifdef BLOCKINGBACKEND
+  for (int i=0; i<x0.base().size(); i++)
+    std::cout << "Block " << i << " size : " << x0.base()[i].size() << std::endl;
+#endif
+  Dune::PDELab::interpolate(g0,gluegfs0,x0);
+  Dune::PDELab::interpolate(g1,gluegfs1,x0);
+  Dune::PDELab::set_nonconstrained_dofs(cc,0.0,x0);
+
+  // create stiffness matrix
   typedef typename GridOperator::Traits::Jacobian M;
   std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
   M mat(gridoperator, 0.0);
@@ -720,12 +733,6 @@ void testNonMatchingCubeGrids()
       std::cout << "(0 x 0)  \t";
     std::cout << std::endl;
   }
-
-  typedef typename GridOperator::Traits::Domain DV;
-  DV x0(gluegfs, 0.0);
-  Dune::printvector(std::cout, x0.base(), "vec", "r");
-  for (int i=0; i<x0.base().size(); i++)
-    std::cout << "Block " << i << " size : " << x0.base()[i].size() << std::endl;
   gridoperator.jacobian(x0,mat);
 
   Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");

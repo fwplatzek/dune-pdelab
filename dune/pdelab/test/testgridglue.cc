@@ -630,7 +630,11 @@ void testNonMatchingCubeGrids()
   RemoteGFSDOM remotegfsdom = RemoteGFSTrafo::transform(gfsdom, trafo);
 
   // GridGlue GFS
+#ifdef BLOCKING_MATRIX
   typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,BlockingBackend> GlueGFS;
+#else
+  typedef Dune::PDELab::GridGlueGridFunctionSpace<GlueType,GFSDOM,GFSTAR,Backend> GlueGFS;
+#endif
   GlueGFS gluegfs(glue,gfsdom,gfstar);
 
   typedef Dune::PDELab::LocalFunctionSpace<GlueGFS> GlueLFS;
@@ -723,6 +727,7 @@ void testNonMatchingCubeGrids()
   std::cout << "Allocate Siffness Matrix " << Dune::className<typename M::BaseT>() << std::endl;
   M mat(gridoperator, 0.0);
   Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r", 1, 1);
+#ifdef BLOCKINGBACKEND
   std::cout << "Matrix Layout:\n";
   for (int i=0; i<mat.base().N(); i++)
   {
@@ -733,8 +738,8 @@ void testNonMatchingCubeGrids()
       std::cout << "(0 x 0)  \t";
     std::cout << std::endl;
   }
+#endif
   gridoperator.jacobian(x0,mat);
-
   Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
 }
 

@@ -644,7 +644,7 @@ void testNonMatchingCubeGrids()
     RemoteLFS remotelfs = Trafo::transform(gfstar, trafo);
   }
 
-  // try getting subspaces
+  // get subspaces
   typedef Dune::TypeTree::TreePath<0> Path0;
   typedef Dune::TypeTree::TreePath<1> Path1;
   typedef Dune::PDELab::GridFunctionSubSpace<GlueGFS, Path0> GlueGFS0;
@@ -677,17 +677,21 @@ void testNonMatchingCubeGrids()
   C cc;
   cc.clear();
   ConstraintsParameters constraintsparameters;
-  Dune::PDELab::constraints(constraintsparameters,gluegfs0,cc);
-  Dune::PDELab::constraints(constraintsparameters,gluegfs1,cc);
+  Dune::PDELab::ConstraintsAssemblerHelper<ConstraintsParameters, GlueGFS, DomGridView, C, false>::assemble(constraintsparameters,gluegfs,glue.template gridView<0>(),cc,false);
+  Dune::PDELab::ConstraintsAssemblerHelper<ConstraintsParameters, GlueGFS, TarGridView, C, false>::assemble(constraintsparameters,gluegfs,glue.template gridView<1>(),cc,false);
 
   std::cout << "CouplingSpace size : "
             << GRIDGLUE_INDEXSET_SIZE
             << " * "
             << GRIDGLUE_DOF_SIZE << std::endl;
+  std::cout << "Constraints size : "
+            << cc.size() << std::endl;
 
   // make grid operator
   typedef F<DomGridView,RF> F0; F0 f0(glue.template gridView<0>());
   typedef F<TarGridView,RF> F1; F1 f1(glue.template gridView<1>());
+  typedef G<DomGridView,RF> G0; G0 g0(glue.template gridView<0>());
+  typedef G<TarGridView,RF> G1; G1 g1(glue.template gridView<1>());
   typedef J<DomGridView,RF> J0; J0 j0(glue.template gridView<0>());
   typedef J<TarGridView,RF> J1; J1 j1(glue.template gridView<1>());
   typedef Dune::PDELab::Poisson<F0,ConstraintsParameters,J0> A0; A0 a0(f0,constraintsparameters,j0);

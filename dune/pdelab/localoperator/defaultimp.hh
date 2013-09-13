@@ -166,12 +166,12 @@ namespace Dune {
       {}
 
       //! compute local jacobian of the skeleton term
-      template<typename IG, typename LFSU, typename X, typename LFSV,
+      template<typename IG, typename LFSUS, typename LFSUN, typename X, typename LFSVS, typename LFSVN,
                typename Jacobian>
       void jacobian_skeleton
       ( const IG& ig,
-        const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s,
-        const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
+        const LFSUS& lfsu_s, const X& x_s, const LFSVS& lfsv_s,
+        const LFSUN& lfsu_n, const X& x_n, const LFSVN& lfsv_n,
         Jacobian& mat_ss, Jacobian& mat_sn,
         Jacobian& mat_ns, Jacobian& mat_nn) const
       {
@@ -454,12 +454,12 @@ namespace Dune {
       {}
 
       //! apply local jacobian of the skeleton term
-      template<typename IG, typename LFSU, typename X, typename LFSV,
+      template<typename IG, typename LFSUS, typename LFSUN, typename X, typename LFSVS, typename LFSVN,
                typename Y>
       void jacobian_apply_skeleton
       ( const IG& ig,
-        const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s,
-        const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
+        const LFSUS& lfsu_s, const X& x_s, const LFSVS& lfsv_s,
+        const LFSUN& lfsu_n, const X& x_n, const LFSVN& lfsv_n,
         Y& y_s, Y& y_n) const
       {
         typedef typename X::value_type D;
@@ -652,12 +652,12 @@ namespace Dune {
     public:
 
       //! compute \f$\alpha_\text{skel}\f$
-      template<typename IG, typename LFSU, typename X, typename LFSV,
+      template<typename IG, typename LFSUS, typename LFSUN, typename X, typename LFSVS, typename LFSVN,
                typename R>
       void alpha_skeleton
       ( const IG& ig,
-        const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s,
-        const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
+        const LFSUS& lfsu_s, const X& x_s, const LFSVS& lfsv_s,
+        const LFSUN& lfsu_n, const X& x_n, const LFSVN& lfsv_n,
         R& r_s, R& r_n) const
       {
         typedef LocalMatrix<typename R::value_type> Jacobian;

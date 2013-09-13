@@ -510,7 +510,8 @@ public:
     Dune::FieldVector<typename I::ctype,I::dimension>
       xg = ig.geometry().global(x);
 
-    if (Dune::FloatCmp::le(xg[0], 0.0) || Dune::FloatCmp::gt(xg[0], 2.0))
+    static const double eps = 1e-3;
+    if (Dune::FloatCmp::le(xg[0], 0.0, eps) || Dune::FloatCmp::gt(xg[0], 1.99, eps))
     {
       return true;
     }
@@ -523,7 +524,8 @@ public:
     Dune::FieldVector<typename I::ctype,I::dimension>
       xg = ig.geometry().global(x);
 
-    if (Dune::FloatCmp::eq(xg[0], 1.0))
+    static const double eps = 1e-3;
+    if (Dune::FloatCmp::eq(xg[0], 1.0, eps))
     {
       return true;
     }

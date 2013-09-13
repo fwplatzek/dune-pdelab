@@ -86,7 +86,7 @@ namespace Dune {
 
         timing = watch.elapsed();
         // timing = gos.trialGridFunctionSpace().gridView().comm().max(timing);
-        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0 && verbose>=1)
+//        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0 && verbose>=1)
           std::cout << "=== matrix setup (max) " << timing << " s" << std::endl;
         watch.reset();
         assembler_time += timing;
@@ -101,7 +101,7 @@ namespace Dune {
 
         timing = watch.elapsed();
         // timing = gos.trialGridFunctionSpace().gridView().comm().max(timing);
-        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0 && verbose>=1)
+//        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0 && verbose>=1)
           std::cout << "=== matrix assembly (max) " << timing << " s" << std::endl;
         assembler_time += timing;
 
@@ -113,7 +113,7 @@ namespace Dune {
 
         timing = watch.elapsed();
         // timing = gos.trialGridFunctionSpace().gridView().comm().max(timing);
-        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0 && verbose>=1)
+//        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0 && verbose>=1)
           std::cout << "=== residual assembly (max) " << timing << " s" << std::endl;
         assembler_time += timing;
         res.assembler_time = assembler_time;
@@ -124,13 +124,13 @@ namespace Dune {
         watch.reset();
         V z(gos.trialGridFunctionSpace(),0.0);
         typename V::ElementType red = std::min(reduction,defect/mindefect);
-        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0)
+//        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0)
           std::cout << "=== solving (reduction: " << red << ") ";
         ls.apply(m,z,r,red); // solver makes right hand side consistent
         linearsolverresult = ls.result();
         timing = watch.elapsed();
         // timing = gos.trialGridFunctionSpace().gridView().comm().max(timing);
-        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0 && verbose>=1)
+//        if (gos.trialGridFunctionSpace().gridView().comm().rank()==0 && verbose>=1)
           std::cout << timing << " s" << std::endl;
         res.linear_solver_time = timing;
 

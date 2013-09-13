@@ -176,16 +176,16 @@ namespace Dune {
       | .  .  .  B1 |  l1
       \ .  C0 .  A1 /  u1
 
-      A0: u0 <-> u0
-      A1: u1 <-> u1
-      B0: u0  -> l0
-      B1: u1  -> l1
-      C0: u1 <-  l0
-      C1: u0 <-  l1
+      A0: u0 <-> u0 (A0.alpha_volume)
+      A1: u1 <-> u1 (A1.alpha_volume)
+      B0: u0  -> l0 (CPL0.coupling_first)
+      B1: u1  -> l1 (CPL1.coupling_first)
+      C0: u1 <-  l0 (CPL0.coupling_second)
+      C1: u0 <-  l1 (CPL1.coupling_second)
     */
-    template<typename A0, typename A1, typename B0, typename B1, typename C0, typename C1>
-    class GridGlueLocalProblem :
-      public NumericalJacobianApplyVolume< GridGlueLocalProblem<A0,A1,B0,B1,C0,C1> >,
+    template<typename A0, typename A1, typename CPL0, typename CPL1>
+    class GridGlueLocalOperator :
+//      public NumericalJacobianApplyVolume< GridGlueLocalOperator<A0,A1,CPL0,CPL1> >,
       public LocalOperatorDefaultFlags
     {
     public:
@@ -195,14 +195,14 @@ namespace Dune {
 
       // residual assembly flags
       enum { doAlphaVolume = true };
-      enum { doAlphaSkeleton = false };
+      enum { doAlphaSkeleton = true };
       enum { doAlphaBoundary = false };
       enum { doLambdaVolume = true };
       enum { doLambdaBoundary = true };
       enum { doLambdaSkeleton = false };
 
-      GridGlueLocalProblem (const A0& a0, const A1& a1, const B0& b0, const B1& b1, const C0& c0, const C1& c1)
-        : a0_(a0), a1_(a1), b0_(b0), b1_(b1), c0_(c0), c1_(c1)
+      GridGlueLocalOperator (const A0& a0, const A1& a1, const CPL0& cpl0, const CPL1& cpl1)
+        : a0_(a0), a1_(a1), cpl0_(cpl0), cpl1_(cpl1)
       {}
 
       // define sparsity pattern of operator representation
@@ -260,6 +260,7 @@ namespace Dune {
         const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
         R& r_s, R& r_n)
       {
+        std::cout << "alpha_skeleton\n";
       }
 
       // volume integral depending only on test functions
@@ -297,45 +298,145 @@ namespace Dune {
       void jacobian_skeleton (const IG& ig, const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s, const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
         Jacobian& mat_ss, Jacobian& mat_sn, Jacobian& mat_ns, Jacobian& mat_nn) const
       {
-        // B0: u0 -> l0
-        b0_.jacobian_skeleton(ig,lfsu_s.template child<0>(),x_s,lfsv_s.template child<0>(),
-          lfsu_n.template child<2>(),x_n,lfsv_n.template child<2>(),mat_ss,mat_sn,mat_ns,mat_nn);
-        // B1: u1 -> l1
-        b1_.jacobian_skeleton(ig,lfsu_s.template child<1>(),x_s,lfsv_s.template child<1>(),
-          lfsu_n.template child<3>(),x_n,lfsv_n.template child<3>(),mat_ss,mat_sn,mat_ns,mat_nn);
-        // C0: l0 -> u1
-        c0_.jacobian_skeleton(ig,lfsu_s.template child<2>(),x_s,lfsv_s.template child<2>(),
-          lfsu_n.template child<1>(),x_n,lfsv_n.template child<1>(),mat_ss,mat_sn,mat_ns,mat_nn);
-        // C1: l1 -> u0
-        c1_.jacobian_skeleton(ig,lfsu_s.template child<3>(),x_s,lfsv_s.template child<3>(),
-          lfsu_n.template child<0>(),x_n,lfsv_n.template child<0>(),mat_ss,mat_sn,mat_ns,mat_nn);
+        std::cout << "jacobian_skeleton" << std::endl;
+        enum { u0 = 0, u1 = 1, l0 = 2, l1 = 3 };
+        if (/* B0 */ lfsv_s.template child<u0>().size() && lfsv_n.template child<l0>().size())
+          // B0: u0 -> l0 (LFSU_O& lfsu_0, const X& x_0, const LFSV_G& lfsv_g)
+          cpl0_.jacobian_coupling_first(ig,lfsu_s.template child<u0>(),x_s,lfsv_n.template child<l0>(),mat_ns);
+        if (/* B1 */ lfsv_s.template child<u1>().size() && lfsv_n.template child<l1>().size())
+          // B1: u1 -> l1
+          cpl1_.jacobian_coupling_first(ig,lfsu_s.template child<u1>(),x_s,lfsv_n.template child<l1>(),mat_ns);
+        if (/* C0 */ lfsv_s.template child<u1>().size() && lfsv_n.template child<l0>().size())
+          // C0: l0 -> u1
+          cpl0_.jacobian_coupling_second(ig,lfsu_n.template child<l0>(),x_n,lfsv_s.template child<u1>(),mat_sn);
+        if (/* C1 */ lfsv_s.template child<u0>().size() && lfsv_n.template child<l1>().size())
+          // C1: l1 -> u0
+          cpl1_.jacobian_coupling_second(ig,lfsu_n.template child<l1>(),x_n,lfsv_s.template child<u0>(),mat_sn);
       }
 
     private:
       const A0& a0_;
       const A1& a1_;
-      const B0& b0_;
-      const B1& b1_;
-      const C0& c0_;
-      const C1& c1_;
+      const CPL0& cpl0_;
+      const CPL1& cpl1_;
     };
+
+    class NoCoupling
+    {
+    public:
+
+      double b,c;
+
+      NoCoupling () : b(0), c(0)
+      {}
+
+      NoCoupling (double i, double j) : b(i), c(j)
+      {}
+
+      // map from \Omega_0 to \Gamma
+      template<typename IG, typename LFSU_O, typename LFSV_G, typename X, typename R>
+      void alpha_coupling_first (const IG& ig, const LFSU_O& lfsu_0, const X& x_0, const LFSV_G& lfsv_g,
+        R& r_g) const
+      {
+        const int m=lfsv_g.size();
+        const int n=lfsu_0.size();
+        for (int j=0; j<n; j++)
+        {
+          for (int i=0; i<m; i++)
+            r_g.accumulate(lfsv_g,i,x_0(lfsu_0,j)*b);
+        }
+      }
+
+      // Map from \Gamma to \Omega_1
+      template<typename IG, typename LFSU_G, typename LFSV_O, typename X, typename R>
+      void alpha_coupling_second (const IG& ig, const LFSU_G& lfsu_g, const X& x_g, const LFSV_O& lfsv_1,
+        R& r_1) const
+      {
+        const int m=lfsv_1.size();
+        const int n=lfsu_g.size();
+        for (int j=0; j<n; j++)
+        {
+          for (int i=0; i<m; i++)
+            r_1.accumulate(lfsv_1,i,x_g(lfsu_g,j)*c);
+        }
+      }
+
+      // Matrix B: map from \Omega_0 to \Gamma
+      template<typename IG, typename LFSU_O, typename LFSV_G, typename X, typename Jacobian>
+      void jacobian_coupling_first (const IG& ig, const LFSU_O& lfsu_0, const X& x_0, const LFSV_G& lfsv_g,
+        Jacobian& mat_B) const
+      {
+        static const double epsilon(1e-7);
+
+        typedef typename X::value_type D;
+        typedef typename Jacobian::value_type R;
+        typedef LocalVector<R,TestSpaceTag,typename Jacobian::weight_type> ResidualVector;
+        typedef typename ResidualVector::WeightedAccumulationView ResidualView;
+
+        const int m=lfsv_g.size();
+        const int n=lfsu_0.size();
+        assert(mat_B.ncols() == n);
+        assert(mat_B.nrows() == m);
+
+        X u(x_0);
+
+        // Notice that in general lfsv.size() != mat.nrows()
+        ResidualVector down(mat_B.nrows(),0.),up(mat_B.nrows());
+        ResidualView downview = down.weightedAccumulationView(mat_B.weight());
+        ResidualView upview = up.weightedAccumulationView(mat_B.weight());
+
+        alpha_coupling_first(ig,lfsu_0,u,lfsv_g,downview);
+        for (int j=0; j<n; j++) // loop over columns
+        {
+          up = 0.0;
+          D delta = epsilon*(1.0+std::abs(u(lfsu_0,j)));
+          u(lfsu_0,j) += delta;
+          alpha_coupling_first(ig,lfsu_0,u,lfsv_g,upview);
+          for (int i=0; i<m; i++)
+            mat_B.rawAccumulate(lfsv_g,i,lfsu_0,j,(up(lfsv_g,i)-down(lfsv_g,i))/delta);
+          u(lfsu_0,j) = x_0(lfsu_0,j);
+        }
+      }
+
+      // Matrix C: map from \Gamma to \Omega_1
+      template<typename IG, typename LFSU_G, typename LFSV_O, typename X, typename Jacobian>
+      void jacobian_coupling_second (const IG& ig, const LFSU_G& lfsu_g, const X& x_g, const LFSV_O& lfsv_1,
+        Jacobian& mat_C) const
+      {
+        static const double epsilon(1e-7);
+
+        typedef typename X::value_type D;
+        typedef typename Jacobian::value_type R;
+        typedef LocalVector<R,TestSpaceTag,typename Jacobian::weight_type> ResidualVector;
+        typedef typename ResidualVector::WeightedAccumulationView ResidualView;
+
+        const int m=lfsv_1.size();
+        const int n=lfsu_g.size();
+
+        X u(x_g);
+
+        // Notice that in general lfsv.size() != mat.nrows()
+        ResidualVector down(mat_C.nrows(),0.),up(mat_C.nrows());
+        ResidualView downview = down.weightedAccumulationView(mat_C.weight());
+        ResidualView upview = up.weightedAccumulationView(mat_C.weight());
+
+        alpha_coupling_second(ig,lfsu_g,u,lfsv_1,downview);
+        for (int j=0; j<n; j++) // loop over columns
+        {
+          up = 0.0;
+          D delta = epsilon*(1.0+std::abs(u(lfsu_g,j)));
+          u(lfsu_g,j) += delta;
+          alpha_coupling_second(ig,lfsu_g,u,lfsv_1,upview);
+          for (int i=0; i<m; i++)
+            mat_C.rawAccumulate(lfsv_1,i,lfsu_g,j,(up(lfsv_1,i)-down(lfsv_1,i))/delta);
+          u(lfsu_g,j) = x_g(lfsu_g,j);
+        }
+      }
+
+    };
+
   } // end namespace Dune
 } // end namespace Dune
-
-class NoCoupling
-{
-public:
-
-  NoCoupling ()
-  {}
-
-  template<typename IG, typename LFSU, typename X, typename LFSV, typename Jacobian>
-  void jacobian_skeleton (const IG& ig, const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s, const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
-    Jacobian& mat_ss, Jacobian& mat_sn, Jacobian& mat_ns, Jacobian& mat_nn) const
-  {
-  }
-
-};
 
 template<typename GV, typename RF>
 class F
@@ -583,12 +684,10 @@ void testNonMatchingCubeGrids()
   typedef J<TarGridView,RF> J1; J1 j1(glue.template gridView<1>());
   typedef Dune::PDELab::Poisson<F0,ConstraintsParameters,J0> A0; A0 a0(f0,constraintsparameters,j0);
   typedef Dune::PDELab::Poisson<F1,ConstraintsParameters,J1> A1; A1 a1(f1,constraintsparameters,j1);
-  typedef NoCoupling B0; B0 b0;
-  typedef NoCoupling B1; B1 b1;
-  typedef NoCoupling C0; C0 c0;
-  typedef NoCoupling C1; C1 c1;
-  typedef Dune::PDELab::GridGlueLocalProblem<A0,A1,B0,B1,C0,C1> LOP;
-  LOP lop(a0,a1,b0,b1,c0,c1);
+  typedef Dune::PDELab::NoCoupling C0; C0 c0(2,3);
+  typedef Dune::PDELab::NoCoupling C1; C1 c1(5,6);
+  typedef Dune::PDELab::GridGlueLocalOperator<A0,A1,C0,C1> LOP;
+  LOP lop(a0,a1,c0,c1);
   typedef Dune::PDELab::GridGlueOperator<GlueGFS,GlueGFS,LOP,
                                      Dune::PDELab::ISTLMatrixBackend,
                                      double,double,double,

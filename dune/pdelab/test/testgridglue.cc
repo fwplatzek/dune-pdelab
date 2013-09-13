@@ -43,6 +43,7 @@ unsigned int GRIDGLUE_INDEXSET_SIZE;
 #include "../backend/istlmatrixbackend.hh"
 #include "../gridoperator/gridoperator.hh"
 #include "../backend/istlsolverbackend.hh"
+#include <dune/pdelab/stationary/linearproblem.hh>
 #include "../localoperator/laplacedirichletp12d.hh"
 #include "../localoperator/poisson.hh"
 #include "../gridfunctionspace/vtk.hh"
@@ -742,6 +743,14 @@ void testNonMatchingCubeGrids()
 #endif
   gridoperator.jacobian(x0,mat);
   Dune::printmatrix(std::cout, mat.base(), "full_matrix", "r");
+
+  // solver
+  DV x(x0);
+  // typedef Dune::PDELab::ISTLBackend_SEQ_SuperLU LS;
+  // LS ls(true);
+  // Dune::PDELab::StationaryLinearProblemSolver<GridOperator,LS,DV> slp(gridoperator,x,ls,1e-10);
+  // slp.apply();
+
   // output
   {
     typedef Dune::PDELab::DiscreteGridFunction<GlueGFS0,DV> DGF;

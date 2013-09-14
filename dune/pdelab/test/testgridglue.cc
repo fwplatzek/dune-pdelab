@@ -746,10 +746,10 @@ void testNonMatchingCubeGrids()
 
   // solver
   DV x(x0);
-  // typedef Dune::PDELab::ISTLBackend_SEQ_SuperLU LS;
-  // LS ls(true);
-  // Dune::PDELab::StationaryLinearProblemSolver<GridOperator,LS,DV> slp(gridoperator,x,ls,1e-10);
-  // slp.apply();
+  typedef Dune::PDELab::ISTLBackend_SEQ_SuperLU LS;
+  LS ls(true);
+  Dune::PDELab::StationaryLinearProblemSolver<GridOperator,LS,DV> slp(gridoperator,x,ls,1e-10);
+  slp.apply();
 
   // output
   {

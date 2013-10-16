@@ -8,7 +8,8 @@
 
 #include <dune/common/shared_ptr.hh>
 
-#include <dune/pdelab/common/typetree/powernode.hh>
+#include <dune/typetree/powernode.hh>
+
 #include <dune/pdelab/gridfunctionspace/powercompositegridfunctionspacebase.hh>
 #include <dune/pdelab/gridfunctionspace/tags.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
@@ -113,26 +114,31 @@ namespace Dune {
 
     private:
 
-      static typename BaseT::NodeStorage create_children(const GV& gv, const FEM& fem, const LeafBackend& leaf_backend, const LeafOrderingTag& leaf_ordering_tag)
+      // Preconstruct children - it is important that the children are set before entering the constructor
+      // of ImplementationBase!
+      static typename BaseT::NodeStorage create_components(const GV& gv,
+                                                           shared_ptr<const FEM> fem_ptr,
+                                                           const LeafBackend& leaf_backend,
+                                                           const LeafOrderingTag& leaf_ordering_tag)
       {
         typename BaseT::NodeStorage r;
-        shared_ptr<const FEM> fem_ptr = stackobject_to_shared_ptr(fem);
         for (std::size_t i = 0; i < k; ++i)
           r[i] = make_shared<LeafGFS>(gv,fem_ptr,leaf_backend,leaf_ordering_tag);
         return r;
       }
 
-      public:
+    public:
 
       VectorGridFunctionSpace(const GV& gv, const FEM& fem,
                               const Backend& backend = Backend(), const LeafBackend& leaf_backend = LeafBackend(),
                               const OrderingTag& ordering_tag = OrderingTag(), const LeafOrderingTag& leaf_ordering_tag = LeafOrderingTag())
-        : BaseT(create_children(gv,fem,leaf_backend,leaf_ordering_tag))
+        : BaseT(create_components(gv,stackobject_to_shared_ptr(fem),leaf_backend,leaf_ordering_tag))
         , ImplementationBase(backend,ordering_tag)
+      {}
+
+      std::string name() const
       {
-        //shared_ptr<const FEM> fem_ptr = stackobject_to_shared_ptr(fem);
-        //for (std::size_t i = 0; i < k; ++i)
-        //  this->setChild(i,make_shared<LeafGFS>(gv,fem_ptr,leaf_backend,leaf_ordering_tag));
+        return ImplementationBase::name();
       }
 
 #ifndef DOXYGEN
@@ -159,13 +165,33 @@ namespace Dune {
       //! Direct access to the DOF ordering.
       const Ordering &ordering() const
       {
-        return *orderingStorage();
+        if (!this->isRootSpace())
+          {
+            DUNE_THROW(GridFunctionSpaceHierarchyError,
+                       "Ordering can only be obtained for root space in GridFunctionSpace tree.");
+          }
+        if (!_ordering)
+          {
+            create_ordering();
+            this->update(*_ordering);
+          }
+        return *_ordering;
       }
 
       //! Direct access to the DOF ordering.
       Ordering &ordering()
       {
-        return *orderingStorage();
+        if (!this->isRootSpace())
+          {
+            DUNE_THROW(GridFunctionSpaceHierarchyError,
+                       "Ordering can only be obtained for root space in GridFunctionSpace tree.");
+          }
+        if (!_ordering)
+          {
+            create_ordering();
+            this->update(*_ordering);
+          }
+        return *_ordering;
       }
 
       //! Direct access to the storage of the DOF ordering.

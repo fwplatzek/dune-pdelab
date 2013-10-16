@@ -1,15 +1,18 @@
 gridfunctionspacedir = $(includedir)/dune/pdelab/gridfunctionspace
 gridfunctionspace_HEADERS =			\
+	decorator.hh				\
 	directleaflocalordering.hh		\
 	entityblockedlocalordering.hh		\
 	gridviewordering.hh			\
 	interleavedordering.hh			\
 	leafgridviewordering.hh			\
 	leaflocalordering.hh			\
+	leaforderingbase.hh			\
 	lexicographicordering.hh		\
 	localorderingbase.hh			\
 	orderingbase.hh				\
 	orderinginterface.hh			\
+	permutedordering.hh			\
 	singlecodimleafordering.hh		\
 	subordering.hh				\
 	transformations.hh			\

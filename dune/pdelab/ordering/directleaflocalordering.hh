@@ -4,11 +4,12 @@
 #ifndef DUNE_PDELAB_ORDERING_DIRECTLEAFLOCALORDERING_HH
 #define DUNE_PDELAB_ORDERING_DIRECTLEAFLOCALORDERING_HH
 
+#include <dune/typetree/leafnode.hh>
+
 #include <dune/common/nullptr.hh>
 #include <dune/geometry/referenceelements.hh>
 #include <dune/localfunctions/common/interfaceswitch.hh>
 #include <dune/localfunctions/common/localkey.hh>
-#include <dune/pdelab/common/typetree/leafnode.hh>
 #include <dune/pdelab/common/partitioninfoprovider.hh>
 #include <dune/pdelab/ordering/utility.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspacebase.hh>
@@ -27,6 +28,9 @@ namespace Dune {
 
       template<typename>
       friend class LeafGridViewOrdering;
+
+      template<typename>
+      friend class LeafOrderingBase;
 
       template<typename size_type>
       friend struct ::Dune::PDELab::impl::update_ordering_data;

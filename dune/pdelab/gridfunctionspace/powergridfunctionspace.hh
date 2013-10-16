@@ -8,7 +8,8 @@
 
 #include <dune/common/shared_ptr.hh>
 
-#include <dune/pdelab/common/typetree/powernode.hh>
+#include <dune/typetree/powernode.hh>
+
 #include <dune/pdelab/gridfunctionspace/powercompositegridfunctionspacebase.hh>
 #include <dune/pdelab/gridfunctionspace/datahandleprovider.hh>
 #include <dune/pdelab/gridfunctionspace/tags.hh>
@@ -202,13 +203,33 @@ namespace Dune {
       //! Direct access to the DOF ordering.
       const Ordering &ordering() const
       {
-        return *orderingStorage();
+        if (!this->isRootSpace())
+          {
+            DUNE_THROW(GridFunctionSpaceHierarchyError,
+                       "Ordering can only be obtained for root space in GridFunctionSpace tree.");
+          }
+        if (!_ordering)
+          {
+            create_ordering();
+            this->update(*_ordering);
+          }
+        return *_ordering;
       }
 
       //! Direct access to the DOF ordering.
       Ordering &ordering()
       {
-        return *orderingStorage();
+        if (!this->isRootSpace())
+          {
+            DUNE_THROW(GridFunctionSpaceHierarchyError,
+                       "Ordering can only be obtained for root space in GridFunctionSpace tree.");
+          }
+        if (!_ordering)
+          {
+            create_ordering();
+            this->update(*_ordering);
+          }
+        return *_ordering;
       }
 
       //! Direct access to the storage of the DOF ordering.

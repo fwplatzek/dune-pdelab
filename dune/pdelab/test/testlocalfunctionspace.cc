@@ -13,6 +13,7 @@
 #include"../finiteelementmap/q12dfem.hh"
 #include"../gridfunctionspace/gridfunctionspace.hh"
 #include"../gridfunctionspace/localvector.hh"
+#include"../gridfunctionspace/subspace.hh"
 
 
 // test function trees
@@ -41,18 +42,22 @@ void test (const GV& gv)
       Dune::PDELab::LexicographicOrderingTag,PowerGFS,Q1GFS> CompositeGFS;
   CompositeGFS compositegfs(powergfs,q1gfs);
 
-  // make coefficent Vectors
+  // make coefficent Vectors - we need to make copies of the spaces because we stuck
+  // them in a hierarchy
   typedef typename Dune::PDELab::BackendVectorSelector<Q2GFS,double>::Type V;
-  V x(q2gfs);
+  Q2GFS q2gfs2(gv,q22dfem);
+  V x(q2gfs2);
   x = 0.0;
   typedef typename Dune::PDELab::BackendVectorSelector<PowerGFS,double>::Type VP;
-  VP xp(powergfs);
+  Q2GFS q2gfs_pc(gv,q22dfem);
+  PowerGFS powergfs2(q2gfs_pc);
+  VP xp(powergfs2);
   xp = 0.0;
 
   // make local function space object
   typedef Dune::PDELab::AnySpaceTag Tag;
   typedef typename Dune::PDELab::LocalFunctionSpace<Q2GFS> Q2LFS;
-  Q2LFS q2lfs(q2gfs);
+  Q2LFS q2lfs(q2gfs2);
   typedef Dune::PDELab::LFSIndexCache<Q2LFS> Q2LFSCache;
   Q2LFSCache q2lfsCache(q2lfs);
   typedef typename V::template ConstLocalView<Q2LFSCache> VView;
@@ -60,7 +65,7 @@ void test (const GV& gv)
   Dune::PDELab::LocalVector<double, Tag> xl(q2lfs.maxSize());
 
   typedef typename Dune::PDELab::LocalFunctionSpace<PowerGFS> PowerLFS;
-  PowerLFS powerlfs(powergfs);
+  PowerLFS powerlfs(powergfs2);
   typedef Dune::PDELab::LFSIndexCache<PowerLFS> PowerLFSCache;
   PowerLFSCache powerlfsCache(powerlfs);
   typedef typename VP::template ConstLocalView<PowerLFSCache> VPView;
@@ -73,6 +78,11 @@ void test (const GV& gv)
   //CompositeLFSCache compositelfsCache(compositelfs);
   //  std::vector<double> xlc(compositelfs.maxSize());
 
+  typedef Dune::TypeTree::TreePath<1> Path1;
+  typedef Dune::PDELab::GridFunctionSubSpace<CompositeGFS, Path1> SubGFS1;
+  typedef Dune::PDELab::LocalFunctionSpace<SubGFS1> SubLFS1;
+  SubGFS1 subgfs1(compositegfs);
+  SubLFS1 sublfs1(subgfs1);
 
   // loop over elements
   typedef typename GV::Traits::template Codim<0>::Iterator ElementIterator;
@@ -112,6 +122,21 @@ void test (const GV& gv)
           compositelfs.template child<0>().template child<1>().localVectorSize());
       assert(compositelfs.localVectorSize() ==
           compositelfs.template child<1>().localVectorSize());
+
+      // check LFS<SubSpace<CompositeSpace,1>> == LFS<CompositeSpace>::Child<1>
+      sublfs1.bind(*it);
+      assert(compositelfs.template child<1>().size() == sublfs1.size());
+      for (unsigned int i=0; i<compositelfs.template child<1>().size(); i++)
+      {
+        if ( compositelfs.template child<1>().dofIndex(i) != sublfs1.dofIndex(i) )
+        {
+          std::cout << "DOF " << i << ": \n"
+                    << "LFS::CHILD\t" << compositelfs.template child<1>().dofIndex(i) << "\n"
+                    << "LFS<SUB>\t" << sublfs1.dofIndex(i) << "\n";
+        }
+        assert( compositelfs.template child<1>().dofIndex(i) == sublfs1.dofIndex(i) );
+      }
+
 	}
 }
 

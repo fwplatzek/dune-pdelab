@@ -5,9 +5,10 @@
 
 #include <string>
 
+#include <dune/typetree/compositenodemacros.hh>
+#include <dune/typetree/powernode.hh>
+
 #include <dune/pdelab/common/exceptions.hh>
-#include <dune/pdelab/common/typetree/compositenodemacros.hh>
-#include <dune/pdelab/common/typetree/powernode.hh>
 
 #include <dune/pdelab/gridfunctionspace/tags.hh>
 #include <dune/pdelab/ordering/utility.hh>
@@ -23,16 +24,16 @@ namespace Dune {
     namespace interleaved_ordering {
 
       //! Interface for merging index spaces
-      template<typename DI, typename GDI, typename CI, typename Node>
+      template<typename DI, typename CI, typename Node>
       class Base
-        : public OrderingBase<DI,GDI,CI>
+        : public OrderingBase<DI,CI>
       {
 
-        typedef OrderingBase<DI,GDI,CI> BaseT;
+        typedef OrderingBase<DI,CI> BaseT;
 
       public:
 
-        typedef typename OrderingBase<DI,GDI,CI>::Traits Traits;
+        typedef typename OrderingBase<DI,CI>::Traits Traits;
 
         typedef InterleavedOrderingTag OrderingTag;
 
@@ -133,22 +134,20 @@ namespace Dune {
 
     } // namespace interleaved_ordering
 
-    //! Interface for merging index spaces
-    template<typename DI, typename GDI, typename CI, typename Child, std::size_t k>
+
+    template<typename DI, typename CI, typename Child, std::size_t k>
     class PowerInterleavedOrdering
       : public TypeTree::PowerNode<Child, k>
       , public interleaved_ordering::Base<DI,
-                                          GDI,
                                           CI,
-                                          PowerInterleavedOrdering<DI,GDI,CI,Child,k>
+                                          PowerInterleavedOrdering<DI,CI,Child,k>
                                           >
     {
       typedef TypeTree::PowerNode<Child, k> Node;
 
       typedef interleaved_ordering::Base<DI,
-                                         GDI,
                                          CI,
-                                         PowerInterleavedOrdering<DI,GDI,CI,Child,k>
+                                         PowerInterleavedOrdering<DI,CI,Child,k>
                                          > Base;
 
     public:
@@ -181,7 +180,7 @@ namespace Dune {
 
 
     template<typename GFS, typename Transformation>
-    struct power_gfs_to_ordering_descriptor<GFS,Transformation,InterleavedOrderingTag>
+    struct power_gfs_to_interleaved_ordering_descriptor
     {
 
       static const bool recursive = true;
@@ -192,7 +191,6 @@ namespace Dune {
 
         typedef PowerInterleavedOrdering<
           typename Transformation::DOFIndex,
-          typename TC::Traits::GlobalDOFIndex,
           typename Transformation::ContainerIndex,
           TC,
           GFS::CHILDREN
@@ -216,16 +214,19 @@ namespace Dune {
 
     };
 
-    //! Interface for merging index spaces
-    template<typename DI, typename GDI, typename CI, DUNE_TYPETREE_COMPOSITENODE_TEMPLATE_CHILDREN>
+    template<typename GFS, typename Transformation>
+    power_gfs_to_interleaved_ordering_descriptor<GFS,Transformation>
+    register_power_gfs_to_ordering_descriptor(GFS*,Transformation*,InterleavedOrderingTag*);
+
+
+
+    template<typename DI, typename CI, DUNE_TYPETREE_COMPOSITENODE_TEMPLATE_CHILDREN>
     class CompositeInterleavedOrdering :
       public DUNE_TYPETREE_COMPOSITENODE_BASETYPE,
       public interleaved_ordering::Base<DI,
-                                        GDI,
                                         CI,
                                         CompositeInterleavedOrdering<
                                           DI,
-                                          GDI,
                                           CI,
                                           DUNE_TYPETREE_COMPOSITENODE_CHILDTYPES
                                           >
@@ -235,11 +236,9 @@ namespace Dune {
 
       typedef interleaved_ordering::Base<
         DI,
-        GDI,
         CI,
         CompositeInterleavedOrdering<
           DI,
-          GDI,
           CI,
           DUNE_TYPETREE_COMPOSITENODE_CHILDTYPES
           >
@@ -272,7 +271,7 @@ namespace Dune {
 #if HAVE_VARIADIC_TEMPLATES
 
     template<typename GFS, typename Transformation>
-    struct composite_gfs_to_ordering_descriptor<GFS,Transformation,InterleavedOrderingTag>
+    struct composite_gfs_to_interleaved_ordering_descriptor
     {
 
       static const bool recursive = true;
@@ -283,7 +282,6 @@ namespace Dune {
 
         typedef CompositeInterleavedOrdering<
           typename Transformation::DOFIndex,
-          typename extract_first_child<TC...>::type::Traits::GlobalDOFIndex,
           typename Transformation::ContainerIndex,
           TC...
           > type;
@@ -310,7 +308,7 @@ namespace Dune {
 
     //! Node transformation descriptor for CompositeGridFunctionSpace -> LexicographicOrdering (without variadic templates).
     template<typename GFS, typename Transformation>
-    struct composite_gfs_to_ordering_descriptor<GFS,Transformation,InterleavedOrderingTag>
+    struct composite_gfs_to_interleaved_ordering_descriptor
     {
 
       static const bool recursive = true;
@@ -390,6 +388,10 @@ namespace Dune {
     };
 
 #endif // HAVE_VARIADIC_TEMPLATES
+
+    template<typename GFS, typename Transformation>
+    composite_gfs_to_interleaved_ordering_descriptor<GFS,Transformation>
+    register_composite_gfs_to_ordering_descriptor(GFS*,Transformation*,InterleavedOrderingTag*);
 
    //! \} group GridFunctionSpace
   } // namespace PDELab

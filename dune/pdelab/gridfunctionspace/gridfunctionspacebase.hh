@@ -3,10 +3,11 @@
 #ifndef DUNE_PDELAB_GRIDFUNCTIONSPACE_GRIDFUNCTIONSPACEBASE_HH
 #define DUNE_PDELAB_GRIDFUNCTIONSPACE_GRIDFUNCTIONSPACEBASE_HH
 
+#include <dune/typetree/visitor.hh>
+#include <dune/typetree/traversal.hh>
+
 #include <dune/pdelab/common/exceptions.hh>
 #include <dune/pdelab/common/partitioninfoprovider.hh>
-#include <dune/pdelab/common/typetree/visitor.hh>
-#include <dune/pdelab/common/typetree/traversal.hh>
 
 namespace Dune {
   namespace PDELab {
@@ -99,6 +100,7 @@ namespace Dune {
               data._global_size = _global_size;
               data._max_local_size = _max_local_size;
               data._size_available = ordering.update_gfs_data_size(data._size,data._block_count);
+              data.setPartitionSet(ordering);
             }
         }
 

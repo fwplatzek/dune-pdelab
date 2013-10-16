@@ -12,7 +12,8 @@
 #include <dune/common/hash.hh>
 #include <dune/common/iteratorfacades.hh>
 
-#include <dune/pdelab/common/typetree.hh>
+#include <dune/typetree/typetree.hh>
+
 #include <dune/pdelab/common/unordered_map.hh>
 #include <dune/pdelab/constraints/common/constraintstransformation.hh>
 #include <dune/pdelab/gridfunctionspace/tags.hh>
@@ -206,9 +207,10 @@ namespace Dune {
 
       map_dof_indices_to_container_indices(DOFIterator dof_begin,
                                            ContainerIterator container_begin,
-                                           LeafSizeIterator leaf_size_begin)
-        : dof_pos(dof_begin)
-        , dof_end(dof_begin)
+                                           LeafSizeIterator leaf_size_begin,
+                                           std::size_t dof_index_tail_length = 0)
+        : dof_pos(dof_begin,dof_index_tail_length)
+        , dof_end(dof_begin,dof_index_tail_length)
         , container_pos(container_begin)
         , leaf_size_pos(leaf_size_begin)
       {}
@@ -307,7 +309,7 @@ namespace Dune {
           typename CIVector::iterator,
           typename LeafSizeVector::const_iterator,
           TypeTree::TreeInfo<Ordering>::depth
-          > index_mapper(_lfs._dof_indices->begin(),_container_indices.begin(),leaf_sizes.begin());
+          > index_mapper(_lfs._dof_indices->begin(),_container_indices.begin(),leaf_sizes.begin(),_lfs.subSpaceDepth());
         TypeTree::applyToTree(_lfs.gridFunctionSpace().ordering(),index_mapper);
 
         _constraints.resize(0);
@@ -503,8 +505,8 @@ namespace Dune {
       std::vector<std::pair<ConstraintsIterator,ConstraintsIterator> > _constraints_iterators;
       mutable CIMap _container_index_map;
       ConstraintsVector _constraints;
-      mutable size_type _offsets[LFS::CHILDREN];
-      mutable size_type _extended_offsets[LFS::CHILDREN];
+      mutable array<size_type,LFS::CHILDREN> _offsets;
+      mutable array<size_type,LFS::CHILDREN> _extended_offsets;
       mutable bool _inverse_cache_built;
       mutable InverseMap _inverse_map;
 
@@ -584,7 +586,7 @@ namespace Dune {
           typename CIVector::iterator,
           typename LeafSizeVector::const_iterator,
           TypeTree::TreeInfo<Ordering>::depth
-          > index_mapper(_lfs._dof_indices->begin(),_container_indices.begin(),leaf_sizes.begin());
+          > index_mapper(_lfs._dof_indices->begin(),_container_indices.begin(),leaf_sizes.begin(),_lfs.subSpaceDepth());
         TypeTree::applyToTree(_lfs.gridFunctionSpace().ordering(),index_mapper);
       }
 
@@ -821,8 +823,12 @@ namespace Dune {
       typedef LFS LocalFunctionSpace;
       typedef typename LFS::Traits::GridFunctionSpace GFS;
       typedef typename GFS::Ordering Ordering;
+    private:
       typedef typename Ordering::Traits::ContainerIndex CI;
       typedef typename Ordering::Traits::DOFIndex DI;
+    public:
+      typedef CI ContainerIndex;
+      typedef DI DOFIndex;
       typedef std::size_t size_type;
 
       typedef std::vector<CI> CIVector;

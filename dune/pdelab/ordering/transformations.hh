@@ -5,8 +5,10 @@
 
 #include <cstddef>
 
-#include <dune/pdelab/common/typetree/traversal.hh>
-#include <dune/pdelab/common/typetree/accumulate_static.hh>
+#include <dune/typetree/traversal.hh>
+#include <dune/typetree/accumulate_static.hh>
+
+#include <dune/pdelab/common/typetraits.hh>
 #include <dune/pdelab/common/multiindex.hh>
 #include <dune/pdelab/gridfunctionspace/tags.hh>
 #include <dune/pdelab/gridfunctionspace/tags.hh>
@@ -70,11 +72,20 @@ namespace Dune {
     };
 
 
-
     // Declare PowerGFS to ordering descriptor and register transformation
 
     template<typename GFS, typename Transformation, typename OrderingTag>
-    struct power_gfs_to_ordering_descriptor;
+    struct power_gfs_to_ordering_descriptor
+      : public TypeTree::meta_function
+    {
+      typedef DUNE_DECLTYPE(
+        register_power_gfs_to_ordering_descriptor(
+          TypeTree::declptr<GFS>(),
+          TypeTree::declptr<Transformation>(),
+          TypeTree::declptr<OrderingTag>()
+          )
+        ) type;
+    };
 
     template<typename GridFunctionSpace, typename Params>
     power_gfs_to_ordering_descriptor<
@@ -88,7 +99,17 @@ namespace Dune {
     // Declare LeafGFS to ordering descriptor and register transformation
 
     template<typename GFS, typename Transformation, typename OrderingTag>
-    struct leaf_gfs_to_ordering_descriptor;
+    struct leaf_gfs_to_ordering_descriptor
+      : public TypeTree::meta_function
+    {
+      typedef DUNE_DECLTYPE(
+        register_leaf_gfs_to_ordering_descriptor(
+          TypeTree::declptr<GFS>(),
+          TypeTree::declptr<Transformation>(),
+          TypeTree::declptr<OrderingTag>()
+          )
+        ) type;
+    };
 
     template<typename GridFunctionSpace, typename Params>
     leaf_gfs_to_ordering_descriptor<
@@ -102,7 +123,17 @@ namespace Dune {
     // Declare CompositeGFS to ordering descriptor and register transformation
 
     template<typename GFS, typename Transformation, typename OrderingTag>
-    struct composite_gfs_to_ordering_descriptor;
+    struct composite_gfs_to_ordering_descriptor
+      : public TypeTree::meta_function
+    {
+      typedef DUNE_DECLTYPE(
+        register_composite_gfs_to_ordering_descriptor(
+          TypeTree::declptr<GFS>(),
+          TypeTree::declptr<Transformation>(),
+          TypeTree::declptr<OrderingTag>()
+          )
+        ) type;
+    };
 
     template<typename GridFunctionSpace, typename Params>
     composite_gfs_to_ordering_descriptor<

@@ -4,22 +4,12 @@ set(constraints_HEADERS
     hangingnode.hh
     hangingnodemanager.hh
     interiornode.hh
-    mdf.hh
+    interiornodeconstraints.hh
+    mfd.hh
     p0.hh
     p0ghost.hh
     raviartthomas0.hh)
 
-set(SUBDIRS
-    common)
-
-# include not needed for CMake
-# include $(top_srcdir)/am/global-rules
-
-foreach(i ${SUBDIRS})
-  if(${i} STREQUAL "test")
-    set(opt EXCLUDE_FROM_ALL)
-  endif(${i} STREQUAL "test")
-  add_subdirectory(${i} ${opt})
-endforeach(i ${SUBDIRS})
+add_subdirectory(common)
 
 install(FILES ${constraints_HEADERS} DESTINATION ${constraintsdir})

@@ -10,7 +10,6 @@
 #include <vector>
 
 #include <dune/common/exceptions.hh>
-#include <dune/geometry/type.hh>
 #include <dune/common/shared_ptr.hh>
 #include <dune/common/static_assert.hh>
 #include <dune/common/stdstreams.hh>
@@ -22,21 +21,20 @@
 #include <dune/localfunctions/common/interfaceswitch.hh>
 #include <dune/localfunctions/common/localkey.hh>
 
+#include <dune/typetree/typetree.hh>
+
 #include <dune/pdelab/backend/backendselector.hh>
+#include <dune/pdelab/backend/istl/descriptors.hh>
 #include <dune/pdelab/common/geometrywrapper.hh>
-#include <dune/pdelab/common/typetree.hh>
-#include <dune/pdelab/gridfunctionspace/tags.hh>
+#include <dune/pdelab/gridfunctionspace/compositegridfunctionspace.hh>
+#include <dune/pdelab/gridfunctionspace/datahandleprovider.hh>
+#include <dune/pdelab/gridfunctionspace/gridfunctionspacebase.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspaceutilities.hh>
+#include <dune/pdelab/gridfunctionspace/powergridfunctionspace.hh>
+#include <dune/pdelab/gridfunctionspace/tags.hh>
 #include <dune/pdelab/gridfunctionspace/utility.hh>
 #include <dune/pdelab/ordering/gridviewordering.hh>
 #include <dune/pdelab/ordering/lexicographicordering.hh>
-#include <dune/pdelab/gridfunctionspace/gridfunctionspacebase.hh>
-#include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
-#include <dune/pdelab/gridfunctionspace/datahandleprovider.hh>
-#include <dune/pdelab/gridfunctionspace/powergridfunctionspace.hh>
-#include <dune/pdelab/gridfunctionspace/compositegridfunctionspace.hh>
-
-#include <dune/pdelab/backend/istl/descriptors.hh>
 
 namespace Dune {
   namespace PDELab {
@@ -151,14 +149,14 @@ namespace Dune {
       {
 
         //! \brief define Type as the Type of a container of E's
-        typedef typename SelectType<
+        typedef typename conditional<
           is_same<
             CE,
             NoConstraints
             >::value,
           EmptyTransformation,
           ConstraintsTransformation<typename Ordering::Traits::DOFIndex,typename Ordering::Traits::ContainerIndex,E>
-          >::Type Type;
+          >::type Type;
 
       private:
         ConstraintsContainer () {}
@@ -240,13 +238,33 @@ namespace Dune {
       //! Direct access to the DOF ordering.
       const Ordering &ordering() const
       {
-        return *orderingStorage();
+        if (!this->isRootSpace())
+          {
+            DUNE_THROW(GridFunctionSpaceHierarchyError,
+                       "Ordering can only be obtained for root space in GridFunctionSpace tree.");
+          }
+        if (!_ordering)
+          {
+            create_ordering();
+            this->update(*_ordering);
+          }
+        return *_ordering;
       }
 
       //! Direct access to the DOF ordering.
       Ordering &ordering()
       {
-        return *orderingStorage();
+        if (!this->isRootSpace())
+          {
+            DUNE_THROW(GridFunctionSpaceHierarchyError,
+                       "Ordering can only be obtained for root space in GridFunctionSpace tree.");
+          }
+        if (!_ordering)
+          {
+            create_ordering();
+            this->update(*_ordering);
+          }
+        return *_ordering;
       }
 
       //! Direct access to the storage of the DOF ordering.

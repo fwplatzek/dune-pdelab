@@ -471,7 +471,7 @@ namespace Dune {
         lfs.vread(*pxg,xl);
 
         // get Jacobian of geometry
-        const typename Traits::ElementType::Geometry::Jacobian&
+        const typename Traits::ElementType::Geometry::Jacobian
           JgeoIT = e.geometry().jacobianInverseTransposed(x);
 
         // get local Jacobians/gradients of the shape functions

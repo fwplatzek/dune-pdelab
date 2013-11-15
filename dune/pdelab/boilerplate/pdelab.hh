@@ -8,7 +8,7 @@
 
     These classes are experimental !
 
-    To see an example how they might simplify your life see 
+    To see an example how they might simplify your life see
     dune-pdelab-howto/src/convection-diffusion/tutorial.cc
 */
 
@@ -16,7 +16,7 @@
 #include <iostream>
 #include "config.h"           // file constructed by ./configure script
 
-#include <dune/common/mpihelper.hh> // include mpi helper class 
+#include <dune/common/mpihelper.hh> // include mpi helper class
 #include <dune/common/parametertreeparser.hh>
 #include <dune/common/shared_ptr.hh>
 #include <dune/common/classname.hh>
@@ -30,14 +30,14 @@
 #include <dune/grid/onedgrid.hh>
 #include <dune/grid/io/file/vtk/subsamplingvtkwriter.hh>
 #include <dune/grid/yaspgrid.hh>
-#if HAVE_UG 
+#if HAVE_UG
 #include <dune/grid/uggrid.hh>
 #endif
 #if HAVE_ALBERTA
 #include<dune/grid/albertagrid.hh>
 #include <dune/grid/albertagrid/dgfparser.hh>
 #endif
-#if HAVE_UG 
+#if HAVE_UG
 #include<dune/grid/uggrid.hh>
 #endif
 #if HAVE_ALUGRID
@@ -103,7 +103,7 @@ namespace Dune {
                 array<unsigned int,dim> elements; elements.fill(cells);
 
                 StructuredGridFactory<T> factory;
-    
+
                 if (meshtype==Dune::GeometryType::cube)
                     gridp = factory.createCubeGrid(lowerLeft,upperRight,elements);
                 else if (meshtype==Dune::GeometryType::simplex)
@@ -116,8 +116,8 @@ namespace Dune {
             }
 
 
-            StructuredGrid (Dune::GeometryType::BasicType meshtype, 
-                            array<double,dimworld> lower_left, array<double,dimworld> upper_right, 
+            StructuredGrid (Dune::GeometryType::BasicType meshtype,
+                            array<double,dimworld> lower_left, array<double,dimworld> upper_right,
                             array<unsigned int,dim> cells)
             {
                 FieldVector<ctype,dimworld> lowerLeft;
@@ -136,7 +136,7 @@ namespace Dune {
                     }
 
                 StructuredGridFactory<T> factory;
-    
+
                 if (meshtype==Dune::GeometryType::cube)
                     gridp = factory.createCubeGrid(lowerLeft,upperRight,elements);
                 else if (meshtype==Dune::GeometryType::simplex)
@@ -186,14 +186,14 @@ namespace Dune {
                 return gridp.operator->();
             }
 
-      
+
         private:
             Dune::shared_ptr<T> gridp; // hold a shared pointer to a grid
         };
 
         // specialization for yaspgrid; treats paralle case right
         template<int dim>
-        class StructuredGrid<YaspGrid<dim> > 
+        class StructuredGrid<YaspGrid<dim> >
         {
         public:
 
@@ -223,8 +223,8 @@ namespace Dune {
             }
 
             // constructor with sizes given
-            StructuredGrid (Dune::GeometryType::BasicType meshtype, 
-                            array<double,dimworld> lower_left, array<double,dimworld> upper_right, 
+            StructuredGrid (Dune::GeometryType::BasicType meshtype,
+                            array<double,dimworld> lower_left, array<double,dimworld> upper_right,
                             array<unsigned int,dim> cells, int overlap=1)
             {
                 // check that lower right corner is the origin
@@ -257,8 +257,8 @@ namespace Dune {
             }
 
             // constructor with periodicity argument
-            StructuredGrid (Dune::GeometryType::BasicType meshtype, 
-                            array<double,dimworld> lower_left, array<double,dimworld> upper_right, 
+            StructuredGrid (Dune::GeometryType::BasicType meshtype,
+                            array<double,dimworld> lower_left, array<double,dimworld> upper_right,
                             array<unsigned int,dim> cells, array<bool,dim> periodic, int overlap=1)
             {
                 // check that lower right corner is the origin
@@ -328,7 +328,7 @@ namespace Dune {
             {
                 return gridp.operator->();
             }
-      
+
         private:
             Dune::shared_ptr<Grid> gridp; // hold a shared pointer to a grid
         };
@@ -389,7 +389,7 @@ namespace Dune {
             {
                 return gridp.operator->();
             }
-      
+
         private:
             Dune::shared_ptr<T> gridp; // hold a shared pointer to a grid
         };
@@ -401,7 +401,7 @@ namespace Dune {
 
         // finite element map base template
         template<typename GV, typename C, typename R, unsigned int degree, unsigned int dim, Dune::GeometryType::BasicType gt>
-        class CGFEMBase 
+        class CGFEMBase
         {};
 
         template<typename GV, typename C, typename R, unsigned int degree, unsigned int dim>
@@ -450,7 +450,7 @@ namespace Dune {
 
         // constraints base template
         template<typename T, unsigned int degree, Dune::GeometryType::BasicType gt, MeshType mt, SolverCategory::Category st, typename BCType>
-        class CGCONBase 
+        class CGCONBase
         {};
 
         template<typename T, typename BCType>
@@ -595,12 +595,12 @@ namespace Dune {
                 ccp = shared_ptr<CC>(new CC());
             }
 
-            FEM& getFEM() 
+            FEM& getFEM()
             {
                 return femb.getFEM();
             }
 
-            const FEM& getFEM() const 
+            const FEM& getFEM() const
             {
                 return femb.getFEM();
             }
@@ -679,7 +679,7 @@ namespace Dune {
 
         // constraints base template
         template<SolverCategory::Category st>
-        class DGCONBase 
+        class DGCONBase
         {};
 
         template<>
@@ -743,7 +743,7 @@ namespace Dune {
 
         // Discontinuous space
         // default implementation, use only specializations below
-        template<typename T, typename N, unsigned int degree, 
+        template<typename T, typename N, unsigned int degree,
                  Dune::GeometryType::BasicType gt, SolverCategory::Category st = SolverCategory::sequential,
                  typename VBET=ISTLVectorBackend<Dune::PB::PkSize<degree,T::dimension>::value> >
         class DGPkSpace
@@ -835,8 +835,109 @@ namespace Dune {
         };
 
 
+        // Discontinuous space for Qk
+        // default implementation, use only specializations below
+        template<typename T, typename N, unsigned int degree,
+                 Dune::GeometryType::BasicType gt, SolverCategory::Category st = SolverCategory::sequential,
+                 typename VBET=ISTLVectorBackend<Dune::QkStuff::QkSize<degree,T::dimension>::value> >
+        class DGQkSpace
+        {
+        };
+
+        // Discontinuous space for Qk; Here is the only specialization for cube elements
+        // default implementation, use only specializations below
+        template<typename T, typename N, unsigned int degree, SolverCategory::Category st>
+        class DGQkSpace<T,N,degree,Dune::GeometryType::cube,st,ISTLVectorBackend<Dune::QkStuff::QkSize<degree,T::dimension>::value> >
+        {
+        public:
+
+            // export types
+            typedef T Grid;
+            typedef typename T::LeafGridView GV;
+            typedef typename T::ctype ctype;
+            static const int dim = T::dimension;
+            static const int dimworld = T::dimensionworld;
+            typedef N NT;
+            typedef Dune::PDELab::QkDGLocalFiniteElementMap<ctype,NT,degree,dim> FEM;
+            typedef DGCONBase<st> CONB;
+            typedef typename CONB::CON CON;
+            typedef ISTLVectorBackend<Dune::QkStuff::QkSize<degree,T::dimension>::value> VBET;
+            typedef VBET VBE;
+            typedef GridFunctionSpace<GV,FEM,CON,VBE> GFS;
+            typedef typename BackendVectorSelector<GFS,N>::Type DOF;
+            typedef Dune::PDELab::DiscreteGridFunction<GFS,DOF> DGF;
+            typedef typename GFS::template ConstraintsContainer<N>::Type CC;
+            typedef VTKGridFunctionAdapter<DGF> VTKF;
+
+            // constructor making the grid function space an all that is needed
+            DGQkSpace (const GV& gridview) : gv(gridview), conb()
+            {
+                femp = shared_ptr<FEM>(new FEM());
+                gfsp = shared_ptr<GFS>(new GFS(gv,*femp));
+                ccp = shared_ptr<CC>(new CC());
+            }
+
+            FEM& getFEM() { return *femp; }
+            const FEM& getFEM() const { return *femp; }
+
+            // return gfs reference
+            GFS& getGFS () { return *gfsp; }
+
+            // return gfs reference const version
+            const GFS& getGFS () const {return *gfsp;}
+
+            // return gfs reference
+            CC& getCC () { return *ccp;}
+
+            // return gfs reference const version
+            const CC& getCC () const { return *ccp;}
+
+            template<class BCTYPE>
+            void assembleConstraints (const BCTYPE& bctype)
+            {
+                ccp->clear();
+                constraints(bctype,*gfsp,*ccp);
+            }
+
+            void clearConstraints ()
+            {
+                ccp->clear();
+            }
+
+            void setConstrainedDOFS (DOF& x, NT nt) const
+            {
+                set_constrained_dofs(*ccp,nt,x);
+                conb.make_consistent(*gfsp,x);
+            }
+
+            void setNonConstrainedDOFS (DOF& x, NT nt) const
+            {
+                set_nonconstrained_dofs(*ccp,nt,x);
+                conb.make_consistent(*gfsp,x);
+            }
+
+            void copyConstrainedDOFS (const DOF& xin, DOF& xout) const
+            {
+                copy_constrained_dofs(*ccp,xin,xout);
+                conb.make_consistent(*gfsp,xout);
+            }
+
+            void copyNonConstrainedDOFS (const DOF& xin, DOF& xout) const
+            {
+                copy_nonconstrained_dofs(*ccp,xin,xout);
+                conb.make_consistent(*gfsp,xout);
+            }
+
+        private:
+            GV gv; // need this object here because FEM and GFS store a const reference !!
+            CONB conb;
+            shared_ptr<FEM> femp;
+            shared_ptr<GFS> gfsp;
+            shared_ptr<CC> ccp;
+        };
+
         // Discontinuous P0 space
-        template<typename T, typename N, 
+        template<typename T, typename N,
                  Dune::GeometryType::BasicType gt, SolverCategory::Category st = SolverCategory::sequential,
                  typename VBET=ISTLVectorBackend<1> >
         class P0Space
@@ -931,7 +1032,7 @@ namespace Dune {
         // how can we most easily specify a grid function
         // pass a function space as parameter
         template<typename FS, typename Functor>
-        class UserFunction 
+        class UserFunction
             : public GridFunctionBase<GridFunctionTraits<typename FS::GV, typename FS::NT,
                                                          1,FieldVector<typename FS::NT,1> >
                                       ,UserFunction<FS,Functor> >
@@ -940,14 +1041,14 @@ namespace Dune {
             typedef GridFunctionTraits<typename FS::GV, typename FS::NT,
                                        1,FieldVector<typename FS::NT,1> > Traits;
 
-            //! constructor 
+            //! constructor
             UserFunction (const FS& fs_, const Functor& f_)
                 : fs(fs_), f(f_)
             {}
 
             //! \copydoc GridFunctionBase::evaluate()
-            inline void evaluate (const typename Traits::ElementType& e, 
-                                  const typename Traits::DomainType& x, 
+            inline void evaluate (const typename Traits::ElementType& e,
+                                  const typename Traits::DomainType& x,
                                   typename Traits::RangeType& y) const
             {
                 typename Traits::DomainType x_ = e.geometry().global(x);
@@ -960,7 +1061,7 @@ namespace Dune {
             {
                 return fs.getGFS().gridView();
             }
-  
+
         private:
             const FS fs; // store a copy of the function space
             const Functor f;
@@ -1239,7 +1340,7 @@ namespace Dune {
             // types exported
             typedef Dune::PDELab::ISTLBackend_SEQ_CG_AMG_SSOR<typename ASS::GO> LS;
 
-            ISTLSolverBackend_CG_AMG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000, 
+            ISTLSolverBackend_CG_AMG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000,
                                            int verbose_=1, bool reuse_=false, bool usesuperlu_=true)
             {
                 lsp = shared_ptr<LS>(new LS(maxiter_,verbose_,reuse_,usesuperlu_));
@@ -1264,7 +1365,7 @@ namespace Dune {
             // types exported
             typedef Dune::PDELab::ISTLBackend_NOVLP_CG_AMG_SSOR<typename ASS::GO> LS;
 
-            ISTLSolverBackend_CG_AMG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000, 
+            ISTLSolverBackend_CG_AMG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000,
                                            int verbose_=1, bool reuse_=false, bool usesuperlu_=true)
             {
                 lsp = shared_ptr<LS>(new LS(fs.getGFS(),maxiter_,verbose_,reuse_,usesuperlu_));
@@ -1289,7 +1390,7 @@ namespace Dune {
             // types exported
             typedef Dune::PDELab::ISTLBackend_CG_AMG_SSOR<typename ASS::GO> LS;
 
-            ISTLSolverBackend_CG_AMG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000, 
+            ISTLSolverBackend_CG_AMG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000,
                                            int verbose_=1, bool reuse_=false, bool usesuperlu_=true)
             {
                 lsp = shared_ptr<LS>(new LS(fs.getGFS(),maxiter_,verbose_,reuse_,usesuperlu_));
@@ -1314,7 +1415,7 @@ namespace Dune {
             // types exported
             typedef ISTLBackend_SEQ_CG_SSOR LS;
 
-            ISTLSolverBackend_CG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000, 
+            ISTLSolverBackend_CG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000,
                                        int steps_=5, int verbose_=1)
             {
                 lsp = shared_ptr<LS>(new LS(maxiter_,verbose_));
@@ -1339,7 +1440,7 @@ namespace Dune {
             // types exported
             typedef ISTLBackend_NOVLP_CG_SSORk<typename ASS::GO> LS;
 
-            ISTLSolverBackend_CG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000, 
+            ISTLSolverBackend_CG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000,
                                        int steps_=5, int verbose_=1)
             {
                 lsp = shared_ptr<LS>(new LS(fs.getGFS(),maxiter_,steps_,verbose_));
@@ -1364,7 +1465,7 @@ namespace Dune {
             // types exported
             typedef ISTLBackend_OVLP_CG_SSORk<typename FS::GFS, typename FS::CC> LS;
 
-            ISTLSolverBackend_CG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000, 
+            ISTLSolverBackend_CG_SSOR (const FS& fs, const ASS& ass, unsigned maxiter_=5000,
                                        int steps_=5, int verbose_=1)
             {
                 lsp = shared_ptr<LS>(new LS(fs.getGFS(),fs.getCC(),maxiter_,steps_,verbose_));

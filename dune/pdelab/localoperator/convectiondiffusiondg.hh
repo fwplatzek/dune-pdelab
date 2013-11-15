@@ -19,8 +19,8 @@
 #include"convectiondiffusionparameter.hh"
 
 #ifndef USECACHE
-// #define USECACHE 1
-#define USECACHE 0
+#define USECACHE 1
+//#define USECACHE 0
 #endif
 
 /**
@@ -145,6 +145,7 @@ namespace Dune {
             lfsv.finiteElement().localBasis().evaluateFunction(it->position(),psi);
 #else
             const std::vector<RangeType>& phi = cache[order].evaluateFunction(it->position(),lfsu.finiteElement().localBasis());
+            const std::vector<RangeType>& psi = cache[order].evaluateFunction(it->position(),lfsv.finiteElement().localBasis());
 #endif
 
             // evaluate u
@@ -160,6 +161,7 @@ namespace Dune {
             lfsv.finiteElement().localBasis().evaluateJacobian(it->position(),js_v);
 #else
             const std::vector<JacobianType>& js = cache[order].evaluateJacobian(it->position(),lfsu.finiteElement().localBasis());
+            const std::vector<JacobianType>& js_v = cache[order].evaluateJacobian(it->position(),lfsv.finiteElement().localBasis());
 #endif
 
             // transform gradients of shape functions to real element
@@ -381,6 +383,8 @@ namespace Dune {
 #else
             const std::vector<RangeType>& phi_s = cache[order_s].evaluateFunction(iplocal_s,lfsu_s.finiteElement().localBasis());
             const std::vector<RangeType>& phi_n = cache[order_n].evaluateFunction(iplocal_n,lfsu_n.finiteElement().localBasis());
+            const std::vector<RangeType>& psi_s = cache[order_s].evaluateFunction(iplocal_s,lfsv_s.finiteElement().localBasis());
+            const std::vector<RangeType>& psi_n = cache[order_n].evaluateFunction(iplocal_n,lfsv_n.finiteElement().localBasis());
 #endif
 
             // evaluate u
@@ -404,6 +408,8 @@ namespace Dune {
 #else
             const std::vector<JacobianType>& gradphi_s = cache[order_s].evaluateJacobian(iplocal_s,lfsu_s.finiteElement().localBasis());
             const std::vector<JacobianType>& gradphi_n = cache[order_n].evaluateJacobian(iplocal_n,lfsu_n.finiteElement().localBasis());
+            const std::vector<JacobianType>& gradpsi_s = cache[order_s].evaluateJacobian(iplocal_s,lfsv_s.finiteElement().localBasis());
+            const std::vector<JacobianType>& gradpsi_n = cache[order_n].evaluateJacobian(iplocal_n,lfsv_n.finiteElement().localBasis());
 #endif
 
             // transform gradients of shape functions to real element
@@ -743,6 +749,7 @@ namespace Dune {
             lfsv_s.finiteElement().localBasis().evaluateFunction(iplocal_s,psi_s);
 #else
             const std::vector<RangeType>& phi_s = cache[order_s].evaluateFunction(iplocal_s,lfsu_s.finiteElement().localBasis());
+            const std::vector<RangeType>& psi_s = cache[order_s].evaluateFunction(iplocal_s,lfsv_s.finiteElement().localBasis());
 #endif
 
             // integration factor
@@ -801,6 +808,7 @@ namespace Dune {
             lfsv_s.finiteElement().localBasis().evaluateJacobian(iplocal_s,gradpsi_s);
 #else
             const std::vector<JacobianType>& gradphi_s = cache[order_s].evaluateJacobian(iplocal_s,lfsu_s.finiteElement().localBasis());
+            const std::vector<JacobianType>& gradpsi_s = cache[order_s].evaluateJacobian(iplocal_s,lfsv_s.finiteElement().localBasis());
 #endif
 
             // transform gradients of shape functions to real element

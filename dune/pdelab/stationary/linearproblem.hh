@@ -65,8 +65,8 @@ namespace Dune {
         watch.reset();
 
         m = 0.0;
-        Dune::PDELab::set_shifted_dofs(gos.localAssembler().trialConstraints(),0.0,*x); // set hanging node DOFs to zero
-        gos.localAssembler().backtransform(*x); // interpolate hanging nodes adjacent to Dirichlet nodes
+        // Dune::PDELab::set_shifted_dofs(gos.localAssembler().trialConstraints(),0.0,*x); // set hanging node DOFs to zero
+        // gos.localAssembler().backtransform(*x); // interpolate hanging nodes adjacent to Dirichlet nodes
         gos.jacobian(*x,m);
 
         timing = watch.elapsed();
@@ -101,9 +101,9 @@ namespace Dune {
           std::cout << timing << " s" << std::endl;
 
         // and update
-        Dune::PDELab::set_shifted_dofs(gos.localAssembler().trialConstraints(),0.0,*x); // set hanging node DOFs to zero
+        // Dune::PDELab::set_shifted_dofs(gos.localAssembler().trialConstraints(),0.0,*x); // set hanging node DOFs to zero
         *x -= z;
-        gos.localAssembler().backtransform(*x); // interpolate hanging nodes adjacent to Dirichlet nodes
+        // gos.localAssembler().backtransform(*x); // interpolate hanging nodes adjacent to Dirichlet nodes
       }
       
       const Dune::PDELab::LinearSolverResult<double>& ls_result() const{

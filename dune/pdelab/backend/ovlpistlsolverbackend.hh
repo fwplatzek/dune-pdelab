@@ -880,8 +880,8 @@ namespace Dune {
         Dune::SeqScalarProduct<VectorType> sp;
 #endif
         SmootherArgs smootherArgs;
-        smootherArgs.iterations = 1;
-        smootherArgs.relaxationFactor = 1;
+        smootherArgs.iterations = 2;
+        smootherArgs.relaxationFactor = 0.92;
         Criterion criterion(params);
         stats.tprepare=watch.elapsed();
         watch.reset();

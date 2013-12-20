@@ -1272,7 +1272,7 @@ namespace Dune {
        * \return time step size
        */
       template<typename Limiter>
-      T apply (T time, T dt, TrlV& xold, TrlV& xnew, const Limiter& limiter)
+      T apply (T time, T dt, TrlV& xold, TrlV& xnew, Limiter limiter)
       {
         // save formatting attributes
         ios_base_all_saver format_attribute_saver(std::cout);

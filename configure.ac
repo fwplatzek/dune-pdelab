@@ -22,12 +22,11 @@ DUNE_CHECK_ALL
 # implicitly set the Dune-flags everywhere
 AC_SUBST(AM_CPPFLAGS, '$(DUNE_CPPFLAGS) -I$(top_srcdir)')
 AC_SUBST(AM_LDFLAGS, $DUNE_LDFLAGS)
-AC_SUBST([LDADD], ['$(top_builddir)/lib/libdunepdelab.la $(DUNE_LIBS)'])
+AC_SUBST([LDADD], '$(top_builddir)/lib/libdunepdelab.la $(DUNE_LIBS)')
 
 AC_CONFIG_FILES([
   cmake/Makefile
   cmake/modules/Makefile
-  cmake/pkg/Makefile
   doc/doxygen/Doxyfile
   doc/doxygen/Makefile
   doc/Makefile
@@ -38,7 +37,6 @@ AC_CONFIG_FILES([
   dune/pdelab/backend/common/Makefile
   dune/pdelab/backend/dense/Makefile
   dune/pdelab/backend/istl/Makefile
-  dune/pdelab/benchmark/Makefile
   dune/pdelab/boilerplate/Makefile
   dune/pdelab/common/Makefile
   dune/pdelab/constraints/Makefile

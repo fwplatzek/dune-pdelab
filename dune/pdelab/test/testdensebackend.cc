@@ -7,22 +7,18 @@
 
 #include <iostream>
 #include <string>
-#include <dune/common/parallel/mpihelper.hh>
-#include <dune/common/exceptions.hh>
-#include <dune/common/fvector.hh>
-#include <dune/grid/yaspgrid.hh>
-#include<dune/istl/operators.hh>
-#include<dune/istl/solvers.hh>
-#include<dune/istl/preconditioners.hh>
 
-#include <dune/pdelab/finiteelementmap/q12dfem.hh>
-#include <dune/pdelab/finiteelementmap/q22dfem.hh>
-#include <dune/pdelab/finiteelementmap/q1fem.hh>
+#include <dune/common/parallel/mpihelper.hh>
+#include <dune/grid/yaspgrid.hh>
+#include <dune/istl/solvers.hh>
+#include <dune/istl/preconditioners.hh>
+#include <dune/istl/operators.hh>
+
+#include <dune/pdelab/finiteelementmap/qkfem.hh>
 #include <dune/pdelab/constraints/conforming.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #include <dune/pdelab/gridfunctionspace/gridfunctionspaceutilities.hh>
 #include <dune/pdelab/gridfunctionspace/interpolate.hh>
-#include <dune/pdelab/constraints/common/constraints.hh>
 #include <dune/pdelab/common/function.hh>
 #include <dune/pdelab/backend/dense.hh>
 #include <dune/pdelab/gridoperator/gridoperator.hh>
@@ -153,17 +149,20 @@ public:
 //===============================================================
 
 // generate a P1 function and output it
-template<typename GV, typename FEM, typename CON, int q>
-void poisson (const GV& gv, const FEM& fem, std::string filename)
+template<typename GV, typename FEM, typename CON>
+void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
 {
   // constants and types
-  typedef typename GV::Grid::ctype DF;
   typedef typename FEM::Traits::FiniteElementType::Traits::
     LocalBasisType::Traits::RangeFieldType R;
 
   // make function space
-  typedef Dune::PDELab::GridFunctionSpace<GV,FEM,CON,
-                                          Dune::PDELab::DenseVectorBackend<> > GFS;
+  typedef Dune::PDELab::GridFunctionSpace<
+    GV,
+    FEM,
+    CON,
+    Dune::PDELab::DenseVectorBackend<>
+    > GFS;
   GFS gfs(gv,fem);
   gfs.name("solution");
 
@@ -181,8 +180,8 @@ void poisson (const GV& gv, const FEM& fem, std::string filename)
   FType f(gv);
   typedef J<GV,R> JType;
   JType j(gv);
-  typedef Dune::PDELab::Poisson<FType,ConstraintsParameters,JType,q> LOP;
-  LOP lop(f,constraintsparameters,j);
+  typedef Dune::PDELab::Poisson<FType,ConstraintsParameters,JType> LOP;
+  LOP lop(f,constraintsparameters,j,q);
 
   // make grid operator
   typedef Dune::PDELab::GridOperator<GFS,GFS,LOP,
@@ -267,44 +266,44 @@ int main(int argc, char** argv)
     {
       // make grid
       Dune::FieldVector<double,2> L(1.0);
-      Dune::FieldVector<int,2> N(1);
-      Dune::FieldVector<bool,2> B(false);
+      Dune::array<int,2> N(Dune::fill_array<int,2>(1));
+      std::bitset<2> B(false);
       Dune::YaspGrid<2> grid(L,N,B,0);
       grid.globalRefine(3);
 
       // get view
       typedef Dune::YaspGrid<2>::LeafGridView GV;
-      const GV& gv=grid.leafView();
+      const GV& gv=grid.leafGridView();
 
       // make finite element map
       typedef GV::Grid::ctype DF;
-      typedef Dune::PDELab::Q12DLocalFiniteElementMap<DF,double> FEM;
-      FEM fem;
+      typedef Dune::PDELab::QkLocalFiniteElementMap<GV,DF,double,1> FEM;
+      FEM fem(gv);
 
       // solve problem
-      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,2>(gv,fem,"densebackend_yasp_Q1_2d");
+      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints>(gv,fem,"densebackend_yasp_Q1_2d",2);
     }
 
     // YaspGrid Q2 2D test
     {
       // make grid
       Dune::FieldVector<double,2> L(1.0);
-      Dune::FieldVector<int,2> N(1);
-      Dune::FieldVector<bool,2> B(false);
+      Dune::array<int,2> N(Dune::fill_array<int,2>(1));
+      std::bitset<2> B(false);
       Dune::YaspGrid<2> grid(L,N,B,0);
       grid.globalRefine(3);
 
       // get view
       typedef Dune::YaspGrid<2>::LeafGridView GV;
-      const GV& gv=grid.leafView();
+      const GV& gv=grid.leafGridView();
 
       // make finite element map
       typedef GV::Grid::ctype DF;
-      typedef Dune::PDELab::Q22DLocalFiniteElementMap<DF,double> FEM;
-      FEM fem;
+      typedef Dune::PDELab::QkLocalFiniteElementMap<GV,DF,double,2> FEM;
+      FEM fem(gv);
 
       // solve problem
-      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints,2>(gv,fem,"densebackend_yasp_Q2_2d");
+      poisson<GV,FEM,Dune::PDELab::ConformingDirichletConstraints>(gv,fem,"densebackend_yasp_Q2_2d",2);
     }
 
     // test passed

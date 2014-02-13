@@ -1,8 +1,8 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 
-#ifndef DUNE_PDELAB_CONSTRAINTS_HH
-#define DUNE_PDELAB_CONSTRAINTS_HH
+#ifndef DUNE_PDELAB_CONSTRAINTS_COMMON_CONSTRAINTS_HH
+#define DUNE_PDELAB_CONSTRAINTS_COMMON_CONSTRAINTS_HH
 
 #include<dune/common/exceptions.hh>
 #include<dune/common/float_cmp.hh>
@@ -728,7 +728,7 @@ namespace Dune {
       ConstraintsAssemblerHelper<NoConstraintsParameters, GFS, GV, CG, false>::assemble(p,gfs,gfs.gridView(),cg,verbose);
     }
 
-    //! construct constraints from given constraits parameter tree
+    //! construct constraints from given constraints parameter tree
     /**
      * \code
      * #include <dune/pdelab/constraints/common/constraints.hh>
@@ -1049,4 +1049,4 @@ namespace Dune {
   } // namespace PDELab
 } // namespace Dune
 
-#endif
+#endif // DUNE_PDELAB_CONSTRAINTS_COMMON_CONSTRAINTS_HH

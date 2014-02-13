@@ -18,6 +18,7 @@
 #include <dune/pdelab/common/unordered_map.hh>
 #include <dune/pdelab/common/unordered_set.hh>
 #include <dune/pdelab/common/borderindexidcache.hh>
+#include <dune/pdelab/common/globaldofindex.hh>
 #include <dune/pdelab/gridfunctionspace/entityindexcache.hh>
 
 namespace Dune {
@@ -116,6 +117,11 @@ namespace Dune {
         : _communication_cache(make_shared<CommunicationCache>(grid_operator))
         , _grid_view(grid_operator.testGridFunctionSpace().gridView())
       {}
+
+      void update(const GridOperator& grid_operator)
+      {
+        _communication_cache = make_shared<CommunicationCache>(grid_operator);
+      }
 
       class CommunicationCache
         : public BorderIndexIdCache<GFSV>
@@ -371,7 +377,7 @@ namespace Dune {
       private:
 
         const CommunicationCache& _communication_cache;
-        const GridView& _grid_view;
+        GridView _grid_view;
         const GFSU& _gfsu;
         const GFSV& _gfsv;
         Pattern& _pattern;
@@ -468,7 +474,7 @@ namespace Dune {
       private:
 
         const CommunicationCache& _communication_cache;
-        const GridView& _grid_view;
+        GridView _grid_view;
         const GFSU& _gfsu;
         const GFSV& _gfsv;
         Matrix& _matrix;
@@ -549,6 +555,9 @@ namespace Dune {
       {
         return *this;
       }
+
+      void update(const GridOperator& grid_operator)
+      {}
 
     };
 

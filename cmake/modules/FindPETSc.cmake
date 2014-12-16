@@ -295,3 +295,11 @@ include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (PETSc
   "PETSc could not be found.  Be sure to set PETSC_DIR and PETSC_ARCH."
   PETSC_INCLUDES PETSC_LIBRARIES PETSC_EXECUTABLE_RUNS)
+
+#add all petsc related flags to ALL_PKG_FLAGS, this must happen regardless of a target using add_dune_petsc_flags
+if(PETSC_FOUND)
+  foreach(dir ${PETSC_INCLUDES})
+    set_property(GLOBAL APPEND PROPERTY ALL_PKG_FLAGS "-I${dir}")
+  endforeach()
+  set_property(GLOBAL APPEND PROPERTY ALL_PKG_LIBS "${PETSC_LIBRARIES}")
+endif()

@@ -1,5 +1,6 @@
 install(FILES explicitonestep.hh
               implicitonestep.hh
+              multistepparameter.hh
               onestep.hh
               onestepparameter.hh
               pvdwriter.hh

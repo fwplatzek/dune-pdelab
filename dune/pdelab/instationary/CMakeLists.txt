@@ -1,5 +1,6 @@
 install(FILES explicitonestep.hh
               implicitonestep.hh
+              multistep.hh
               multistepparameter.hh
               onestep.hh
               onestepparameter.hh

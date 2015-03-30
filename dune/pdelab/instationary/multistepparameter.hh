@@ -4,6 +4,12 @@
 #ifndef DUNE_PDELAB_MULTISTEPPARAMETER_HH
 #define DUNE_PDELAB_MULTISTEPPARAMETER_HH
 
+/**
+ * \author Marian Piatkowski
+ * \file
+ * \brief Multi-step base class and multi-step parameters.
+ */
+
 #include <string>
 
 namespace Dune {
@@ -17,9 +23,8 @@ namespace Dune {
      * \f]
      *
      * \tparam value_type C++ type of the floating point parameters
-     * \tparam order_ Order of the ODE this scheme is appropriate for.
      */
-    template<typename value_type_, unsigned order_>
+    template<typename value_type_>
     class MultiStepParameterInterface
     {
     public:
@@ -35,9 +40,9 @@ namespace Dune {
        */
       virtual unsigned steps() const = 0;
 
-      /** \brief Temporal order of the problems this methods is appropriate for
+      /** \brief Return maximal temporal order of the problems this method is appropriate for.
        */
-      static const unsigned order = order_;
+      virtual unsigned order() const = 0;
 
       /** \brief Return \f$\alpha\f$ coefficients.
        * \note that r \f$\in 0,...,R\f$

@@ -10,6 +10,11 @@
  * \brief Implementation of the MultiStepGridOperator
  */
 
+//============================================
+// TODO
+// Implement member functions for explicit multi-step methods.
+//============================================
+
 #include <dune/pdelab/instationary/multistep.hh>
 #include <dune/pdelab/gridoperator/multistep/localassembler.hh>
 #include <dune/pdelab/gridoperator/common/gridoperatorutilities.hh>
@@ -19,10 +24,13 @@ namespace Dune {
   namespace PDELab {
 
     /** \brief Multi-step grid-operator to be used in MultiStepMethod
-     * \tparam GO0 stationary grid-operator.
-     * \tparam GO1 instationary grid-operator of temporal order one (typically mass matrix involved).
+     * \tparam GO0 Stationary grid-operator.
+     * \tparam GO1 Instationary grid-operator of temporal order one (typically mass matrix involved).
+     * \tparam implicit Determines whether method is implicit or not.
      */
-    template<typename GO0, typename GO1>
+
+    // TODO higher temporal order problems with more than two grid-operators
+    template<typename GO0, typename GO1, bool implicit = true>
     class MultiStepGridOperator
     {
     public :
@@ -35,6 +43,7 @@ namespace Dune {
 
       //! The local assembler types of the subordinate grid operators
       //! @{
+      // TODO higher temporal order problems with more than two grid-operators
       typedef typename GO0::Traits::LocalAssembler LocalAssemblerDT0;
       typedef typename GO1::Traits::LocalAssembler LocalAssemblerDT1;
       //! @}
@@ -77,18 +86,20 @@ namespace Dune {
       typedef typename LocalAssembler::MultiStepParameters MultiStepParameters;
 
       /** constructor for non trivial constraints
+       * \param method_ Parameter object. This chooses the actual method used.
        * \param go0_ stationary gridoperator object
        * \param go1_ instationary gridoperator object (typically mass matrix involved)
        */
-      MultiStepGridOperator(GO0 & go0_, GO1 & go1_, bool implicit_ = true)
-        : global_assembler(go0_.assembler()),
-          go0(go0_), go1(go1_),
-          la0(go0_.localAssembler()), la1(go1_.localAssembler()),
-          const_residual( go0_.testGridFunctionSpace() ),
-          local_assembler(la0,la1, const_residual) ,
-          implicit(implicit_)
+      MultiStepGridOperator(const MultiStepParameters& method_, GO0 & go0_, GO1 & go1_) :
+        method(&method_) ,
+        global_assembler(go0_.assembler()) ,
+        go0(go0_), go1(go1_) ,
+        la0(go0_.localAssembler()), la1(go1_.localAssembler()) ,
+        const_residual( go0_.testGridFunctionSpace() ) ,
+        local_assembler(la0,la1, const_residual)
       {
         GO0::setupGridOperators(Dune::tie(go0_,go1_));
+        local_assembler.setMethod(method_);
         if(!implicit)
           local_assembler.setDTAssemblingMode(LocalAssembler::DoNotAssembleDT);
       }
@@ -133,7 +144,7 @@ namespace Dune {
         return trialGridFunctionSpace().globalSize();
       }
 
-      /** \brief get dimension of test function test
+      /** \brief get dimension of test function space
        */
       typename Traits::TestGridFunctionSpace::Traits::SizeType globalSizeV () const
       {
@@ -158,16 +169,98 @@ namespace Dune {
         }
       }
 
-      //============================================
-      // TODO
-      // implement preStep, residual, jacobian,
-      // interpolate, setMethod, postStep here
-      //============================================
+      /** \brief Prepare for doing a step.
+       */
+      template<typename OldValues>
+      void preStep(Real time_, Real dt_, const OldValues& oldValues)
+      {
+        // use existing methods and set the number of stages to 1
+        local_assembler.preStep(time_, dt_, 1);
+        // assemble constant part of residual
+        typedef typename LocalAssembler::LocalPreStepAssemblerEngine PreStepEngine;
+        PreStepEngine & prestep_engine = local_assembler.localPreStepAssemblerEngine(oldValues);
+        global_assembler.assemble(prestep_engine);
+      }
+
+      /** \brief Assemble residual.
+       */
+      void residual(const Domain& x, Range& r) const {
+        if(!implicit)
+          DUNE_THROW(Dune::Exception,"This function should not be called in explicit mode");
+
+        typedef typename LocalAssembler::LocalResidualAssemblerEngine ResidualEngine;
+        ResidualEngine & residual_engine = local_assembler.localResidualAssemblerEngine(r,x);
+        global_assembler.assemble(residual_engine);
+      }
+
+      /** \brief Assemble jacobian.
+       */
+      void jacobian(const Domain& x, Jacobian& a) const {
+        if(!implicit)
+          DUNE_THROW(Dune::Exception,"This function should not be called in explicit mode");
+
+        typedef typename LocalAssembler::LocalJacobianAssemblerEngine JacobianEngine;
+        JacobianEngine & jacobian_engine = local_assembler.localJacobianAssemblerEngine(a,x);
+        global_assembler.assemble(jacobian_engine);
+      }
+
+      /** \brief Interpolate constrained values from a given function.
+       */
+      template<typename X, typename F>
+      void interpolate(const X& xold, F& f, X& x) const
+      {
+        // set time in boundary value function
+        //======================
+        // TODO
+        // provide function "timeAfterStep" in LocalAssembler
+        // instead of "timeAtStage"
+        //======================
+        f.setTime(local_assembler.timeAfterStep());
+
+        go0.localAssembler().setTime(local_assembler.timeAfterStep());
+
+        // interpolate
+        go0.interpolate(xold,f,x);
+
+        // copy non-constrained dofs from old time step
+        Dune::PDELab::copy_nonconstrained_dofs(local_assembler.trialConstraints(), xold, x);
+      }
+
+      /** \brief Set time stepping method.
+       */
+      void setMethod(const MultiStepParameters& method_)
+      {
+        method = &method_;
+        local_assembler.setMethod(method_);
+      }
+
+      /** \brief To be called after step is completed.
+       */
+      void postStep()
+      {
+        la0.postStage();
+        la1.postStage();
+        la0.postStep();
+        la1.postStep();
+      }
+
+      void update()
+      {
+        go0.update();
+        go1.update();
+        const_residual = Range(go0.testGridFunctionSpace());
+      }
+
+      const typename Traits::MatrixBackend& matrixBackend() const
+      {
+        return go0.matrixBackend();
+      }
 
     private :
       Assembler & global_assembler;
       GO0 & go0;
       GO1 & go1;
+      const MultiStepParameters *method;
       LocalAssemblerDT0 & la0;
       LocalAssemblerDT1 & la1;
       Range const_residual;

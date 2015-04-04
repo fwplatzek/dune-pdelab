@@ -210,11 +210,6 @@ namespace Dune {
       void interpolate(const X& xold, F& f, X& x) const
       {
         // set time in boundary value function
-        //======================
-        // TODO
-        // provide function "timeAfterStep" in LocalAssembler
-        // instead of "timeAtStage"
-        //======================
         f.setTime(local_assembler.timeAfterStep());
 
         go0.localAssembler().setTime(local_assembler.timeAfterStep());

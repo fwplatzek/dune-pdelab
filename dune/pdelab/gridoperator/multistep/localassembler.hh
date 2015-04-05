@@ -174,14 +174,6 @@ namespace Dune {
         // TODO add here code
       }
 
-      //! Returns a reference to the requested engine.
-      //! This engine is completely configured and ready to use.
-      LocalExplicitPatternAssemblerEngine & localExplicitPatternAssemblerEngine
-      (typename Traits::MatrixPattern & p)
-      {
-        // TODO add here code
-      }
-
       //============================================
       // TODO
       // Add engines for the explicit case.

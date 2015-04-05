@@ -162,11 +162,11 @@ namespace Dune {
           typedef typename LocalAssembler::LocalPatternAssemblerEngine PatternEngine;
           PatternEngine & pattern_engine = local_assembler.localPatternAssemblerEngine(p);
           global_assembler.assemble(pattern_engine);
-        } else {
-          typedef typename LocalAssembler::LocalExplicitPatternAssemblerEngine PatternEngine;
-          PatternEngine & pattern_engine = local_assembler.localExplicitPatternAssemblerEngine(p);
-          global_assembler.assemble(pattern_engine);
         }
+        //============================================
+        // TODO
+        // pattern in explicit case in else-condition
+        //============================================
       }
 
       /** \brief Prepare for doing a step.

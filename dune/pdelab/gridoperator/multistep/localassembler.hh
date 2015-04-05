@@ -11,7 +11,7 @@
  */
 
 #include <dune/typetree/typetree.hh>
-#include <dune/pdelab/gridoperator/onestep/patternengine.hh> // we can use this from the one-step methods
+#include <dune/pdelab/gridoperator/multistep/patternengine.hh>
 #include <dune/pdelab/instationary/multistepparameter.hh>
 #include <dune/pdelab/gridoperator/common/assemblerutilities.hh>
 #include <dune/pdelab/gridfunctionspace/lfsindexcache.hh>
@@ -46,7 +46,7 @@ namespace Dune {
        typename GO::Traits::TestGridFunctionSpaceConstraints> Base;
 
       //! The local assembler engines
-      typedef OneStepLocalPatternAssemblerEngine<MultiStepLocalAssembler> LocalPatternAssemblerEngine; // we can use this from the one-step method
+      typedef MultiStepLocalPatternAssemblerEngine<MultiStepLocalAssembler> LocalPatternAssemblerEngine;
       //======================
       // TODO
       // take and adapt code from onestep/localassembler.hh
@@ -57,7 +57,7 @@ namespace Dune {
       // TODO
       // take and adapt code from onestep/localassembler.hh
       //======================
-      friend class OneStepLocalPatternAssemblerEngine<MultiStepLocalAssembler>; // we can use this from the one-step method
+      friend class MultiStepLocalPatternAssemblerEngine<MultiStepLocalAssembler>;
 
       void static_checks() {
         static_assert((is_same<typename LA0::Traits::Jacobian::Pattern,

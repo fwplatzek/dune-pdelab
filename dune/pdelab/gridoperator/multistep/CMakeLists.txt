@@ -2,6 +2,7 @@ set(gridoperatormultistepdir ${CMAKE_INSTALL_INCLUDEDIR}/dune/pdelab/gridoperato
 
 set(gridoperatormultistep_HEADERS
   localassembler.hh
+  enginebase.hh
   )
 
 install(FILES ${gridoperatormultistep_HEADERS} DESTINATION ${gridoperatormultistepdir})

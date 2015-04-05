@@ -10,6 +10,13 @@
  * \brief Implementation of the IMEXOneStepLocalAssembler
  */
 
+#include <dune/pdelab/gridoperator/common/assemblerutilities.hh>
+#include <dune/pdelab/gridoperator/imexonestep/patternengine.hh>
+#include <dune/pdelab/gridoperator/imexonestep/prestageengine.hh>
+#include <dune/pdelab/gridoperator/imexonestep/residualengine.hh>
+#include <dune/pdelab/gridoperator/imexonestep/jacobianengine.hh>
+#include <dune/pdelab/instationary/imexonestepparameter.hh>
+
 namespace Dune {
   namespace PDELab {
 
@@ -253,3 +260,4 @@ namespace Dune {
 
   } // end namespace PDELab
 } // end namespace Dune
+#endif

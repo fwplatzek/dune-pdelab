@@ -10,6 +10,9 @@
  * \brief Implementation of the IMEXOneStepMethod
  */
 
+#include <dune/pdelab/instationary/onestep.hh>
+#include <dune/pdelab/instationary/imexonestepparameter.hh>
+
 namespace Dune {
   namespace PDELab {
 

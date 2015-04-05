@@ -10,6 +10,10 @@
  * \brief Implementation of the IMEXOneStepLocalPreStageAssemblerEngine
  */
 
+#include <dune/pdelab/gridoperator/imexonestep/enginebase.hh>
+#include <cmath>
+#include <vector>
+
 namespace Dune {
   namespace PDELab {
 
@@ -154,7 +158,7 @@ namespace Dune {
       //! @{
       void preAssembly()
       {
-        std::cout << "local preassembly" << std::endl;
+        // std::cout << "local preassembly" << std::endl;
         lae0->preAssembly();
         lae1->preAssembly();
         lae2->preAssembly();

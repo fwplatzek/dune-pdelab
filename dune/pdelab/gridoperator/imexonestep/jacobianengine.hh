@@ -10,6 +10,9 @@
  * \brief Implementation of the IMEXOneStepLocalJacobianAssemblerEngine
  */
 
+#include <dune/pdelab/gridoperator/imexonestep/enginebase.hh>
+#include <cmath>
+
 namespace Dune {
   namespace PDELab {
 

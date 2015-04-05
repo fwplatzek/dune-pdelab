@@ -10,6 +10,9 @@
  * \brief Implementation of the local pattern assembler engine
  */
 
+#include <dune/pdelab/gridoperator/common/assemblerutilities.hh>
+#include <dune/pdelab/gridoperator/imexonestep/enginebase.hh>
+
 namespace Dune {
   namespace PDELab {
 

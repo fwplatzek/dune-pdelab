@@ -10,6 +10,11 @@
  * \brief Implementation of the IMEXOneStepGridOperator
  */
 
+#include <dune/pdelab/instationary/imexonestep.hh>
+#include <dune/pdelab/gridoperator/imexonestep/localassembler.hh>
+#include <dune/pdelab/gridoperator/common/gridoperatorutilities.hh>
+#include <dune/pdelab/constraints/common/constraints.hh>
+
 namespace Dune {
   namespace PDELab {
 

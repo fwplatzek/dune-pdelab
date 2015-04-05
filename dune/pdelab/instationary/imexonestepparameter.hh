@@ -10,6 +10,11 @@
  * \brief Implementation of the IMEX time stepping parameter classes
  */
 
+#include <string>
+#include <dune/common/exceptions.hh>
+#include <dune/common/fmatrix.hh>
+#include <dune/common/fvector.hh>
+
 namespace Dune {
   namespace PDELab {
 

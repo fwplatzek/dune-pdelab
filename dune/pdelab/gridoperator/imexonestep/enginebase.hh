@@ -29,13 +29,6 @@ namespace Dune {
 
       typedef typename LAE0::Traits Traits;
 
-      // Constraints caching policy
-      static const bool needs_constraints_caching =
-        LAE0::needs_constraints_caching ||
-        LAE1::needs_constraints_caching ||
-        LAE2::needs_constraints_caching ;
-
-
       template<typename TrialConstraintsContainer, typename TestConstraintsContainer>
       bool needsConstraintsCaching(const TrialConstraintsContainer& cu, const TestConstraintsContainer& cv) const
       {

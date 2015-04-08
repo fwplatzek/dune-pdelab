@@ -6,6 +6,7 @@ set(gridoperatormultistep_HEADERS
   patternengine.hh
   prestepengine.hh
   residualengine.hh
+  jacobianengine.hh
   )
 
 install(FILES ${gridoperatormultistep_HEADERS} DESTINATION ${gridoperatormultistepdir})

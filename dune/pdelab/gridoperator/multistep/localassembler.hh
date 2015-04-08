@@ -88,7 +88,7 @@ namespace Dune {
         Base(la0_.trialConstraints(), la0_.testConstraints()) ,
         la0(la0_), la1(la1_) ,
         const_residual(const_residual_) ,
-        time(0.0), dt_mode(MultiplyOperator0ByDT)
+        time(0.0), dt_mode(MultiplyOperator0ByDT), steps(0)
         // TODO add engines here in constructor
       {
         static_checks();
@@ -121,6 +121,8 @@ namespace Dune {
       //! Set the multi-step method parameters
       void setMethod(const MultiStepParameters & method_) {
         msp_method = &method_;
+        // NOTE Set number of steps only here, maybe we need to do that somewhere else, too.
+        steps = msp_method->steps();
       }
 
       enum DTAssemblingMode { DivideOperator1ByDT, MultiplyOperator0ByDT };
@@ -188,6 +190,7 @@ namespace Dune {
       Real dt;
       Real dt_factor_0, dt_factor_1;
       DTAssemblingMode dt_mode;
+      int steps;
       //============================================
       // TODO
       // Add engines here as private members.

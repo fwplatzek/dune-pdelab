@@ -100,8 +100,6 @@ namespace Dune {
       {
         GO0::setupGridOperators(Dune::tie(go0_,go1_));
         local_assembler.setMethod(method_);
-        if(!implicit)
-          local_assembler.setDTAssemblingMode(LocalAssembler::DoNotAssembleDT);
       }
 
       /** \brief divides instationary term, i.e. mass term, by the time step size

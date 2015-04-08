@@ -28,15 +28,15 @@ namespace Dune {
       public MultiStepLocalAssemblerEngineBase<
       MSLA,
       // TODO higher order problems with more than two grid-operators
-      typename MSLA::LocalAssemblerDT0::LocalPatternAssemblerEngine,
-      typename MSLA::LocalAssemblerDT1::LocalPatternAssemblerEngine
+      typename MSLA::LocalAssemblerDT0::LocalResidualAssemblerEngine,
+      typename MSLA::LocalAssemblerDT1::LocalResidualAssemblerEngine
       >
     {
 
       typedef MultiStepLocalAssemblerEngineBase<
         MSLA,
-        typename MSLA::LocalAssemblerDT0::LocalPatternAssemblerEngine,
-        typename MSLA::LocalAssemblerDT1::LocalPatternAssemblerEngine
+        typename MSLA::LocalAssemblerDT0::LocalResidualAssemblerEngine,
+        typename MSLA::LocalAssemblerDT1::LocalResidualAssemblerEngine
         > BaseT;
 
       // TODO higher order problems with more than two grid-operators
@@ -158,7 +158,7 @@ namespace Dune {
 
         // extract coefficients of the time step scheme
         alpha_R = la.msp_method->alpha(la.steps);
-        beta_R = la.ms_method->beta(la.steps);
+        beta_R = la.msp_method->beta(la.steps);
         implicit = std::abs(beta_R) > 1e-6;
 
         setWeights();

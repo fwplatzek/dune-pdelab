@@ -191,7 +191,7 @@ namespace Dune {
       typename Traits::Residual & const_residual;
       Real time;
       Real dt;
-      Real dt_factor_0, dt_factor_1;
+      Real dt_factor0, dt_factor1;
       DTAssemblingMode dt_mode;
       int steps;
       //============================================

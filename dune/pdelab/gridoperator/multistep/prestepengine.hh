@@ -29,15 +29,15 @@ namespace Dune {
       public MultiStepLocalAssemblerEngineBase<
       MSLA,
       // TODO higher order problems with more than two grid-operators
-      typename MSLA::LocalAssemblerDT0::LocalPatternAssemblerEngine,
-      typename MSLA::LocalAssemblerDT1::LocalPatternAssemblerEngine
+      typename MSLA::LocalAssemblerDT0::LocalResidualAssemblerEngine,
+      typename MSLA::LocalAssemblerDT1::LocalResidualAssemblerEngine
       >
     {
 
       typedef MultiStepLocalAssemblerEngineBase<
         MSLA,
-        typename MSLA::LocalAssemblerDT0::LocalPatternAssemblerEngine,
-        typename MSLA::LocalAssemblerDT1::LocalPatternAssemblerEngine
+        typename MSLA::LocalAssemblerDT0::LocalResidualAssemblerEngine,
+        typename MSLA::LocalAssemblerDT1::LocalResidualAssemblerEngine
         > BaseT;
 
       // TODO higher order problems with more than two grid-operators

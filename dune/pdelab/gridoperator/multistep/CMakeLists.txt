@@ -4,6 +4,7 @@ set(gridoperatormultistep_HEADERS
   localassembler.hh
   enginebase.hh
   patternengine.hh
+  prestepengine.hh
   )
 
 install(FILES ${gridoperatormultistep_HEADERS} DESTINATION ${gridoperatormultistepdir})

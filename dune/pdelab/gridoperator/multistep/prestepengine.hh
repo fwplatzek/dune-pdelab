@@ -11,6 +11,8 @@
  */
 
 #include <dune/pdelab/gridoperator/multistep/enginebase.hh>
+#include <vector>
+#include <cmath>
 
 namespace Dune {
   namespace PDELab {
@@ -143,9 +145,29 @@ namespace Dune {
       //! @{
       void preAssembly()
       {
-        //============================================
-        // TODO add code here
-        //============================================
+        lae0->preAssembly();
+        lae1->preAssembly();
+
+        *const_residual_0 = 0.0;
+        *const_residual_1 = 0.0;
+
+        // extract coefficients of the time step scheme
+        // for the constant part of the residual
+        // therefore the size is equal to la.steps
+        alpha.resize(la.steps); // TODO Do we have to resize here really?
+        beta.resize(la.steps); // TODO Do we have to resize here really?
+        do0.resize(la.steps); // TODO Do we have to resize here really?
+        do1.resize(la.steps); // TODO Do we have to resize here really?
+        for(int i=0; i<la.steps; ++i) {
+          alpha[i] = la.msp_method->alpha(i);
+          beta[i] = la.msp_method->beta(i);
+          do0[i] = (std::abs(beta[i]) > 1e-6);
+          do1[i] = (std::abs(alpha[i]) > 1e-6);
+        }
+
+        // prepare local operators, set the stage to 1
+        la.la0.preStage(la.timeAfterStep(),1);
+        la.la1.preStage(la.timeAfterStep(),1);
       }
 
       template<typename GFSU, typename GFSV>
@@ -156,18 +178,408 @@ namespace Dune {
       }
       //! @}
 
-      //============================================
-      // TODO add assembling methods
-      // Add all types of functions from the file
-      // "gridoperator/onestep/prestageengine.hh", line 176
-      //============================================
       //! @ Assembling methods
       //! @{
+      template<typename EG, typename LFSU, typename LFSV>
+      void assembleUVVolume(const EG & eg, const LFSU & lfsu, const LFSV & lfsv)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
 
-      //============================================
-      // TODO add private members of this class
-      //============================================
+          lae0->setSolution(*((*solutions)[r]));
+          lae1->setSolution(*((*solutions)[r]));
+
+          lae0->loadCoefficientsLFSUInside(lfsu);
+          lae1->loadCoefficientsLFSUInside(lfsu);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleUVVolume(eg,lfsu,lfsv);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleUVVolume(eg,lfsu,lfsv);
+          }
+        }
+      }
+
+      template<typename EG, typename LFSV>
+      void assembleVVolume(const EG & eg, const LFSV & lfsv)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleVVolume(eg,lfsv);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleVVolume(eg,lfsv);
+          }
+        }
+      }
+
+      template<typename IG, typename LFSU_S, typename LFSV_S, typename LFSU_N, typename LFSV_N>
+      void assembleUVSkeleton(const IG & ig, const LFSU_S & lfsu_s, const LFSV_S & lfsv_s,
+                              const LFSU_N & lfsu_n, const LFSV_N & lfsv_n)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          lae0->setSolution(*((*solutions)[r]));
+          lae1->setSolution(*((*solutions)[r]));
+
+          lae0->loadCoefficientsLFSUInside(lfsu_s);
+          lae1->loadCoefficientsLFSUInside(lfsu_s);
+          lae0->loadCoefficientsLFSUOutside(lfsu_n);
+          lae1->loadCoefficientsLFSUOutside(lfsu_n);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleUVSkeleton(ig,lfsu_s,lfsv_s,lfsu_n,lfsv_n);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleUVSkeleton(ig,lfsu_s,lfsv_s,lfsu_n,lfsv_n);
+          }
+        }
+      }
+
+      template<typename IG, typename LFSV_S, typename LFSV_N>
+      void assembleVSkeleton(const IG & ig, const LFSV_S & lfsv_s, const LFSV_N & lfsv_n)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleVSkeleton(ig,lfsv_s,lfsv_n);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleVSkeleton(ig,lfsv_s,lfsv_n);
+          }
+        }
+      }
+
+      template<typename IG, typename LFSU_S, typename LFSV_S>
+      void assembleUVBoundary(const IG & ig, const LFSU_S & lfsu_s, const LFSV_S & lfsv_s)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          lae0->setSolution(*((*solutions)[r]));
+          lae1->setSolution(*((*solutions)[r]));
+
+          lae0->loadCoefficientsLFSUInside(lfsu_s);
+          lae1->loadCoefficientsLFSUInside(lfsu_s);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleUVBoundary(ig,lfsu_s,lfsv_s);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleUVBoundary(ig,lfsu_s,lfsv_s);
+          }
+        }
+      }
+
+      template<typename IG, typename LFSV_S>
+      void assembleVBoundary(const IG & ig, const LFSV_S & lfsv_s)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleVBoundary(ig,lfsv_s);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleVBoundary(ig,lfsv_s);
+          }
+        }
+      }
+
+      template<typename IG, typename LFSU_S, typename LFSV_S>
+      void assembleUVProcessor(const IG & ig, const LFSU_S & lfsu_s, const LFSV_S & lfsv_s)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          lae0->setSolution(*((*solutions)[r]));
+          lae1->setSolution(*((*solutions)[r]));
+
+          lae0->loadCoefficientsLFSUInside(lfsu_s);
+          lae1->loadCoefficientsLFSUInside(lfsu_s);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleUVProcessor(ig,lfsu_s,lfsv_s);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleUVProcessor(ig,lfsu_s,lfsv_s);
+          }
+        }
+      }
+
+      template<typename IG, typename LFSV_S>
+      void assembleVProcessor(const IG & ig, const LFSV_S & lfsv_s)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleVProcessor(ig,lfsv_s);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleVProcessor(ig,lfsv_s);
+          }
+        }
+      }
+
+      template<typename IG, typename LFSU_S, typename LFSV_S, typename LFSU_N, typename LFSV_N,
+               typename LFSU_C, typename LFSV_C>
+      void assembleUVEnrichedCoupling(const IG & ig,
+                                             const LFSU_S & lfsu_s, const LFSV_S & lfsv_s,
+                                             const LFSU_N & lfsu_n, const LFSV_N & lfsv_n,
+                                             const LFSU_C & lfsu_c, const LFSV_C & lfsv_c)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          lae0->setSolution(*((*solutions)[r]));
+          lae1->setSolution(*((*solutions)[r]));
+
+          lae0->loadCoefficientsLFSUInside(lfsu_s);
+          lae1->loadCoefficientsLFSUInside(lfsu_s);
+
+          lae0->loadCoefficientsLFSUOutside(lfsu_n);
+          lae1->loadCoefficientsLFSUOutside(lfsu_n);
+
+          lae0->loadCoefficientsLFSUCoupling(lfsu_c);
+          lae1->loadCoefficientsLFSUCoupling(lfsu_c);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleUVEnrichedCoupling(ig,lfsu_s,lfsv_s,lfsu_n,lfsv_n,lfsu_c,lfsv_c);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleUVEnrichedCoupling(ig,lfsu_s,lfsv_s,lfsu_n,lfsv_n,lfsu_c,lfsv_c);
+          }
+        }
+      }
+
+      template<typename IG, typename LFSV_S, typename LFSV_N, typename LFSV_C>
+      void assembleVEnrichedCoupling(const IG & ig,
+                                            const LFSV_S & lfsv_s,
+                                            const LFSV_N & lfsv_n,
+                                            const LFSV_C & lfsv_c)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleVEnrichedCoupling(ig,lfsv_s,lfsv_n,lfsv_c);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleVEnrichedCoupling(ig,lfsv_s,lfsv_n,lfsv_c);
+          }
+        }
+      }
+
+      template<typename EG, typename LFSU, typename LFSV>
+      void assembleUVVolumePostSkeleton(const EG & eg, const LFSU & lfsu, const LFSV & lfsv)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          lae0->setSolution(*((*solutions)[r]));
+          lae1->setSolution(*((*solutions)[r]));
+
+          lae0->loadCoefficientsLFSUInside(lfsu);
+          lae1->loadCoefficientsLFSUInside(lfsu);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleUVVolumePostSkeleton(eg,lfsu,lfsv);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleUVVolumePostSkeleton(eg,lfsu,lfsv);
+          }
+        }
+      }
+
+      template<typename EG, typename LFSV>
+      void assembleVVolumePostSkeleton(const EG & eg, const LFSV & lfsv)
+      {
+        for(int r=0; r<la.steps; ++r) {
+          // reset the time in the local assembler
+          // TODO pay attention for non-uniform time steps
+          la.la0.setTime(la.time+(1-la.steps+r)*la.dt);
+          la.la1.setTime(la.time+(1-la.steps+r)*la.dt);
+
+          // check if coefficient in stationary part is zero ...
+          // if so, skip the assembling
+          if(do0[r]) {
+            // TODO higher order problems needs power of dt_factor0
+            la.la0.setWeight(beta[r]*la.dt_factor0);
+            lae0->assembleVVolumePostSkeleton(eg,lfsv);
+          }
+
+          // check if coefficient in instationary part is zero ...
+          // if so, skip the assembling
+          if(do1[r]) {
+            // TODO higher order problems needs power of dt_factor1
+            la.la1.setWeight(alpha[r]*la.dt_factor1);
+            lae1->assembleVVolumePostSkeleton(eg,lfsv);
+          }
+        }
+      }
+      //! @}
+
     private :
+      //! Default value indicating an invalid residual pointer
+      Residual * const invalid_residual;
+
+      //! Default value indicating an invalid solution pointer
+      Solutions * const invalid_solutions;
+
+      //! Pointer to the current constant part residual vector in
+      //! which to assemble the residual corresponding to the operator
+      //! representing the time derivative of order zero and one.
+      //! @{
+      Residual * const_residual_0;
+      Residual * const_residual_1;
+      //! @}
+
+      //! Pointer to the current residual vector in which to assemble
+      const Solutions * solutions;
+
+      //! Coefficients of time stepping scheme
+      std::vector<Real> alpha;
+      std::vector<Real> beta;
+      std::vector<bool> do0;
+      std::vector<bool> do1;
     }; // end class MultiStepLocalPreStepAssemblerEngine
 
   } // end namespace PDELab

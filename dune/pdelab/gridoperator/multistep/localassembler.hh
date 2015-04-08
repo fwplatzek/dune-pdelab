@@ -12,6 +12,7 @@
 
 #include <dune/typetree/typetree.hh>
 #include <dune/pdelab/gridoperator/multistep/patternengine.hh>
+#include <dune/pdelab/gridoperator/multistep/prestepengine.hh>
 #include <dune/pdelab/instationary/multistepparameter.hh>
 #include <dune/pdelab/gridoperator/common/assemblerutilities.hh>
 #include <dune/pdelab/gridfunctionspace/lfsindexcache.hh>
@@ -47,6 +48,7 @@ namespace Dune {
 
       //! The local assembler engines
       typedef MultiStepLocalPatternAssemblerEngine<MultiStepLocalAssembler> LocalPatternAssemblerEngine;
+      typedef MultiStepLocalPreStepAssemblerEngine<MultiStepLocalAssembler> LocalPreStepAssemblerEngine;
       //======================
       // TODO
       // take and adapt code from onestep/localassembler.hh
@@ -58,6 +60,7 @@ namespace Dune {
       // take and adapt code from onestep/localassembler.hh
       //======================
       friend class MultiStepLocalPatternAssemblerEngine<MultiStepLocalAssembler>;
+      friend class MultiStepLocalPreStepAssemblerEngine<MultiStepLocalAssembler>;
 
       void static_checks() {
         static_assert((is_same<typename LA0::Traits::Jacobian::Pattern,

@@ -5,6 +5,7 @@ set(gridoperatormultistep_HEADERS
   enginebase.hh
   patternengine.hh
   prestepengine.hh
+  residualengine.hh
   )
 
 install(FILES ${gridoperatormultistep_HEADERS} DESTINATION ${gridoperatormultistepdir})

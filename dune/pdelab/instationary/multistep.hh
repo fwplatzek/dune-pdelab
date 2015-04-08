@@ -138,8 +138,11 @@ namespace Dune {
        *
        * \param[in]  time start of time step.
        * \param[in]  dt time step size.
-       * \param[in]  oldValues Vector of pointers to the old values.
-         TODO how is the ordering in this vector w.r.t. time?
+       * \param[in]  oldValues Vector of pointers to the old values. Must support
+                     the expression *oldValues[i] such that *oldValues[0]
+                     yields to a reference of the old value which lies in the past the most
+                     and *oldValues[sizeof(oldValues)-1] yields to a reference
+                     of the current solution.
        * \param[in,out] xnew new value at the end of the time step.
        */
       template<class OldValues>
@@ -225,8 +228,11 @@ namespace Dune {
        *
        * \param[in]  time start of time step.
        * \param[in]  dt suggested time step size.
-       * \param[in]  oldValues Vector of pointers to the old values.
-         TODO how is the ordering in this vector w.r.t. time?
+       * \param[in]  oldValues Vector of pointers to the old values. Must support
+                     the expression *oldValues[i] such that *oldValues[0]
+                     yields to a reference of the old value which lies in the past the most
+                     and *oldValues[sizeof(oldValues)-1] yields to a reference
+                     of the current solution.
        * \param[in]  f function to interpolate boundary conditions from.
        * \param[in,out] xnew new value at the end of the time step.
        *
@@ -261,13 +267,10 @@ namespace Dune {
 
         // set boundary conditions and initial value
         //======================
-        // TODO
-        // Here the old value, which is latest in time, is needed.
-        // The final version is therefore postponed until
-        // the order in the vector of pointers becomes clear.
-        // Then uncomment the line below.
+        // NOTE Which one is more correct?
         //======================
-        // igos.interpolate(*oldValues[0],f,xnew);
+        // igos.interpolate(*oldValues.back(),f,xnew);
+        igos.interpolate(*(oldValues.back()),f,xnew);
 
         // solve stage
         try {

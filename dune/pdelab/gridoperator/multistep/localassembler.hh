@@ -91,8 +91,8 @@ namespace Dune {
         Base(la0_.trialConstraints(), la0_.testConstraints()) ,
         la0(la0_), la1(la1_) ,
         const_residual(const_residual_) ,
-        time(0.0), dt_mode(MultiplyOperator0ByDT), steps(0)
-        // TODO add engines here in constructor
+        time(0.0), dt_mode(MultiplyOperator0ByDT), steps(0) ,
+        pattern_engine(*this), prestep_engine(*this), residual_engine(*this), jacobian_engine(*this)
       {
         static_checks();
       }
@@ -160,7 +160,9 @@ namespace Dune {
       LocalPreStepAssemblerEngine & localPreStepAssemblerEngine
       (const std::vector<typename Traits::Solution*>& x)
       {
-        // TODO add here code
+        prestep_engine.setSolutions(x);
+        prestep_engine.setConstResidual(const_residual);
+        return prestep_engine;
       }
 
       //! Returns a reference to the requested engine.
@@ -168,7 +170,10 @@ namespace Dune {
       LocalResidualAssemblerEngine & localResidualAssemblerEngine
       (typename Traits::Residual & r, const typename Traits::Solution & x)
       {
-        // TODO add here code
+        residual_engine.setSolution(x);
+        residual_engine.setConstResidual(const_residual);
+        residual_engine.setResidual(r);
+        return residual_engine;
       }
 
       //! Returns a reference to the requested engine.
@@ -176,7 +181,9 @@ namespace Dune {
       LocalJacobianAssemblerEngine & localJacobianAssemblerEngine
       (typename Traits::Jacobian & a, const typename Traits::Solution & x)
       {
-        // TODO add here code
+        jacobian_engine.setSolution(x);
+        jacobian_engine.setJacobian(a);
+        return jacobian_engine;
       }
 
       //============================================
@@ -194,10 +201,10 @@ namespace Dune {
       Real dt_factor0, dt_factor1;
       DTAssemblingMode dt_mode;
       int steps;
-      //============================================
-      // TODO
-      // Add engines here as private members.
-      //============================================
+      LocalPatternAssemblerEngine pattern_engine;
+      LocalPreStepAssemblerEngine prestep_engine;
+      LocalResidualAssemblerEngine residual_engine;
+      LocalJacobianAssemblerEngine jacobian_engine;
     }; // end class MultiStepLocalAssembler
 
   } // end namespace PDELab

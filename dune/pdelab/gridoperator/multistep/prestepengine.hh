@@ -154,10 +154,10 @@ namespace Dune {
         // extract coefficients of the time step scheme
         // for the constant part of the residual
         // therefore the size is equal to la.steps
-        alpha.resize(la.steps); // TODO Do we have to resize here really?
-        beta.resize(la.steps); // TODO Do we have to resize here really?
-        do0.resize(la.steps); // TODO Do we have to resize here really?
-        do1.resize(la.steps); // TODO Do we have to resize here really?
+        alpha.resize(la.steps); // resize actually does nothing when the new size is equal to the old one
+        beta.resize(la.steps);
+        do0.resize(la.steps);
+        do1.resize(la.steps);
         for(int i=0; i<la.steps; ++i) {
           alpha[i] = la.msp_method->alpha(i);
           beta[i] = la.msp_method->beta(i);
@@ -166,8 +166,8 @@ namespace Dune {
         }
 
         // prepare local operators, set the stage to 1
-        la.la0.preStage(la.timeAfterStep(),1);
-        la.la1.preStage(la.timeAfterStep(),1);
+        la.la0.preStage(la.time+la.dt,1);
+        la.la1.preStage(la.time+la.dt,1);
       }
 
       template<typename GFSU, typename GFSV>

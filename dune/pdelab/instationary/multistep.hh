@@ -220,6 +220,7 @@ namespace Dune {
         }
 
         timestep++;
+        return dt;
 
       } // end of method apply
 
@@ -321,6 +322,7 @@ namespace Dune {
         }
 
         timestep++;
+        return dt;
 
       } // end of method apply which interpolates
 

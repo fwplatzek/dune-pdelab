@@ -76,9 +76,9 @@ namespace Dune {
                       "Received two local assemblers which are non-compatible "
                       "due to different solution vector types");
         static_assert((is_same<typename LA0::Traits::Residual,
-                            typename LA1::Traits::Residual>::value),
-                           "Received two local assemblers which are non-compatible "
-                           "due to different residual vector types");
+                       typename LA1::Traits::Residual>::value),
+                      "Received two local assemblers which are non-compatible "
+                      "due to different residual vector types");
       }
 
       //! The local operators type for real numbers e.g. time

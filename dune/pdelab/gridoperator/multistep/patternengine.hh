@@ -86,7 +86,7 @@ namespace Dune {
       //! @name Notification functions
       //! @{
       void preAssembly(){
-        implicit = la.osp_method->implicit();
+        implicit = la.msp_method->implicit();
 
         // TODO higher order problems with more than two grid-operators
         lae0->preAssembly();

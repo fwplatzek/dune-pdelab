@@ -161,6 +161,10 @@ namespace Dune {
         beta_R = la.msp_method->beta(la.steps);
         implicit = std::abs(beta_R) > 1e-6;
 
+        // set time in local operators
+        la.la0.setTime(la.time + la.dt);
+        la.la1.setTime(la.time + la.dt);
+
         setWeights();
       }
 

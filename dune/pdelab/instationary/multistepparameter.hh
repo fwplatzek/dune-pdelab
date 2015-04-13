@@ -146,6 +146,91 @@ namespace Dune {
       Dune::FieldVector<value_type,3> B;
 
     };
+
+    /**
+     * \brief Parameter class for the BDF3 method
+     * of order 1 ODE's.
+     *
+     * Implementation of the multi step method
+     * \f[
+     * u^{n+1} - \frac{18}{11} u^n + \frac{9}{11} u^{n-1} - \frac{2}{11} u^{n-2} =
+     * \frac{6}{11} \Delta t f(t^{n+1}, u^{n+1})
+     * \f]
+     *
+     * \tparam value_type C++ type of the floating point parameters
+     *
+     * A(88°)-stable implicit linear multistep method
+     */
+
+    template<typename value_type>
+    class BDF3Scheme : public MultiStepParameterInterface<value_type>
+    {
+    public :
+
+      BDF3Scheme()
+      {
+        A[0] = -2./11; A[1] = 9./11; A[2] = -18./11; A[3] = 1.0;
+        B[0] = 0.0; B[1] = 0.0; B[2] = 0.0; B[3] = 6./11;
+      }
+
+      /** \brief Return true if method is implicit.
+       */
+      virtual bool implicit() const {
+        return true;
+      }
+
+      /** \brief Return number of steps of the method.
+       */
+      virtual unsigned steps() const {
+        return 3;
+      }
+
+      /** \brief Return order of the problem this method is appropriate for.
+       *
+       * Solves \f$\dot{u} = f(t,u)\f$ numerically
+       */
+      virtual unsigned order() const {
+        return 1;
+      }
+
+      /** \brief Return \f$\alpha\f$ coefficients.
+       *
+       * Returns \f$\alpha_r\f$:
+       * \f{align*}{
+       * \alpha_0 &= -\frac{2}{11} & \alpha_1 &= \frac{9}{11} & \alpha_2 &= -\frac{18}{11} & \alpha_3 &= 1
+       * \f}
+       *
+       * \note that r \f$\in 0,...,R\f$
+       */
+      virtual value_type alpha(int r) const {
+        return A[r];
+      }
+
+      /** \brief Return \f$\beta\f$ coefficients.
+       *
+       * Returns \f$\beta_r\f$:
+       * \f{align*}{
+       * \beta_0 &= 0 & \beta_1 &= 0 & \beta_2 &= 0 & \beta_3 &= \frac{6}{11}
+       * \f}
+       *
+       * \note that r \f$\in 0,...,R\f$
+       */
+      virtual value_type beta(int r) const {
+        return B[r];
+      }
+
+      /** \brief Return name of the scheme.
+       */
+      virtual std::string name() const {
+        return std::string("BDF3 (Order 1)");
+      }
+
+    private :
+      Dune::FieldVector<value_type,4> A;
+      Dune::FieldVector<value_type,4> B;
+
+    };
+
   } // end namespace PDELab
 } // end namespace Dune
 #endif

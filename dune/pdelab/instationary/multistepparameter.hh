@@ -64,6 +64,88 @@ namespace Dune {
 
     }; // end class MultiStepParameterInterface
 
+    /**
+     * \brief Parameter class for the BDF2 method
+     * of order 1 ODE's.
+     *
+     * Implementation of the multi step method
+     * \f[
+     * u^{n+1} - \frac43 u^n + \frac13 u^{n-1} = \frac23 \Delta t f(t^{n+1}, u^{n+1})
+     * \f]
+     *
+     * \tparam value_type C++ type of the floating point parameters
+     *
+     * A-stable implicit linear multistep method
+     */
+
+    template<typename value_type>
+    class BDF2Scheme : public MultiStepParameterInterface<value_type>
+    {
+    public :
+
+      BDF2Scheme()
+      {
+        A[0] = 1./3; A[1] = -4./3; A[2] = 1.0;
+        B[0] = 0.0; B[1] = 0.0; B[2] = 2./3;
+      }
+
+      /** \brief Return true if method is implicit.
+       */
+      virtual bool implicit() const {
+        return true;
+      }
+
+      /** \brief Return number of steps of the method.
+       */
+      virtual unsigned steps() const {
+        return 2;
+      }
+
+      /** \brief Return order of the problem this method is appropriate for.
+       *
+       * Solves \f$\dot{u} = f(t,u)\f$ numerically
+       */
+      virtual unsigned order() const {
+        return 1;
+      }
+
+      /** \brief Return \f$\alpha\f$ coefficients.
+       *
+       * Returns \f$\alpha_r\f$:
+       * \f{align*}{
+       * \alpha_0 &= \frac13 & \alpha_1 &= -\frac43 & \alpha_2 &= 1
+       * \f}
+       *
+       * \note that r \f$\in 0,...,R\f$
+       */
+      virtual value_type alpha(int r) const {
+        return A[r];
+      }
+
+      /** \brief Return \f$\beta\f$ coefficients.
+       *
+       * Returns \f$\beta_r\f$:
+       * \f{align*}{
+       * \beta_0 &= 0 & \beta_1 &= 0 & \beta_2 &= \frac23
+       * \f}
+       *
+       * \note that r \f$\in 0,...,R\f$
+       */
+      virtual value_type beta(int r) const {
+        return B[r];
+      }
+
+      /** \brief Return name of the scheme.
+       */
+      virtual std::string name() const {
+        return std::string("BDF2 (Order 1)");
+      }
+
+    private :
+      Dune::FieldVector<value_type,3> A;
+      Dune::FieldVector<value_type,3> B;
+
+    };
   } // end namespace PDELab
 } // end namespace Dune
 #endif

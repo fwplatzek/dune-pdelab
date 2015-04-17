@@ -229,9 +229,9 @@ namespace Dune {
         // evaluate transformation which must be linear
         Dune::FieldVector<DF,dim> pos; pos = 0.0;
         typename IG::Entity::Geometry::JacobianInverseTransposed jac;
-        jac = ig.inside()->geometry().jacobianInverseTransposed(pos);
+        jac = ig.inside().geometry().jacobianInverseTransposed(pos);
         jac.invert();
-        RF det = ig.inside()->geometry().integrationElement(pos);
+        RF det = ig.inside().geometry().integrationElement(pos);
 
         // select quadrature rule
         Dune::GeometryType gtface = ig.geometryInInside().type();

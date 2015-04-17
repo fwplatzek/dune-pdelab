@@ -316,13 +316,13 @@ namespace Dune {
 
         // cell geometries
         const Dune::FieldVector<DF,dim>&
-          inside_cell_center_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_cell_center_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,dim>&
-          outside_cell_center_local = Dune::ReferenceElements<DF,dim>::general(ig.outside()->type()).position(0,0);
+          outside_cell_center_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
         Dune::FieldVector<DF,IG::dimension>
-          inside_cell_center_global = ig.inside()->geometry().center();
+          inside_cell_center_global = ig.inside().geometry().center();
         Dune::FieldVector<DF,IG::dimension>
-          outside_cell_center_global = ig.outside()->geometry().center();
+          outside_cell_center_global = ig.outside().geometry().center();
 
         // distance of cell centers
         Dune::FieldVector<DF,dim> d(outside_cell_center_global);
@@ -426,9 +426,9 @@ namespace Dune {
 
         // cell geometry
         const Dune::FieldVector<DF,dim>&
-          inside_cell_center_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_cell_center_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         Dune::FieldVector<DF,dim>
-          inside_cell_center_global = ig.inside()->geometry().global(inside_cell_center_local);
+          inside_cell_center_global = ig.inside().geometry().global(inside_cell_center_local);
 
         // distance of cell center to boundary
         Dune::FieldVector<DF,dim> d = ig.geometry().global(face_local);
@@ -700,9 +700,9 @@ namespace Dune {
               {
                 const Dune::FieldVector<DF,dim>&
                   outside_cell_center_local = Dune::ReferenceElements<DF,dim>::
-                  general(iit->outside()->type()).position(0,0);
+                  general(iit->outside().type()).position(0,0);
                 Dune::FieldVector<DF,dim>
-                  outside_cell_center_global = iit->outside()->geometry().global(outside_cell_center_local);
+                  outside_cell_center_global = iit->outside().geometry().global(outside_cell_center_local);
 
                 // distance of cell centers
                 Dune::FieldVector<DF,dim> d(outside_cell_center_global);
@@ -930,9 +930,9 @@ namespace Dune {
               {
                 const Dune::FieldVector<DF,dim>&
                   outside_cell_center_local = Dune::ReferenceElements<DF,dim>::
-                  general(iit->outside()->type()).position(0,0);
+                  general(iit->outside().type()).position(0,0);
                 Dune::FieldVector<DF,dim>
-                  outside_cell_center_global = iit->outside()->geometry().global(outside_cell_center_local);
+                  outside_cell_center_global = iit->outside().geometry().global(outside_cell_center_local);
 
                 // distance of cell centers
                 Dune::FieldVector<DF,dim> d(outside_cell_center_global);

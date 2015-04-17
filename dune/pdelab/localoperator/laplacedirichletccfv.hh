@@ -64,15 +64,15 @@ namespace Dune {
 
         // cell centers in references elements
         const Dune::FieldVector<DF,IG::dimension>&
-          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,IG::dimension>&
-          outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside()->type()).position(0,0);
+          outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside().type()).position(0,0);
 
         // distance between the two cell centers
         Dune::FieldVector<DF,IG::dimension>
-          inside_global = ig.inside()->geometry().global(inside_local);
+          inside_global = ig.inside().geometry().global(inside_local);
         Dune::FieldVector<DF,IG::dimension>
-          outside_global = ig.outside()->geometry().global(outside_local);
+          outside_global = ig.outside().geometry().global(outside_local);
         inside_global -= outside_global;
         RF distance = inside_global.two_norm();
 
@@ -104,11 +104,11 @@ namespace Dune {
 
         // cell center in reference element
         const Dune::FieldVector<DF,IG::dimension>&
-          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
 
         // distance between cell center and face center
         Dune::FieldVector<DF,IG::dimension>
-          inside_global = ig.inside()->geometry().global(inside_local);
+          inside_global = ig.inside().geometry().global(inside_local);
         Dune::FieldVector<DF,IG::dimension>
           outside_global = ig.geometry().global(face_local);
         inside_global -= outside_global;

@@ -169,9 +169,9 @@ namespace Dune {
 
         // evaluate permeability tensors
         const Dune::FieldVector<DF,dim>&
-          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,dim>&
-          outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside()->type()).position(0,0);
+          outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s, A_n;
         A_s = param.A(*(ig.inside()),inside_local);
         A_n = param.A(*(ig.outside()),outside_local);
@@ -280,7 +280,7 @@ namespace Dune {
 
         // evaluate permeability tensors
         const Dune::FieldVector<DF,dim>&
-          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s;
         A_s = param.A(*(ig.inside()),inside_local);
 

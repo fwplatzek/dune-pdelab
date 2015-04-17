@@ -240,7 +240,7 @@ namespace Dune {
 
                     std::vector<Dune::FieldMatrix<RF,1,dim> > grad_phi_v(vsize);
                     BasisSwitch_V::gradient(FESwitch_V::basis(lfsv_v.finiteElement()),
-                                          ig.inside()->geometry(), local, grad_phi_v);
+                                          ig.inside().geometry(), local, grad_phi_v);
 
                     const Dune::FieldVector<DF,dim> normal = ig.unitOuterNormal(it->position());
                     const RF weight = it->weight()*ig.geometry().integrationElement(it->position());
@@ -508,11 +508,11 @@ namespace Dune {
                     // compute gradients
                     std::vector<Dune::FieldMatrix<RF,1,dim> > grad_phi_v_s(vsize_s);
                     BasisSwitch_V::gradient(FESwitch_V::basis(lfsv_s_v.finiteElement()),
-                                            ig.inside()->geometry(), local_s, grad_phi_v_s);
+                                            ig.inside().geometry(), local_s, grad_phi_v_s);
 
                     std::vector<Dune::FieldMatrix<RF,1,dim> > grad_phi_v_n(vsize_n);
                     BasisSwitch_V::gradient(FESwitch_V::basis(lfsv_n_v.finiteElement()),
-                                            ig.outside()->geometry(), local_n, grad_phi_v_n);
+                                            ig.outside().geometry(), local_n, grad_phi_v_n);
 
                     const Dune::FieldVector<DF,dimw> normal = ig.unitOuterNormal(it->position());
                     const RF weight = it->weight()*ig.geometry().integrationElement(it->position());
@@ -792,7 +792,7 @@ namespace Dune {
 
                     std::vector<Dune::FieldMatrix<RF,1,dim> > grad_phi_v(vsize);
                     BasisSwitch_V::gradient(FESwitch_V::basis(lfsv_v.finiteElement()),
-                                          ig.inside()->geometry(), local, grad_phi_v);
+                                          ig.inside().geometry(), local, grad_phi_v);
 
                     const Dune::FieldVector<DF,dimw> normal = ig.unitOuterNormal(it->position());
                     const RF weight = it->weight()*ig.geometry().integrationElement(it->position());

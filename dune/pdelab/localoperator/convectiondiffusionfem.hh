@@ -458,9 +458,9 @@ namespace Dune {
 
         // evaluate permeability tensors
         const Dune::FieldVector<DF,dim>&
-          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,dim>&
-          outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside()->type()).position(0,0);
+          outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s, A_n;
         A_s = param.A(*(ig.inside()),inside_local);
         A_n = param.A(*(ig.outside()),outside_local);
@@ -495,10 +495,10 @@ namespace Dune {
             lfsu_n.finiteElement().localBasis().evaluateJacobian(iplocal_n,gradphi_n);
 
             // transform gradients of shape functions to real element
-            jac = ig.inside()->geometry().jacobianInverseTransposed(iplocal_s);
+            jac = ig.inside().geometry().jacobianInverseTransposed(iplocal_s);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_s(lfsu_s.size());
             for (size_type i=0; i<lfsu_s.size(); i++) jac.mv(gradphi_s[i][0],tgradphi_s[i]);
-            jac = ig.outside()->geometry().jacobianInverseTransposed(iplocal_n);
+            jac = ig.outside().geometry().jacobianInverseTransposed(iplocal_n);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_n(lfsu_n.size());
             for (size_type i=0; i<lfsu_n.size(); i++) jac.mv(gradphi_n[i][0],tgradphi_n[i]);
 
@@ -518,7 +518,7 @@ namespace Dune {
 
         // accumulate indicator
         // DF h_T = diameter(ig.geometry());
-        DF h_T = std::max(diameter(ig.inside()->geometry()),diameter(ig.outside()->geometry()));
+        DF h_T = std::max(diameter(ig.inside().geometry()),diameter(ig.outside().geometry()));
         r_s.accumulate(lfsv_s,0,h_T*sum);
         r_n.accumulate(lfsv_n,0,h_T*sum);
       }
@@ -545,7 +545,7 @@ namespace Dune {
 
         // evaluate permeability tensors
         const Dune::FieldVector<DF,dim>&
-          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s;
         A_s = param.A(*(ig.inside()),inside_local);
         const Dune::FieldVector<DF,dim> n_F = ig.centerUnitOuterNormal();
@@ -579,7 +579,7 @@ namespace Dune {
             lfsu_s.finiteElement().localBasis().evaluateJacobian(iplocal_s,gradphi_s);
 
             // transform gradients of shape functions to real element
-            jac = ig.inside()->geometry().jacobianInverseTransposed(iplocal_s);
+            jac = ig.inside().geometry().jacobianInverseTransposed(iplocal_s);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_s(lfsu_s.size());
             for (size_type i=0; i<lfsu_s.size(); i++) jac.mv(gradphi_s[i][0],tgradphi_s[i]);
 
@@ -599,7 +599,7 @@ namespace Dune {
 
         // accumulate indicator
         //DF h_T = diameter(ig.geometry());
-        DF h_T = diameter(ig.inside()->geometry());
+        DF h_T = diameter(ig.inside().geometry());
         r_s.accumulate(lfsv_s,0,h_T*sum);
       }
 
@@ -973,7 +973,7 @@ namespace Dune {
 
         // accumulate indicator
         //DF h_T = diameter(ig.geometry());
-        DF h_T = diameter(ig.inside()->geometry());
+        DF h_T = diameter(ig.inside().geometry());
         r_s.accumulate(lfsv_s,0,(h_T+dt*dt/h_T)*dt*0.5*(sum_down+sum_up));
       }
 

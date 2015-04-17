@@ -305,9 +305,9 @@ namespace Dune {
           std::vector<Dune::FieldMatrix<RF,dim,dim> > jac_phi_v_s(lfsu_v_s.size());
           std::vector<Dune::FieldMatrix<RF,dim,dim> > jac_phi_v_n(lfsu_v_n.size());
           VectorBasisSwitch_V::jacobian
-            (FESwitch_V::basis(lfsv_v_s.finiteElement()), ig.inside()->geometry(), local_s, jac_phi_v_s);
+            (FESwitch_V::basis(lfsv_v_s.finiteElement()), ig.inside().geometry(), local_s, jac_phi_v_s);
           VectorBasisSwitch_V::jacobian
-            (FESwitch_V::basis(lfsv_v_n.finiteElement()), ig.outside()->geometry(), local_n, jac_phi_v_n);
+            (FESwitch_V::basis(lfsv_v_n.finiteElement()), ig.outside().geometry(), local_n, jac_phi_v_n);
 
           // compute divergence of test functions
           std::vector<RF> div_phi_v_s(lfsv_v_s.size(),0.0);
@@ -471,7 +471,7 @@ namespace Dune {
           // evaluate jacobian of basis functions on reference element
           std::vector<Dune::FieldMatrix<RF,dim,dim> > jac_phi_v_s(lfsu_v_s.size());
           VectorBasisSwitch_V::jacobian
-            (FESwitch_V::basis(lfsv_v_s.finiteElement()), ig.inside()->geometry(), local_s, jac_phi_v_s);
+            (FESwitch_V::basis(lfsv_v_s.finiteElement()), ig.inside().geometry(), local_s, jac_phi_v_s);
 
           // compute divergence of test functions
           std::vector<RF> div_phi_v_s(lfsv_v_s.size(),0.0);

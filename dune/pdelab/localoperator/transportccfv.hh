@@ -280,18 +280,18 @@ namespace Dune {
 
         // evaluate diffusion coefficients
         const Dune::FieldVector<DF,IG::dimension>&
-          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,IG::dimension>&
-          outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside()->type()).position(0,0);
+          outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside().type()).position(0,0);
         typename TP::Traits::RangeFieldType D_inside = tp.D(*(ig.inside()),inside_local);
         typename TP::Traits::RangeFieldType D_outside = tp.D(*(ig.outside()),outside_local);
         typename TP::Traits::RangeFieldType D_avg = 2.0/(1.0/(D_inside+1E-30) + 1.0/(D_outside+1E-30));
 
         // distance between cell centers in global coordinates
         Dune::FieldVector<DF,IG::dimension>
-          inside_global = ig.inside()->geometry().center();
+          inside_global = ig.inside().geometry().center();
         Dune::FieldVector<DF,IG::dimension>
-          outside_global = ig.outside()->geometry().center();
+          outside_global = ig.outside().geometry().center();
         inside_global -= outside_global;
         RF distance = inside_global.two_norm();
 
@@ -371,10 +371,10 @@ namespace Dune {
             typename TP::Traits::RangeFieldType g;
             if (vn>=0) g=x_s(lfsu_s,0); else g=tp.g(*(ig.inside()),face_center_in_element);
             const Dune::FieldVector<DF,IG::dimension>&
-              inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+              inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
             typename TP::Traits::RangeFieldType D_inside = tp.D(*(ig.inside()),inside_local);
             Dune::FieldVector<DF,IG::dimension>
-              inside_global = ig.inside()->geometry().center();
+              inside_global = ig.inside().geometry().center();
             Dune::FieldVector<DF,IG::dimension>
               outside_global = ig.geometry().center();
             inside_global -= outside_global;

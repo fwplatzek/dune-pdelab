@@ -186,9 +186,9 @@ namespace Dune {
 
         // evaluate diffusion tensor at elements' centers, assume they are constant over elements
         const Dune::FieldVector<DF,IG::dimension>&
-          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,IG::dimension>&
-          outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside()->type()).position(0,0);
+          outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside().type()).position(0,0);
         typename K::Traits::RangeType permeability_s(0.0);
         typename K::Traits::RangeType permeability_n(0.0);
         k.evaluate(*(ig.inside()),inside_local,permeability_s);
@@ -212,7 +212,7 @@ namespace Dune {
 
             // transform gradient to real element
             typename IG::Entity::Geometry::JacobianInverseTransposed jac_s;
-            jac_s = ig.inside()->geometry().jacobianInverseTransposed(local_s);
+            jac_s = ig.inside().geometry().jacobianInverseTransposed(local_s);
             std::vector<Dune::FieldVector<RF,dim> > gradphi_s(lfsv_s.size());
             for (size_t i=0; i<lfsv_s.size(); i++)
               {
@@ -220,7 +220,7 @@ namespace Dune {
                 jac_s.umv(js_s[i][0],gradphi_s[i]);
               }
             typename IG::Entity::Geometry::JacobianInverseTransposed jac_n;
-            jac_n = ig.outside()->geometry().jacobianInverseTransposed(local_n);
+            jac_n = ig.outside().geometry().jacobianInverseTransposed(local_n);
             std::vector<Dune::FieldVector<RF,dim> > gradphi_n(lfsv_n.size());
             for (size_t i=0; i<lfsv_n.size(); i++)
               {
@@ -339,7 +339,7 @@ namespace Dune {
 
             // evaluate diffusion tensor at cell center, assume it is constant over elements
             const Dune::FieldVector<DF,IG::dimension>
-              localcenter = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+              localcenter = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
             typename K::Traits::RangeType tensor(0.0);
             k.evaluate(*ig.inside(),localcenter,tensor);
 
@@ -358,7 +358,7 @@ namespace Dune {
 
                 // transform gradient to real element
                 typename IG::Entity::Geometry::JacobianInverseTransposed jac;
-                jac = ig.inside()->geometry().jacobianInverseTransposed(local);
+                jac = ig.inside().geometry().jacobianInverseTransposed(local);
                 std::vector<Dune::FieldVector<RF,dim> > gradphi(lfsv.size());
                 for (size_t i=0; i<lfsv.size(); i++)
                   {
@@ -512,7 +512,7 @@ namespace Dune {
             const Dune::FieldVector<DF,dimw> normal = ig.unitOuterNormal(face_center);
             // evaluate diffusion tensor at cell center, assume it is constant over elements
             const Dune::FieldVector<DF,IG::dimension>
-              localcenter = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+              localcenter = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
             typename K::Traits::RangeType tensor(0.0);
             k.evaluate(*ig.inside(),localcenter,tensor);
             // penalty weight for NIPG / SIPG
@@ -530,7 +530,7 @@ namespace Dune {
 
                 // transform gradient to real element
                 typename IG::Entity::Geometry::JacobianInverseTransposed jac;
-                jac = ig.inside()->geometry().jacobianInverseTransposed(local);
+                jac = ig.inside().geometry().jacobianInverseTransposed(local);
                 std::vector<Dune::FieldVector<RF,dim> > gradphi(lfsv.size());
                 for (size_t i=0; i<lfsv.size(); i++)
                   {
@@ -666,9 +666,9 @@ namespace Dune {
 
         // evaluate diffusion tensor at cell center, assume it is constant over elements
         const Dune::FieldVector<DF,IG::dimension>&
-          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,IG::dimension>&
-          outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside()->type()).position(0,0);
+          outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside().type()).position(0,0);
         typename K::Traits::RangeType permeability_s(0.0);
         typename K::Traits::RangeType permeability_n(0.0);
         k.evaluate(*(ig.inside()),inside_local,permeability_s);
@@ -692,7 +692,7 @@ namespace Dune {
 
             // transform gradient to real element
             typename IG::Entity::Geometry::JacobianInverseTransposed jac_s;
-            jac_s = ig.inside()->geometry().jacobianInverseTransposed(local_s);
+            jac_s = ig.inside().geometry().jacobianInverseTransposed(local_s);
             std::vector<Dune::FieldVector<RF,dim> > gradphi_s(lfsv_s.size());
             for (size_t i=0; i<lfsv_s.size(); i++)
               {
@@ -700,7 +700,7 @@ namespace Dune {
                 jac_s.umv(js_s[i][0],gradphi_s[i]);
               }
             typename IG::Entity::Geometry::JacobianInverseTransposed jac_n;
-            jac_n = ig.outside()->geometry().jacobianInverseTransposed(local_n);
+            jac_n = ig.outside().geometry().jacobianInverseTransposed(local_n);
             std::vector<Dune::FieldVector<RF,dim> > gradphi_n(lfsv_n.size());
             for (size_t i=0; i<lfsv_n.size(); i++)
               {
@@ -833,7 +833,7 @@ namespace Dune {
 
             // evaluate diffusion tensor at cell center, assume it is constant over elements
             const Dune::FieldVector<DF,IG::dimension>
-              localcenter = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside()->type()).position(0,0);
+              localcenter = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
             typename K::Traits::RangeType tensor(0.0);
             k.evaluate(*ig.inside(),localcenter,tensor);
 
@@ -852,7 +852,7 @@ namespace Dune {
 
                 // transform gradient to real element
                 typename IG::Entity::Geometry::JacobianInverseTransposed jac;
-                jac = ig.inside()->geometry().jacobianInverseTransposed(local);
+                jac = ig.inside().geometry().jacobianInverseTransposed(local);
                 std::vector<Dune::FieldVector<RF,dim> > gradphi(lfsv.size());
                 for (size_t i=0; i<lfsv.size(); i++)
                   {

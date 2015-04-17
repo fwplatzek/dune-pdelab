@@ -300,9 +300,9 @@ namespace Dune {
 
         // evaluate permeability tensors
         const Dune::FieldVector<DF,dim>&
-          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,dim>&
-          outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside()->type()).position(0,0);
+          outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s, A_n;
         A_s = param.A(*(ig.inside()),inside_local);
         A_n = param.A(*(ig.outside()),outside_local);
@@ -311,10 +311,10 @@ namespace Dune {
         DF h_s, h_n;
         DF hmax_s = 0.;
         DF hmax_n = 0.;
-        element_size(ig.inside()->geometry(),h_s,hmax_s);
-        element_size(ig.outside()->geometry(),h_n,hmax_n);
+        element_size(ig.inside().geometry(),h_s,hmax_s);
+        element_size(ig.outside().geometry(),h_n,hmax_n);
         RF h_F = std::min(h_s,h_n);
-        h_F = std::min(ig.inside()->geometry().volume(),ig.outside()->geometry().volume())/ig.geometry().volume(); // Houston!
+        h_F = std::min(ig.inside().geometry().volume(),ig.outside().geometry().volume())/ig.geometry().volume(); // Houston!
 
         // select quadrature rule
         Dune::GeometryType gtface = ig.geometryInInside().type();
@@ -409,12 +409,12 @@ namespace Dune {
 #endif
 
             // transform gradients of shape functions to real element
-            jac = ig.inside()->geometry().jacobianInverseTransposed(iplocal_s);
+            jac = ig.inside().geometry().jacobianInverseTransposed(iplocal_s);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_s(lfsu_s.size());
             for (size_type i=0; i<lfsu_s.size(); i++) jac.mv(gradphi_s[i][0],tgradphi_s[i]);
             std::vector<Dune::FieldVector<RF,dim> > tgradpsi_s(lfsv_s.size());
             for (size_type i=0; i<lfsv_s.size(); i++) jac.mv(gradpsi_s[i][0],tgradpsi_s[i]);
-            jac = ig.outside()->geometry().jacobianInverseTransposed(iplocal_n);
+            jac = ig.outside().geometry().jacobianInverseTransposed(iplocal_n);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_n(lfsu_n.size());
             for (size_type i=0; i<lfsu_n.size(); i++) jac.mv(gradphi_n[i][0],tgradphi_n[i]);
             std::vector<Dune::FieldVector<RF,dim> > tgradpsi_n(lfsv_n.size());
@@ -506,9 +506,9 @@ namespace Dune {
 
         // evaluate permeability tensors
         const Dune::FieldVector<DF,dim>&
-          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,dim>&
-          outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside()->type()).position(0,0);
+          outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s, A_n;
         A_s = param.A(*(ig.inside()),inside_local);
         A_n = param.A(*(ig.outside()),outside_local);
@@ -516,10 +516,10 @@ namespace Dune {
         // face diameter; this should be revised for anisotropic meshes?
         DF h_s, h_n;
         DF hmax_s = 0., hmax_n = 0.;
-        element_size(ig.inside()->geometry(),h_s,hmax_s);
-        element_size(ig.outside()->geometry(),h_n,hmax_n);
+        element_size(ig.inside().geometry(),h_s,hmax_s);
+        element_size(ig.outside().geometry(),h_n,hmax_n);
         RF h_F = std::min(h_s,h_n);
-        h_F = std::min(ig.inside()->geometry().volume(),ig.outside()->geometry().volume())/ig.geometry().volume(); // Houston!
+        h_F = std::min(ig.inside().geometry().volume(),ig.outside().geometry().volume())/ig.geometry().volume(); // Houston!
 
         // select quadrature rule
         Dune::GeometryType gtface = ig.geometryInInside().type();
@@ -594,10 +594,10 @@ namespace Dune {
 #endif
 
             // transform gradients of shape functions to real element
-            jac = ig.inside()->geometry().jacobianInverseTransposed(iplocal_s);
+            jac = ig.inside().geometry().jacobianInverseTransposed(iplocal_s);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_s(lfsu_s.size());
             for (size_type i=0; i<lfsu_s.size(); i++) jac.mv(gradphi_s[i][0],tgradphi_s[i]);
-            jac = ig.outside()->geometry().jacobianInverseTransposed(iplocal_n);
+            jac = ig.outside().geometry().jacobianInverseTransposed(iplocal_n);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_n(lfsu_n.size());
             for (size_type i=0; i<lfsu_n.size(); i++) jac.mv(gradphi_n[i][0],tgradphi_n[i]);
 
@@ -688,7 +688,7 @@ namespace Dune {
 
         // evaluate permeability tensors
         const Dune::FieldVector<DF,dim>&
-          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s;
         A_s = param.A(*(ig.inside()),inside_local);
 
@@ -699,9 +699,9 @@ namespace Dune {
         // face diameter
         DF h_s;
         DF hmax_s = 0.;
-        element_size(ig.inside()->geometry(),h_s,hmax_s);
+        element_size(ig.inside().geometry(),h_s,hmax_s);
         RF h_F = h_s;
-        h_F = ig.inside()->geometry().volume()/ig.geometry().volume(); // Houston!
+        h_F = ig.inside().geometry().volume()/ig.geometry().volume(); // Houston!
 
         // transformation
         Dune::FieldMatrix<DF,dim,dim> jac;
@@ -808,7 +808,7 @@ namespace Dune {
 #endif
 
             // transform gradients of shape functions to real element
-            jac = ig.inside()->geometry().jacobianInverseTransposed(iplocal_s);
+            jac = ig.inside().geometry().jacobianInverseTransposed(iplocal_s);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_s(lfsu_s.size());
             for (size_type i=0; i<lfsu_s.size(); i++) jac.mv(gradphi_s[i][0],tgradphi_s[i]);
             std::vector<Dune::FieldVector<RF,dim> > tgradpsi_s(lfsv_s.size());
@@ -883,7 +883,7 @@ namespace Dune {
 
         // evaluate permeability tensors
         const Dune::FieldVector<DF,dim>&
-          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside()->type()).position(0,0);
+          inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s;
         A_s = param.A(*(ig.inside()),inside_local);
 
@@ -894,9 +894,9 @@ namespace Dune {
         // face diameter
         DF h_s;
         DF hmax_s = 0.;
-        element_size(ig.inside()->geometry(),h_s,hmax_s);
+        element_size(ig.inside().geometry(),h_s,hmax_s);
         RF h_F = h_s;
-        h_F = ig.inside()->geometry().volume()/ig.geometry().volume(); // Houston!
+        h_F = ig.inside().geometry().volume()/ig.geometry().volume(); // Houston!
 
         // transformation
         Dune::FieldMatrix<DF,dim,dim> jac;
@@ -976,7 +976,7 @@ namespace Dune {
 #endif
 
             // transform gradients of shape functions to real element
-            jac = ig.inside()->geometry().jacobianInverseTransposed(iplocal_s);
+            jac = ig.inside().geometry().jacobianInverseTransposed(iplocal_s);
             std::vector<Dune::FieldVector<RF,dim> > tgradphi_s(lfsu_s.size());
             for (size_type i=0; i<lfsu_s.size(); i++) jac.mv(gradphi_s[i][0],tgradphi_s[i]);
 

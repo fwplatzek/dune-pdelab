@@ -64,7 +64,7 @@ namespace Dune {
         // if we have a neighbor, take higher level
         if (intersection.neighbor())
           {
-            if (intersection.inside()->level()>=intersection.outside()->level())
+            if (intersection.inside().level()>=intersection.outside().level())
               return codim1index_to_intersectionindex[is.subIndex(*(intersection.inside()),intersection.indexInInside(),1)];
             else
               return codim1index_to_intersectionindex[is.subIndex(*(intersection.outside()),intersection.indexInOutside(),1)];
@@ -110,7 +110,7 @@ namespace Dune {
             if (iit->neighbor())
               {
                 IndexType c1index;
-                if (iit->inside()->level()>=iit->outside()->level())
+                if (iit->inside().level()>=iit->outside().level())
                   c1index = is.subIndex(*(iit->inside()),iit->indexInInside(),1);
                 else
                   c1index = is.subIndex(*(iit->outside()),iit->indexInOutside(),1);

@@ -163,7 +163,7 @@ namespace Dune {
               Dune::ReferenceElements<double,dim-1>::general(fit->geometry().type());
 
             const int eLocalIndex =  fit->indexInInside();
-            const int e_level = fit->inside()->level();
+            const int e_level = fit->inside().level();
 
             // number of vertices on the face
             const int e_v_size = reference_element.size(eLocalIndex,1,dim);
@@ -196,7 +196,7 @@ namespace Dune {
               continue;
             }
 
-            const int f_level = fit->outside()->level();
+            const int f_level = fit->outside().level();
 
             // a conforming face has no hanging nodes
             if(fit->conforming())
@@ -369,8 +369,8 @@ namespace Dune {
                   // only internal faces need to be taken care of
                   if(!(*fit).boundary()) {
 
-                    const int e_level = fit->inside()->level();
-                    const int f_level = fit->outside()->level();
+                    const int e_level = fit->inside().level();
+                    const int f_level = fit->outside().level();
 
                     if( f_level > e_level ){
 
@@ -435,7 +435,7 @@ namespace Dune {
                         //
                         const Dune::ReferenceElement<double,dim> &
                           nb_reference_element =
-                          Dune::ReferenceElements<double,dim>::general( fit->outside()->geometry().type() );
+                          Dune::ReferenceElements<double,dim>::general( fit->outside().geometry().type() );
 
                         // number of vertices in that neigbouring element
                         const IndexType nb_v_size = nb_reference_element.size(dim);
@@ -444,7 +444,7 @@ namespace Dune {
                         for(IndexType i=0; i<nb_v_size; ++i){
 
                           const VertexEntityPointer & nb_vertex =
-                            fit->outside()->template subEntity<dim>(i);
+                            fit->outside().template subEntity<dim>(i);
 
                           bool doExtraCheck = false;
 

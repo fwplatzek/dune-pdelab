@@ -612,7 +612,7 @@ namespace Dune {
 
             if (iit->neighbor()){
 
-              Dune::GeometryType gtn = iit->outside()->type();
+              Dune::GeometryType gtn = iit->outside().type();
               const typename GV::IndexSet::IndexType idn = is.index(*(iit->outside()))+gtoffset[gtn];
 
               if(id>idn){

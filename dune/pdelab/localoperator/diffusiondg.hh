@@ -191,8 +191,8 @@ namespace Dune {
           outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside().type()).position(0,0);
         typename K::Traits::RangeType permeability_s(0.0);
         typename K::Traits::RangeType permeability_n(0.0);
-        k.evaluate(*(ig.inside()),inside_local,permeability_s);
-        k.evaluate(*(ig.outside()),outside_local,permeability_n);
+        k.evaluate(ig.inside(),inside_local,permeability_s);
+        k.evaluate(ig.outside(),outside_local,permeability_n);
 
         // penalty weight for NIPG / SIPG
         RF penalty_weight = sigma / pow(ig.geometry().volume(), beta);
@@ -487,7 +487,7 @@ namespace Dune {
 
                 // evaluate flux boundary condition
                 typename J::Traits::RangeType y(0.0);
-                j.evaluate(*(ig.inside()),local,y);
+                j.evaluate(ig.inside(),local,y);
 
                 // integrate J
                 RF factor = it->weight()*ig.geometry().integrationElement(it->position());
@@ -544,7 +544,7 @@ namespace Dune {
 
                 // evaluate Dirichlet boundary condition
                 typename G::Traits::RangeType y = 0;
-                g.evaluate(*(ig.inside()),local,y);
+                g.evaluate(ig.inside(),local,y);
 
                 // integrate G
                 RF factor = it->weight()*ig.geometry().integrationElement(it->position());
@@ -671,8 +671,8 @@ namespace Dune {
           outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside().type()).position(0,0);
         typename K::Traits::RangeType permeability_s(0.0);
         typename K::Traits::RangeType permeability_n(0.0);
-        k.evaluate(*(ig.inside()),inside_local,permeability_s);
-        k.evaluate(*(ig.outside()),outside_local,permeability_n);
+        k.evaluate(ig.inside(),inside_local,permeability_s);
+        k.evaluate(ig.outside(),outside_local,permeability_n);
 
         // penalty weight for NIPG / SIPG
         RF penalty_weight = sigma / pow(ig.geometry().volume(), beta);

@@ -260,7 +260,7 @@ namespace Dune {
                   u += x_s(lfsu_s,i)*phi[i];
 
                 // evaluate velocity field and outer unit normal
-                typename T::Traits::RangeType b = param.b(*(ig.inside()),local);
+                typename T::Traits::RangeType b = param.b(ig.inside(),local);
                 const Dune::FieldVector<DF,dim> n = ig.unitOuterNormal(it->position());
 
                 // evaluate outflow boundary condition
@@ -319,7 +319,7 @@ namespace Dune {
             const std::vector<RangeType>& phi = cache.evaluateFunction(local,lfsu_s.finiteElement().localBasis());
 
             // evaluate velocity field and outer unit normal
-            typename T::Traits::RangeType b = param.b(*(ig.inside()),local);
+            typename T::Traits::RangeType b = param.b(ig.inside(),local);
             const Dune::FieldVector<DF,dim> n = ig.unitOuterNormal(it->position());
 
             // integrate
@@ -462,8 +462,8 @@ namespace Dune {
         const Dune::FieldVector<DF,dim>&
           outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s, A_n;
-        A_s = param.A(*(ig.inside()),inside_local);
-        A_n = param.A(*(ig.outside()),outside_local);
+        A_s = param.A(ig.inside(),inside_local);
+        A_n = param.A(ig.outside(),outside_local);
 
         // select quadrature rule
         const int intorder = 2*lfsu_s.finiteElement().localBasis().order();
@@ -547,7 +547,7 @@ namespace Dune {
         const Dune::FieldVector<DF,dim>&
           inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s;
-        A_s = param.A(*(ig.inside()),inside_local);
+        A_s = param.A(ig.inside(),inside_local);
         const Dune::FieldVector<DF,dim> n_F = ig.centerUnitOuterNormal();
         Dune::FieldVector<RF,dim> An_F_s;
         A_s.mv(n_F,An_F_s);

@@ -117,7 +117,7 @@ namespace Dune {
         // evaluate boundary condition function
         typename G::Traits::DomainType x = ig.geometryInInside().global(face_local);
         typename G::Traits::RangeType y;
-        g.evaluate(*(ig.inside()),x,y);
+        g.evaluate(ig.inside(),x,y);
 
         // contribution to residual on inside element
         r_s.accumulate(lfsu_s,0,(x_s(lfsu_s,0)-y[0])*face_volume/distance);

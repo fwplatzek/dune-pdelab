@@ -350,7 +350,7 @@ private:
       j (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
       {
         typename J::Traits::RangeType y;
-        j__.evaluate(*(is.inside()),is.geometryInInside().global(x),y);
+        j__.evaluate(is.inside(),is.geometryInInside().global(x),y);
         return y;
       }
 

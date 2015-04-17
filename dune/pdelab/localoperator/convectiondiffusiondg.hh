@@ -304,8 +304,8 @@ namespace Dune {
         const Dune::FieldVector<DF,dim>&
           outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s, A_n;
-        A_s = param.A(*(ig.inside()),inside_local);
-        A_n = param.A(*(ig.outside()),outside_local);
+        A_s = param.A(ig.inside(),inside_local);
+        A_n = param.A(ig.outside(),outside_local);
 
         // face diameter; this should be revised for anisotropic meshes?
         DF h_s, h_n;
@@ -429,7 +429,7 @@ namespace Dune {
               gradu_n.axpy(x_n(lfsu_n,i),tgradphi_n[i]);
 
             // evaluate velocity field and upwinding, assume H(div) velocity field => may choose any side
-            typename T::Traits::RangeType b = param.b(*(ig.inside()),iplocal_s);
+            typename T::Traits::RangeType b = param.b(ig.inside(),iplocal_s);
             RF normalflux = b*n_F_local;
             RF omegaup_s, omegaup_n;
             if (normalflux>=0.0)
@@ -510,8 +510,8 @@ namespace Dune {
         const Dune::FieldVector<DF,dim>&
           outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s, A_n;
-        A_s = param.A(*(ig.inside()),inside_local);
-        A_n = param.A(*(ig.outside()),outside_local);
+        A_s = param.A(ig.inside(),inside_local);
+        A_n = param.A(ig.outside(),outside_local);
 
         // face diameter; this should be revised for anisotropic meshes?
         DF h_s, h_n;
@@ -602,7 +602,7 @@ namespace Dune {
             for (size_type i=0; i<lfsu_n.size(); i++) jac.mv(gradphi_n[i][0],tgradphi_n[i]);
 
             // evaluate velocity field and upwinding, assume H(div) velocity field => may choose any side
-            typename T::Traits::RangeType b = param.b(*(ig.inside()),iplocal_s);
+            typename T::Traits::RangeType b = param.b(ig.inside(),iplocal_s);
             RF normalflux = b*n_F_local;
             RF omegaup_s, omegaup_n;
             if (normalflux>=0.0)
@@ -690,7 +690,7 @@ namespace Dune {
         const Dune::FieldVector<DF,dim>&
           inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s;
-        A_s = param.A(*(ig.inside()),inside_local);
+        A_s = param.A(ig.inside(),inside_local);
 
         // select quadrature rule
         Dune::GeometryType gtface = ig.geometryInInside().type();
@@ -769,7 +769,7 @@ namespace Dune {
               u_s += x_s(lfsu_s,i)*phi_s[i];
 
             // evaluate velocity field and upwinding, assume H(div) velocity field => choose any side
-            typename T::Traits::RangeType b = param.b(*(ig.inside()),iplocal_s);
+            typename T::Traits::RangeType b = param.b(ig.inside(),iplocal_s);
             RF normalflux = b*n_F_local;
 
             if (bctype == ConvectionDiffusionBoundaryConditions::Outflow)
@@ -820,7 +820,7 @@ namespace Dune {
               gradu_s.axpy(x_s(lfsu_s,i),tgradphi_s[i]);
 
             // evaluate Dirichlet boundary condition
-            RF g = param.g(*(ig.inside()),iplocal_s);
+            RF g = param.g(ig.inside(),iplocal_s);
 
             // upwind
             RF omegaup_s, omegaup_n;
@@ -885,7 +885,7 @@ namespace Dune {
         const Dune::FieldVector<DF,dim>&
           inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         typename T::Traits::PermTensorType A_s;
-        A_s = param.A(*(ig.inside()),inside_local);
+        A_s = param.A(ig.inside(),inside_local);
 
         // select quadrature rule
         Dune::GeometryType gtface = ig.geometryInInside().type();
@@ -948,7 +948,7 @@ namespace Dune {
             RF factor = it->weight() * ig.geometry().integrationElement(it->position());
 
             // evaluate velocity field and upwinding, assume H(div) velocity field => choose any side
-            typename T::Traits::RangeType b = param.b(*(ig.inside()),iplocal_s);
+            typename T::Traits::RangeType b = param.b(ig.inside(),iplocal_s);
             RF normalflux = b*n_F_local;
 
             if (bctype == ConvectionDiffusionBoundaryConditions::Outflow)

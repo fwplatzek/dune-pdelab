@@ -114,8 +114,8 @@ namespace Dune {
 
         // evaluate diffusion coefficient
         typename K::Traits::RangeType k_inside, k_outside;
-        k.evaluate(*(ig.inside()),inside_local,k_inside);
-        k.evaluate(*(ig.outside()),outside_local,k_outside);
+        k.evaluate(ig.inside(),inside_local,k_inside);
+        k.evaluate(ig.outside(),outside_local,k_outside);
         typename K::Traits::RangeType k_avg = 2.0/(1.0/(k_inside+1E-30) + 1.0/(k_outside+1E-30));
 
         // cell centers in global coordinates
@@ -175,12 +175,12 @@ namespace Dune {
 
             // evaluate diffusion coefficient
             typename K::Traits::RangeType k_inside;
-            k.evaluate(*(ig.inside()),inside_local,k_inside);
+            k.evaluate(ig.inside(),inside_local,k_inside);
 
             // evaluate boundary condition function
             typename G::Traits::DomainType x = ig.geometryInInside().global(face_local);
             typename G::Traits::RangeType y;
-            g.evaluate(*(ig.inside()),x,y);
+            g.evaluate(ig.inside(),x,y);
 
             // contribution to residual on inside element
             r_s.accumulate(lfsu_s,0,k_inside*(x_s(lfsu_s,0)-y[0])*face_volume/distance);
@@ -193,7 +193,7 @@ namespace Dune {
             //evaluate boundary function
             typename J::Traits::DomainType x = ig.geometryInInside().global(face_local);
             typename J::Traits::RangeType jvalue;
-            j.evaluate(*(ig.inside()),x,jvalue);
+            j.evaluate(ig.inside(),x,jvalue);
 
             // contribution to residual on inside element
             r_s.accumulate(lfsu_s,0,jvalue*face_volume);

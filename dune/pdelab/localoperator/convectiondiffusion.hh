@@ -352,7 +352,7 @@ namespace Dune {
         Dune::FieldVector<DF,dim> facecenterinelement = ig.geometryInInside().global( facecenterlocal );
         std::vector<typename T::Traits::RangeFieldType> w(lfsu_s.size());
         for (size_type i=0; i<lfsu_s.size(); i++)
-          w[i] = param.w(*(ig.inside()),facecenterinelement,x_s(lfsu_s,i));
+          w[i] = param.w(ig.inside(),facecenterinelement,x_s(lfsu_s,i));
 
         // loop over quadrature points and integrate normal flux
         for (typename Dune::QuadratureRule<DF,dim-1>::const_iterator it=rule.begin(); it!=rule.end(); ++it)
@@ -376,7 +376,7 @@ namespace Dune {
 
             // evaluate flux boundary condition
             typename T::Traits::RangeFieldType j;
-            j = param.j(*(ig.inside()),local,u);
+            j = param.j(ig.inside(),local,u);
 
             // integrate j
             RF factor = it->weight()*ig.geometry().integrationElement(it->position());

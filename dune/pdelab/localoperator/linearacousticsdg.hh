@@ -296,8 +296,8 @@ namespace Dune {
             inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,dim>&
             outside_local = Dune::ReferenceElements<DF,dim>::general(ig.outside().type()).position(0,0);
-        RF c_s = param.c(*(ig.inside()),inside_local);
-        RF c_n = param.c(*(ig.outside()),outside_local);
+        RF c_s = param.c(ig.inside(),inside_local);
+        RF c_n = param.c(ig.outside(),outside_local);
 
         // compute A+ (outgoing waves)
         Dune::FieldMatrix<DF,dim+1,dim+1> RT;
@@ -405,7 +405,7 @@ namespace Dune {
         // evaluate speed of sound (assumed constant per element)
         const Dune::FieldVector<DF,dim>&
             inside_local = Dune::ReferenceElements<DF,dim>::general(ig.inside().type()).position(0,0);
-        RF c_s = param.c(*(ig.inside()),inside_local);
+        RF c_s = param.c(ig.inside(),inside_local);
 
         // compute A+ (outgoing waves)
         Dune::FieldMatrix<DF,dim+1,dim+1> RT;

@@ -257,8 +257,8 @@ namespace Dune
                     typedef typename LFSV::template Child<1>::Type FaceUnknowns;
                     const FaceUnknowns& face_space = lfsv.template child<1>();
 
-		    r.accumulate(face_space,e,cell.face_areas[e]
-				 * data.j(*(ig.inside()), local_face_center));
+                    r.accumulate(face_space,e,cell.face_areas[e]
+                        * data.j(ig.inside(), local_face_center));
                 }
             }
 

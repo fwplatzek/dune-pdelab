@@ -262,7 +262,7 @@ namespace Dune {
 
             // evaluate Dirichlet boundary condition
             typename G::Traits::RangeType y;
-            g.evaluate(*(ig.inside()),local,y);
+            g.evaluate(ig.inside(),local,y);
 
             // integrate g v*normal
             RF factor = it->weight()*ig.geometry().integrationElement(it->position())/det;

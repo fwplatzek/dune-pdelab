@@ -335,63 +335,63 @@ namespace Dune {
         RF face_volume = ig.geometry().volume();
 
         // absolute permeability
-        RF k_abs_inside = tp.k_abs(*(ig.inside()),inside_cell_center_local);
-        RF k_abs_outside = tp.k_abs(*(ig.outside()),outside_cell_center_local);
+        RF k_abs_inside = tp.k_abs(ig.inside(),inside_cell_center_local);
+        RF k_abs_outside = tp.k_abs(ig.outside(),outside_cell_center_local);
 
         // gravity times normal
         RF gn = tp.gravity()*ig.unitOuterNormal(face_local);
 
         // liquid phase calculation
-        RF rho_l_inside = tp.rho_l(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,liquid));
-        RF rho_l_outside = tp.rho_l(*(ig.outside()),outside_cell_center_local,x_n(lfsu_n,liquid));
+        RF rho_l_inside = tp.rho_l(ig.inside(),inside_cell_center_local,x_s(lfsu_s,liquid));
+        RF rho_l_outside = tp.rho_l(ig.outside(),outside_cell_center_local,x_n(lfsu_n,liquid));
         RF w_l = (x_s(lfsu_s,liquid)-x_n(lfsu_n,liquid))/distance + aavg(rho_l_inside,rho_l_outside)*gn; // determines direction
         RF pc_upwind, s_l_upwind, s_g_upwind;
-        RF nu_l = aavg(tp.nu_l(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,liquid)),
-                       tp.nu_l(*(ig.outside()),outside_cell_center_local,x_n(lfsu_n,liquid)));
+        RF nu_l = aavg(tp.nu_l(ig.inside(),inside_cell_center_local,x_s(lfsu_s,liquid)),
+                       tp.nu_l(ig.outside(),outside_cell_center_local,x_n(lfsu_n,liquid)));
         if (w_l>=0) // upwind capillary pressure on face
           {
             pc_upwind = x_s(lfsu_s,gas)-x_s(lfsu_s,liquid);
-            s_l_upwind = tp.s_l(*(ig.inside()),inside_cell_center_local,pc_upwind);
+            s_l_upwind = tp.s_l(ig.inside(),inside_cell_center_local,pc_upwind);
           }
         else
           {
             pc_upwind = x_n(lfsu_n,gas)-x_n(lfsu_n,liquid);
-            s_l_upwind = tp.s_l(*(ig.outside()),outside_cell_center_local,pc_upwind);
+            s_l_upwind = tp.s_l(ig.outside(),outside_cell_center_local,pc_upwind);
           }
         s_g_upwind = 1-s_l_upwind;
-        RF lambda_l_inside = tp.kr_l(*(ig.inside()),inside_cell_center_local,s_l_upwind)/
-          tp.mu_l(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,liquid));
-        RF lambda_l_outside = tp.kr_l(*(ig.outside()),outside_cell_center_local,s_l_upwind)/
-          tp.mu_l(*(ig.outside()),outside_cell_center_local,x_n(lfsu_n,liquid));
+        RF lambda_l_inside = tp.kr_l(ig.inside(),inside_cell_center_local,s_l_upwind)/
+          tp.mu_l(ig.inside(),inside_cell_center_local,x_s(lfsu_s,liquid));
+        RF lambda_l_outside = tp.kr_l(ig.outside(),outside_cell_center_local,s_l_upwind)/
+          tp.mu_l(ig.outside(),outside_cell_center_local,x_n(lfsu_n,liquid));
         RF sigma_l = havg(lambda_l_inside*k_abs_inside,lambda_l_outside*k_abs_outside);
 
         r_s.accumulate(lfsv_s,liquid, scale_l * nu_l * sigma_l * w_l * face_volume);
         r_n.accumulate(lfsv_n,liquid, -scale_l * nu_l * sigma_l * w_l * face_volume);
 
         // gas phase calculation
-        RF rho_g_inside = tp.rho_g(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,gas));
-        RF rho_g_outside = tp.rho_g(*(ig.outside()),outside_cell_center_local,x_n(lfsu_n,gas));
+        RF rho_g_inside = tp.rho_g(ig.inside(),inside_cell_center_local,x_s(lfsu_s,gas));
+        RF rho_g_outside = tp.rho_g(ig.outside(),outside_cell_center_local,x_n(lfsu_n,gas));
         RF w_g = (x_s(lfsu_s,gas)-x_n(lfsu_n,gas))/distance + aavg(rho_g_inside,rho_g_outside)*gn; // determines direction
-        RF nu_g = aavg(tp.nu_g(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,gas)),
-                       tp.nu_g(*(ig.outside()),outside_cell_center_local,x_n(lfsu_n,gas)));
+        RF nu_g = aavg(tp.nu_g(ig.inside(),inside_cell_center_local,x_s(lfsu_s,gas)),
+                       tp.nu_g(ig.outside(),outside_cell_center_local,x_n(lfsu_n,gas)));
         if (w_l*w_g<=0) // new evaluation necessary only if signs differ
           {
             if (w_g>=0) // upwind capillary pressure on face
               {
                 pc_upwind = x_s(lfsu_s,gas)-x_s(lfsu_s,liquid);
-                s_l_upwind = tp.s_l(*(ig.inside()),inside_cell_center_local,pc_upwind);
+                s_l_upwind = tp.s_l(ig.inside(),inside_cell_center_local,pc_upwind);
               }
             else
               {
                 pc_upwind = x_n(lfsu_n,gas)-x_n(lfsu_n,liquid);
-                s_l_upwind = tp.s_l(*(ig.outside()),outside_cell_center_local,pc_upwind);
+                s_l_upwind = tp.s_l(ig.outside(),outside_cell_center_local,pc_upwind);
               }
             s_g_upwind = 1-s_l_upwind;
           }
-        RF lambda_g_inside = tp.kr_g(*(ig.inside()),inside_cell_center_local,s_g_upwind)/
-          tp.mu_g(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,gas));
-        RF lambda_g_outside = tp.kr_g(*(ig.outside()),outside_cell_center_local,s_g_upwind)/
-          tp.mu_g(*(ig.outside()),outside_cell_center_local,x_n(lfsu_n,gas));
+        RF lambda_g_inside = tp.kr_g(ig.inside(),inside_cell_center_local,s_g_upwind)/
+          tp.mu_g(ig.inside(),inside_cell_center_local,x_s(lfsu_s,gas));
+        RF lambda_g_outside = tp.kr_g(ig.outside(),outside_cell_center_local,s_g_upwind)/
+          tp.mu_g(ig.outside(),outside_cell_center_local,x_n(lfsu_n,gas));
         RF sigma_g = havg(lambda_g_inside*k_abs_inside,lambda_g_outside*k_abs_outside);
 
         r_s.accumulate(lfsv_s, gas, scale_g * nu_g * sigma_g * w_g * face_volume);
@@ -436,7 +436,7 @@ namespace Dune {
         RF distance = d.two_norm();
 
         // absolute permeability
-        RF k_abs_inside = tp.k_abs(*(ig.inside()),inside_cell_center_local);
+        RF k_abs_inside = tp.k_abs(ig.inside(),inside_cell_center_local);
 
         // gravity times normal
         RF gn = tp.gravity()*ig.unitOuterNormal(face_local);
@@ -444,29 +444,29 @@ namespace Dune {
         // liquid phase Dirichlet boundary
         if (bc_l==1)
           {
-            RF rho_l_inside = tp.rho_l(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,liquid));
+            RF rho_l_inside = tp.rho_l(ig.inside(),inside_cell_center_local,x_s(lfsu_s,liquid));
             RF g_l = tp.g_l(ig.intersection(),face_local,time);
             RF w_l = (x_s(lfsu_s,liquid)-g_l)/distance + rho_l_inside*gn;
-            RF s_l = tp.s_l(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,gas)-x_s(lfsu_s,liquid));
-            RF lambda_l_inside = tp.kr_l(*(ig.inside()),inside_cell_center_local,s_l)/
-              tp.mu_l(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,liquid));
+            RF s_l = tp.s_l(ig.inside(),inside_cell_center_local,x_s(lfsu_s,gas)-x_s(lfsu_s,liquid));
+            RF lambda_l_inside = tp.kr_l(ig.inside(),inside_cell_center_local,s_l)/
+              tp.mu_l(ig.inside(),inside_cell_center_local,x_s(lfsu_s,liquid));
             RF sigma_l = lambda_l_inside*k_abs_inside;
-            RF nu_l = tp.nu_l(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,liquid));
+            RF nu_l = tp.nu_l(ig.inside(),inside_cell_center_local,x_s(lfsu_s,liquid));
             r_s.accumulate(lfsv_s, liquid, scale_l * nu_l * sigma_l * w_l * face_volume);
           }
 
         // gas phase Dirichlet boundary
         if (bc_g==1)
           {
-            RF rho_g_inside = tp.rho_g(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,gas));
+            RF rho_g_inside = tp.rho_g(ig.inside(),inside_cell_center_local,x_s(lfsu_s,gas));
             RF g_g = tp.g_g(ig.intersection(),face_local,time);
             RF w_g = (x_s(lfsu_s,gas)-g_g)/distance + rho_g_inside*gn;
-            RF s_l = tp.s_l(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,gas)-x_s(lfsu_s,liquid));
+            RF s_l = tp.s_l(ig.inside(),inside_cell_center_local,x_s(lfsu_s,gas)-x_s(lfsu_s,liquid));
             RF s_g = 1-s_l;
-            RF lambda_g_inside = tp.kr_g(*(ig.inside()),inside_cell_center_local,s_g)/
-              tp.mu_g(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,gas));
+            RF lambda_g_inside = tp.kr_g(ig.inside(),inside_cell_center_local,s_g)/
+              tp.mu_g(ig.inside(),inside_cell_center_local,x_s(lfsu_s,gas));
             RF sigma_g = lambda_g_inside*k_abs_inside;
-            RF nu_g = tp.nu_g(*(ig.inside()),inside_cell_center_local,x_s(lfsu_s,gas));
+            RF nu_g = tp.nu_g(ig.inside(),inside_cell_center_local,x_s(lfsu_s,gas));
             r_s.accumulate(lfsv_s, gas, scale_l * nu_g * sigma_g * w_g * face_volume);
           }
       }

@@ -266,7 +266,7 @@ namespace Dune {
         Dune::FieldVector<DF,IG::dimension> face_center_in_element = ig.geometryInInside().global(face_local);
 
         // evaluate velocity
-        typename TP::Traits::RangeType v(tp.v(*(ig.inside()),face_center_in_element));
+        typename TP::Traits::RangeType v(tp.v(ig.inside(),face_center_in_element));
 
         // the normal velocity
         RF vn = v*ig.centerUnitOuterNormal();
@@ -283,8 +283,8 @@ namespace Dune {
           inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
         const Dune::FieldVector<DF,IG::dimension>&
           outside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.outside().type()).position(0,0);
-        typename TP::Traits::RangeFieldType D_inside = tp.D(*(ig.inside()),inside_local);
-        typename TP::Traits::RangeFieldType D_outside = tp.D(*(ig.outside()),outside_local);
+        typename TP::Traits::RangeFieldType D_inside = tp.D(ig.inside(),inside_local);
+        typename TP::Traits::RangeFieldType D_outside = tp.D(ig.outside(),outside_local);
         typename TP::Traits::RangeFieldType D_avg = 2.0/(1.0/(D_inside+1E-30) + 1.0/(D_outside+1E-30));
 
         // distance between cell centers in global coordinates
@@ -347,13 +347,13 @@ namespace Dune {
         // do things depending on boundary condition type
         if (bc==0) // Neumann boundary
           {
-            typename TP::Traits::RangeFieldType j = tp.j(*(ig.inside()),face_center_in_element);
+            typename TP::Traits::RangeFieldType j = tp.j(ig.inside(),face_center_in_element);
             r_s.accumulate(lfsu_s,0,j*face_volume);
             return;
           }
 
         // evaluate velocity
-        typename TP::Traits::RangeType v(tp.v(*(ig.inside()),face_center_in_element));
+        typename TP::Traits::RangeType v(tp.v(ig.inside(),face_center_in_element));
 
         // the normal velocity
         RF vn = v*ig.centerUnitOuterNormal();
@@ -369,10 +369,10 @@ namespace Dune {
         if (bc==1) // Dirichlet boundary
           {
             typename TP::Traits::RangeFieldType g;
-            if (vn>=0) g=x_s(lfsu_s,0); else g=tp.g(*(ig.inside()),face_center_in_element);
+            if (vn>=0) g=x_s(lfsu_s,0); else g=tp.g(ig.inside(),face_center_in_element);
             const Dune::FieldVector<DF,IG::dimension>&
               inside_local = Dune::ReferenceElements<DF,IG::dimension>::general(ig.inside().type()).position(0,0);
-            typename TP::Traits::RangeFieldType D_inside = tp.D(*(ig.inside()),inside_local);
+            typename TP::Traits::RangeFieldType D_inside = tp.D(ig.inside(),inside_local);
             Dune::FieldVector<DF,IG::dimension>
               inside_global = ig.inside().geometry().center();
             Dune::FieldVector<DF,IG::dimension>

@@ -91,9 +91,9 @@ namespace Dune {
        * \param go1_ instationary gridoperator object (typically mass matrix involved)
        */
       MultiStepGridOperator(const MultiStepParameters& method_, GO0 & go0_, GO1 & go1_) :
-        method(&method_) ,
         global_assembler(go0_.assembler()) ,
         go0(go0_), go1(go1_) ,
+        method(&method_) ,
         la0(go0_.localAssembler()), la1(go1_.localAssembler()) ,
         const_residual( go0_.testGridFunctionSpace() ) ,
         local_assembler(la0,la1, const_residual)

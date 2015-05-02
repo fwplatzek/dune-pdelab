@@ -55,9 +55,6 @@ namespace Dune {
     template<typename I>
     class IntersectionGeometry
     {
-    private:
-      const I& i;
-      const unsigned int index;
     public:
       //! \todo Please doc me!
       typedef typename I::Geometry Geometry;
@@ -215,19 +212,7 @@ namespace Dune {
       /*! @brief return EntityPointer to the Entity on the inside of this
         intersection. That is the Entity where we started this .
       */
-#ifdef DOXYGEN
-      Entity
-#else
-      typename std::conditional<
-        std::is_same<
-          decltype(i.inside()),
-          Entity
-          >::value,
-        Entity,
-        EntityPointer
-        >::type
-#endif
-      inside() const
+      Entity inside() const
       {
         return i.inside();
       }
@@ -235,7 +220,7 @@ namespace Dune {
       /*! @brief return EntityPointer to the Entity on the inside of this
         intersection. That is the Entity where we started this .
       */
-      EntityPointer insideHostEntity() const
+      Entity insideHostEntity() const
       {
         DUNE_THROW(Dune::Exception,"This should never be called.");
         return i.inside();
@@ -247,19 +232,7 @@ namespace Dune {
         @warning Don't call this method if there is no neighboring Entity
         (neighbor() returns false). In this case the result is undefined.
       */
-#ifdef DOXYGEN
-      Entity
-#else
-      typename std::conditional<
-        std::is_same<
-          decltype(i.inside()),
-          Entity
-          >::value,
-        Entity,
-        EntityPointer
-        >::type
-#endif
-      outside() const
+      Entity outside() const
       {
         return i.outside();
       }
@@ -274,6 +247,10 @@ namespace Dune {
       {
         return index;
       }
+
+    private:
+      const I& i;
+      const unsigned int index;
     };
 
   }

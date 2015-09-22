@@ -2,7 +2,6 @@
 #define DUNE_PDELAB_COMMON_PARAMETERS_HH
 
 #include <utility>
-#include <tuple>
 #include <type_traits>
 
 namespace Dune {
@@ -14,7 +13,7 @@ namespace PDELab {
 
 #undef DefinePDELabParameterName
 #define DefinePDELabParameterName(Name,Variable)                        \
-            template<typename T, typename Base = Imp::NoParameter>      \
+            template<typename T, typename Base = ::Dune::PDELab::Parameters::Imp::NoParameter> \
             struct Name##Parameter : public Base                        \
             {                                                           \
                 template <typename B>                                   \
@@ -22,7 +21,7 @@ namespace PDELab {
                 Name##Parameter (const Name##Parameter &) = default;    \
                 Name##Parameter (T && t) :                              \
                     Variable(std::forward<T>(t)) {}                     \
-                Name##Parameter (const Base & b, const Name##Parameter<T,Imp::NoParameter> & other) : \
+                Name##Parameter (const Base & b, const Name##Parameter<T,::Dune::PDELab::Parameters::Imp::NoParameter> & other) : \
                     Base(b),                                            \
                     Variable(other.Variable) {}                         \
                 typename std::decay<T>::type Variable;                  \

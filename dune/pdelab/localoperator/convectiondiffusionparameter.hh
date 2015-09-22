@@ -68,6 +68,17 @@ namespace Dune {
       // constraints assembler coming with PDELab is used
     };
 
+    namespace ConvectionDiffusionParameters {
+      DefinePDELabParameterName(DiffusionTensor, A);
+      DefinePDELabParameterName(VelocityField, b);
+      DefinePDELabParameterName(SinkTerm, c);
+      DefinePDELabParameterName(SourceTerm, f);
+      DefinePDELabParameterName(BoundaryCondition, bctype);
+      DefinePDELabParameterName(DirichletBoundaryValue, g);
+      DefinePDELabParameterName(NeumannBoundaryValue, j);
+      DefinePDELabParameterName(OutflowBoundaryValue,o);
+    } // end namespace ConvectionDiffusionParameters
+
     /** \brief Parameter class for solving the linear convection-diffusion equation
      *
      * A parameter class for the linear convection-diffusion equation
@@ -198,10 +209,6 @@ namespace Dune {
 
     };
 
-
-
-
-
     /*! Adapter that extracts the flux boundary conditions from the parameter class
 
       \tparam T  model of ConvectionDiffusionParameterInterface
@@ -254,10 +261,6 @@ namespace Dune {
       const typename Traits::GridViewType gv;
       T& t;
     };
-
-
-
-
 
   /*! Adapter that extracts Dirichlet boundary conditions from parameter class
 

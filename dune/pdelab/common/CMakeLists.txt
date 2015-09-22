@@ -15,6 +15,7 @@ install(FILES benchmarkhelper.hh
               jacobiantocurl.hh
               logtag.hh
               multiindex.hh
+              parameters.hh
               partitioninfoprovider.hh
               polymorphicbufferwrapper.hh
               range.hh

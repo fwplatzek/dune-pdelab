@@ -11,6 +11,7 @@
 #include<dune/geometry/quadraturerules.hh>
 #include<dune/pdelab/common/geometrywrapper.hh>
 #include<dune/pdelab/common/function.hh>
+#include<dune/pdelab/common/parameters.hh>
 #include<dune/pdelab/common/functionutilities.hh>
 #include<dune/pdelab/constraints/common/constraintsparameters.hh>
 

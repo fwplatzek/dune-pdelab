@@ -1,6 +1,15 @@
 #ifndef DUNE_PDELAB_COMMON_PARAMETERS_HH
 #define DUNE_PDELAB_COMMON_PARAMETERS_HH
 
+/**
+   \file parameters.hh Add support for functions style definition of LocalOperator parameter classes
+
+   \todo implement bind and unbind for elements
+   \todo implement bind and unbind for intersection
+   \todo implement setTime
+   \todo share storage for time, entity, intersection, where possible
+ */
+
 #include <utility>
 #include <type_traits>
 
@@ -32,31 +41,20 @@ namespace PDELab {
                 return { std::forward<T>(t) };                          \
             }
 
-            // we use multiple inheritance to create a struct containing all classes in the Parameter Pack
-            template <typename... Pack> struct Unroll;
-
-            template <typename Head, typename ... Next>
-            struct Unroll<Head, Next...>:
-                public std::decay<Head>::type,
-                public Unroll<Next...>
+            template<typename Head>
+            Head
+            merge(const Head & head)
             {
-                Unroll(Head && h, Next && ... n) :
-                    std::decay<Head>::type(std::forward<Head>(h)),
-                    Unroll<Next...>(std::forward<Next>(n)...)
-                {}
+                return head;
             };
 
-            template <>
-            struct Unroll<>
-            {};
-
-            template<typename... Pack>
-            struct MergedParameters :
-                public Unroll<Pack...>
+            template<typename Head, typename... Pack>
+            auto
+            merge(const Head & head, Pack && ... pack)
+                -> typename Head::template bindBaseClass<decltype(merge(pack...))>
             {
-                MergedParameters(Pack && ... pack) :
-                    Unroll<Pack...>(std::forward<Pack>(pack)...)
-                {}
+                auto remainder = merge(pack...);
+                return typename Head::template bindBaseClass<decltype(remainder)>(remainder,head);
             };
 
         }
@@ -73,10 +71,12 @@ namespace PDELab {
            \endcode
          */
         template<typename... Pack>
-        Imp::MergedParameters<Pack...>
+        // Imp::MergedParameters<Pack...>
+        auto
         merge(Pack && ... pack)
+            -> decltype(Imp::merge(pack...))
         {
-            return Imp::MergedParameters<Pack...>(std::forward<Pack>(pack)...);
+            return Imp::merge(pack...);
         };
 
         /**
@@ -96,7 +96,6 @@ namespace PDELab {
         {
             return typename P::template bindBaseClass<Base>(b,p);
         };
-
     }
 
 } // end namespace PDELab

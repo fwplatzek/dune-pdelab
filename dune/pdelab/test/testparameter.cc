@@ -2,19 +2,23 @@
 
 #include <iostream>
 
+#include <dune/common/classname.hh>
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/grid/yaspgrid.hh>
 #include <dune/pdelab/common/parameters.hh>
 #include <dune/pdelab/localoperator/convectiondiffusionparameter.hh>
+#include <dune/pdelab/function/helpers.hh>
 
-template <typename Param>
-void assemble(const Param & p)
+template <typename GV, typename Param>
+void assemble(const GV & gv, Param & p)
 {
-    for (int i = 0; i <= 10; i++)
+    for (const auto & e : elements(gv))
     {
-        double x = i * 0.1;
-
-        std::cout << x << "\t" << p.A(x) << "\t" << p.bc(x) << std::endl;
+        Dune::FieldVector<double,2> x(0.5);
+        p.f.bind(e);
+        std::cout << x << "\t"
+                  << p.f(x) << "\t"
+                  << p.bctype(e,x) << std::endl;
     }
     std::cout << "---------------------------" << std::endl;
 }
@@ -31,12 +35,11 @@ int main(int argc, char** argv)
         //Maybe initialize Mpi
         Dune::MPIHelper::instance(argc, argv);
 
-
         // need a grid in order to test grid functions
         Dune::FieldVector<double,2> L(1.0);
         Dune::array<int,2> N(Dune::fill_array<int,2>(1));
         Dune::YaspGrid<2> grid(L,N);
-        grid.globalRefine(6);
+        grid.globalRefine(1);
 
         // setup parameters
         using GV = Dune::YaspGrid<2>::LeafGridView;
@@ -46,27 +49,35 @@ int main(int argc, char** argv)
         using Element = typename BasicParam::Traits::ElementType;
         using Domain = typename BasicParam::Traits::DomainType;
 
-        auto f = [](Element, Domain x) { return x*x; };
+        auto f = [](Element e, Domain x) { return e.geometry().global(x).two_norm(); };
+
+        using namespace Dune::TypeTree::Indices;
+        using Dune::PDELab::replaceEntityByBind;
 
         namespace Param = Dune::PDELab::Parameters;
         namespace ModelParam = Dune::PDELab::ConvectionDiffusionParameters;
         auto param =
             Param::overwrite(
                 Param::merge(
-                    ModelParam::defineSinkTerm([]() { return 1.0; } ),
+                    ModelParam::defineSourceTerm(
+                        replaceEntityByBind(f,_1)
+                        ),
                     ModelParam::defineBoundaryCondition(freeFunctionBCType<Element,Domain>)
                     ),
                 ModelParam::defineSinkTerm(f)
                 );
-        // assemble(param);
+        assemble(grid.leafGridView(),param);
 
         // refine / modify existing parameter class
         auto param2 =
-            Param::overwrite(BasicParam(),
-                ModelParam::defineBoundaryCondition(freeFunctionBCType<Element,Domain>)
+            Param::overwrite(param, // BasicParam(),
+                ModelParam::defineSourceTerm(
+                    replaceEntityByBind(
+                        [](Domain,Element) { return 1.0; } ,
+                        _2)
+                    )
                 );
-        // assemble(param2);
-
+        assemble(grid.leafGridView(),param2);
     }
     catch (Dune::Exception &e){
         std::cerr << "Dune reported error: " << e << std::endl;

@@ -90,6 +90,7 @@ namespace PDELab {
         };
 #endif
 
+        /** helpers for index_sequence */
 
         template<std::size_t O, std::size_t N, std::size_t ...S>
         struct make_index_range_impl : make_index_range_impl<O, N-1, O+N-1, S...> { };
@@ -105,13 +106,81 @@ namespace PDELab {
             return typename make_index_range_impl<O, E-O>::type();
         }
 
+        template<typename A, typename B>
+        struct merge_index_sequence_impl;
+
+        template<std::size_t... A, std::size_t... B>
+        struct merge_index_sequence_impl<
+            Std::index_sequence<A...>,
+            Std::index_sequence<B...>
+            >
+        {
+            using type = Std::index_sequence<A...,B...>;
+        };
+
+        /**
+           tmp to extract a sub section of a tuple
+         */
+
+        template<typename S, typename T>
+        struct sub_tuple_impl;
+
+        template<std::size_t... S, typename... T>
+        struct sub_tuple_impl<
+            Std::index_sequence<S...>,
+            std::tuple<T...>>
+        {
+            using type = std::tuple< typename std::tuple_element<S, std::tuple<T...> >::type ... >;
+        };
+
+        template<std::size_t N, typename T>
+        struct remove_from_tuple_impl;
+        template<std::size_t N, typename... T>
+        struct remove_from_tuple_impl<N, std::tuple<T...>>
+        {
+            using pre = typename make_index_range_impl<0,N>::type;
+            using post = typename make_index_range_impl<N+1, sizeof...(T)-N-1>::type;
+            using idx = typename merge_index_sequence_impl<pre,post>::type;
+            using type = typename sub_tuple_impl<idx, std::tuple<T...> >::type;
+        };
+
         /**
            \todo actually derive the list of parameters for operator() from F
         */
+        template <typename T, typename Range, std::size_t N, class Imp>
+        class ReplaceParameterByMemberBase;
+
+        template <typename ... Args, typename Range, std::size_t N, class Imp>
+        class ReplaceParameterByMemberBase<std::tuple<Args...>, Range, N, Imp>
+        {
+        public:
+            //! interleave arguments with predefined parameter
+            //! \todo make sure we don't invoke unnecessary copies
+            Range
+            operator()(Args ... args) const
+            {
+                // split parameter at position N
+                static constexpr auto pre = make_index_range<0,N>();
+                static constexpr auto post = make_index_range<N,sizeof...(Args)>();
+                return asImp().callFunc(pre,post,std::tuple<Args...>(args...));
+                // return asImp().callFunc(pre,post,std::tuple<Args...>(std::forward<Args>(args)...));
+            }
+        private:
+            const Imp& asImp () const {return static_cast<const Imp &>(*this);}
+        };
+
         template <typename F, std::size_t N, class Imp>
-        class ReplaceParameterByMember
+        class ReplaceParameterByMember :
+            public ReplaceParameterByMemberBase<
+                typename remove_from_tuple_impl<N,typename ExtendedSignatureTraits<typename std::decay<F>::type>::Parameters>::type,
+                typename ExtendedSignatureTraits<typename std::decay<F>::type>::RawRange, N,
+                ReplaceParameterByMember<F,N,Imp> >
         {
             using Fnkt = typename std::decay<F>::type;
+            friend class ReplaceParameterByMemberBase<
+                typename remove_from_tuple_impl<N,typename ExtendedSignatureTraits<typename std::decay<F>::type>::Parameters>::type,
+                typename ExtendedSignatureTraits<typename std::decay<F>::type>::RawRange, N,
+                ReplaceParameterByMember<F,N,Imp> >;
         public:
             using Parameters = typename ExtendedSignatureTraits<Fnkt>::Parameters;
             using Range = typename ExtendedSignatureTraits<Fnkt>::RawRange;
@@ -119,18 +188,6 @@ namespace PDELab {
             ReplaceParameterByMember(F && f)
                 : function_(f)
             {}
-
-            //! interleave arguments with the entity
-            template<typename ... Args>
-            Range
-            operator()(Args && ... args) const
-            {
-                static_assert(sizeof...(Args) == std::tuple_size<Parameters>::value-1, "Wrong number of arguments");
-                // split parameter at position N
-                auto pre = make_index_range<0,N>();
-                auto post = make_index_range<N,sizeof...(Args)>();
-                return callFunc(pre,post,std::tuple<Args...>(std::forward<Args>(args)...));
-            }
 
         private:
             const Imp& asImp () const {return static_cast<const Imp &>(*this);}
@@ -202,6 +259,7 @@ namespace PDELab {
             const Entity * entity_;
         };
 
+        //! \todo detect if F is already a wrapper... in this case we derive from F and don't store it
         template <typename F, std::size_t N>
         class ReplaceTime :
             public ReplaceParameterByMember<F,N,ReplaceTime<F,N>>

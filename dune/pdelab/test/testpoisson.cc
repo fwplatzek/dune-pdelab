@@ -29,6 +29,7 @@
 #include <dune/pdelab/localoperator/convectiondiffusionfem.hh>
 #include <dune/pdelab/gridfunctionspace/vtk.hh>
 #include <dune/pdelab/stationary/linearproblem.hh>
+#include <dune/pdelab/function/helpers.hh>
 
 #include"gridexamples.hh"
 
@@ -40,71 +41,6 @@
 //  -\nabla u \cdot \nu = j on \partial\Omega_N
 //===============================================================
 //===============================================================
-
-//===============================================================
-// Define parameter functions f,g,j and \partial\Omega_D/N
-//===============================================================
-
-template<typename GV, typename RF>
-class PoissonModelProblem :
-  public Dune::PDELab::ConvectionDiffusionModelProblem<GV,RF>
-{
-  using typename Dune::PDELab::ConvectionDiffusionModelProblem<GV,RF>::BCType;
-
-public:
-  using typename Dune::PDELab::ConvectionDiffusionModelProblem<GV,RF>::Traits;
-
-  //! source term
-  typename Traits::RangeFieldType
-  f (const typename Traits::DomainType& x) const
-  {
-    auto xglobal = this->e_->geometry().global(x);
-    if (xglobal[0]>0.25 && xglobal[0]<0.375 && xglobal[1]>0.25 && xglobal[1]<0.375)
-      return 50.0;
-    else
-      return 0.0;
-  }
-
-  //! boundary condition type function
-  BCType
-  bctype (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
-  {
-    auto xglobal = is.geometry().global(x);
-
-    if (xglobal[1]<1E-6 || xglobal[1]>1.0-1E-6)
-      {
-        return Dune::PDELab::ConvectionDiffusionBoundaryConditions::Neumann;
-      }
-    if (xglobal[0]>1.0-1E-6 && xglobal[1]>0.5+1E-6)
-      {
-        return Dune::PDELab::ConvectionDiffusionBoundaryConditions::Neumann;
-      }
-    return Dune::PDELab::ConvectionDiffusionBoundaryConditions::Dirichlet;
-  }
-
-  //! Dirichlet boundary condition value
-  typename Traits::RangeFieldType
-  g (const typename Traits::DomainType& x) const
-  {
-    auto xglobal = this->e_->geometry().global(x);
-    xglobal -= 0.5;
-    return exp(-xglobal.two_norm2());
-  }
-
-  //! Neumann boundary condition
-  typename Traits::RangeFieldType
-  j (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
-  {
-    auto xglobal = is.geometry().global(x);
-
-    if (xglobal[0] > 1.0 - 1E-6 && xglobal[1] > 0.5 + 1E-6) {
-      return -5.0;
-    } else {
-      return 0.0;
-    }
-  }
-
-};
 
 //===============================================================
 // Problem setup and solution
@@ -127,8 +63,68 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   gfs.name("solution");
 
   // make model problem
-  typedef PoissonModelProblem<GV,R> Problem;
-  Problem problem;
+  namespace Param = Dune::PDELab::Parameters;
+  namespace ModelParam = Dune::PDELab::ConvectionDiffusionParameters;
+  using namespace Dune::TypeTree::Indices;
+  using Dune::PDELab::replaceEntityByBind;
+
+  // grid typedefs
+  using BCType = Dune::PDELab::ConvectionDiffusionBoundaryConditions::Type;
+  using BasicParam = Dune::PDELab::ConvectionDiffusionModelProblem<GV,R>;
+  using Element = typename BasicParam::Traits::ElementType;
+  using Domain = typename BasicParam::Traits::DomainType;
+  using Intersection = typename BasicParam::Traits::IntersectionType;
+  using IntersectionDomain = typename BasicParam::Traits::IntersectionDomainType;
+
+  // Define parameter functions f,g,j and \partial\Omega_D/N
+  auto f =
+    [] (const Element& e, const Domain& x) -> R
+    {
+      auto xglobal = e.geometry().global(x);
+      if (xglobal[0]>0.25 && xglobal[0]<0.375 && xglobal[1]>0.25 && xglobal[1]<0.375)
+        return 50.0;
+      else
+        return 0.0;
+    };
+  auto g = [] (const Element& e, const Domain& x)
+    {
+      auto xglobal = e.geometry().global(x);
+      xglobal -= 0.5;
+      return exp(-xglobal.two_norm2());
+    };
+  auto bctype =
+    [] (const Intersection& is, const IntersectionDomain& x) -> BCType
+    {
+      auto xglobal = is.geometry().global(x);
+
+      if (xglobal[1]<1E-6 || xglobal[1]>1.0-1E-6)
+      {
+        return Dune::PDELab::ConvectionDiffusionBoundaryConditions::Neumann;
+      }
+      if (xglobal[0]>1.0-1E-6 && xglobal[1]>0.5+1E-6)
+      {
+        return Dune::PDELab::ConvectionDiffusionBoundaryConditions::Neumann;
+      }
+      return Dune::PDELab::ConvectionDiffusionBoundaryConditions::Dirichlet;
+    };
+  auto j = [] (const Intersection& is, const IntersectionDomain& x) -> R
+    {
+      auto xglobal = is.geometry().global(x);
+      if (xglobal[0] > 1.0 - 1E-6 && xglobal[1] > 0.5 + 1E-6) {
+        return -5.0;
+      } else {
+        return 0.0;
+      }
+    };
+
+  auto problem =
+    Param::overwrite(
+      BasicParam(),
+      ModelParam::defineSourceTerm(replaceEntityByBind(f,_1)),
+      ModelParam::defineBoundaryCondition(bctype),
+      ModelParam::defineDirichletBoundaryValue(replaceEntityByBind(g,_1)),
+      ModelParam::defineNeumannBoundaryValue(j)
+      );
 
   // make constraints map and initialize it from a function
   typedef typename GFS::template ConstraintsContainer<R>::Type C;

@@ -21,6 +21,8 @@ namespace PDELab {
 
             struct NoParameter {};
 
+            // concepts for local functions
+
             struct HasBindMethod
             {
                 template<class F, class C>
@@ -28,6 +30,16 @@ namespace PDELab {
                     f.bind(c)
                     );
             };
+
+            struct HasUnbindMethod
+            {
+                template<class F>
+                auto require(F&& f) -> decltype(
+                    f.unbind()
+                    );
+            };
+
+            // forward calls to the local function _iff_ the appropriate method is available
 
             template<typename F, typename C,
                      typename std::enable_if< Functions::Concept::models<HasBindMethod, F,C>(), int>::type = 0>
@@ -39,6 +51,17 @@ namespace PDELab {
             template<typename F, typename C,
                      typename std::enable_if< not Functions::Concept::models<HasBindMethod, F,C>(), int>::type = 0>
             void forwardBind(F && f, C && c) {}
+
+            template<typename F,
+                     typename std::enable_if< Functions::Concept::models<HasUnbindMethod, F>(), int>::type = 0>
+            void forwardUnbind(F && f)
+            {
+                f.unbind();
+            }
+
+            template<typename F,
+                     typename std::enable_if< not Functions::Concept::models<HasUnbindMethod, F>(), int>::type = 0>
+            void forwardUnbind(F && f) {}
 
 #undef DefinePDELabParameterName
 #define DefinePDELabParameterName(Name,Variable)                        \
@@ -55,7 +78,16 @@ namespace PDELab {
                     Variable(other.Variable) {}                         \
                 typename std::decay<T>::type Variable;                  \
                 template<typename C>                                    \
-                    void bind(C && c) { Dune::PDELab::Parameters::Imp::forwardBind(Variable,c); } \
+                    void bind(C && c) {                                 \
+                    ::Dune::PDELab::Parameters::Imp::forwardBind(Variable, \
+                        std::forward<C>(c));                            \
+                    ::Dune::PDELab::Parameters::Imp::forwardBind(static_cast<Base&>(*this), \
+                        std::forward<C>(c));                            \
+                }                                                       \
+                void unbind() {                                         \
+                    ::Dune::PDELab::Parameters::Imp::forwardUnbind(Variable); \
+                    ::Dune::PDELab::Parameters::Imp::forwardUnbind(static_cast<Base&>(*this)); \
+                }                                                       \
             };                                                          \
             template<typename T>                                        \
             Name##Parameter<T> define##Name(T && t)                     \

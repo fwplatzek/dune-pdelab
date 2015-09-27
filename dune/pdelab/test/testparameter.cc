@@ -19,6 +19,7 @@ void assemble(const GV & gv, Param & p)
         std::cout << x << "\t"
                   << p.f(x) << "\t"
                   << p.bctype(e,x) << std::endl;
+        p.unbind();
     }
     std::cout << "---------------------------" << std::endl;
 }
@@ -58,10 +59,10 @@ int main(int argc, char** argv)
         namespace ModelParam = Dune::PDELab::ConvectionDiffusionParameters;
         auto param =
             Param::merge(
+                ModelParam::defineBoundaryCondition(
+                    freeFunctionBCType<Element,Domain>),
                 ModelParam::defineSourceTerm(
-                    replaceEntityByBind(f,_1)
-                    ),
-                ModelParam::defineBoundaryCondition(freeFunctionBCType<Element,Domain>)
+                    replaceEntityByBind(f,_1))
                 );
         assemble(grid.leafGridView(),param);
 

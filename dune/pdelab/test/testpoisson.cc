@@ -28,7 +28,7 @@
 #include <dune/pdelab/localoperator/laplacedirichletp12d.hh>
 #include <dune/pdelab/localoperator/convectiondiffusionfem.hh>
 #include <dune/pdelab/gridfunctionspace/vtk.hh>
-#include<dune/pdelab/stationary/linearproblem.hh>
+#include <dune/pdelab/stationary/linearproblem.hh>
 
 #include"gridexamples.hh"
 
@@ -58,7 +58,7 @@ public:
   typename Traits::RangeFieldType
   f (const typename Traits::DomainType& x) const
   {
-    const auto& xglobal = this->e_->geometry().global(x);
+    auto xglobal = this->e_->geometry().global(x);
     if (xglobal[0]>0.25 && xglobal[0]<0.375 && xglobal[1]>0.25 && xglobal[1]<0.375)
       return 50.0;
     else
@@ -69,7 +69,7 @@ public:
   BCType
   bctype (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
   {
-    typename Traits::DomainType xglobal = is.geometry().global(x);
+    auto xglobal = is.geometry().global(x);
 
     if (xglobal[1]<1E-6 || xglobal[1]>1.0-1E-6)
       {
@@ -86,7 +86,7 @@ public:
   typename Traits::RangeFieldType
   g (const typename Traits::DomainType& x) const
   {
-    typename Traits::DomainType xglobal = this->e_->geometry().global(x);
+    auto xglobal = this->e_->geometry().global(x);
     xglobal -= 0.5;
     return exp(-xglobal.two_norm2());
   }
@@ -95,7 +95,7 @@ public:
   typename Traits::RangeFieldType
   j (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
   {
-    typename Traits::DomainType xglobal = is.geometry().global(x);
+    auto xglobal = is.geometry().global(x);
 
     if (xglobal[0] > 1.0 - 1E-6 && xglobal[1] > 0.5 + 1E-6) {
       return -5.0;
@@ -133,12 +133,11 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   // make constraints map and initialize it from a function
   typedef typename GFS::template ConstraintsContainer<R>::Type C;
   C cg;
-  cg.clear();
-  Dune::PDELab::ConvectionDiffusionBoundaryConditionAdapter<Problem> bctype(gv,problem);
-  Dune::PDELab::constraints(bctype,gfs,cg);
+  Dune::PDELab::ConvectionDiffusionBoundaryConditionAdapter<decltype(problem)> bcond (gv,problem);
+  Dune::PDELab::constraints(bcond,gfs,cg);
 
   // make local operator
-  typedef Dune::PDELab::ConvectionDiffusionFEM<Problem,FEM> LOP;
+  typedef Dune::PDELab::ConvectionDiffusionFEM<decltype(problem),FEM> LOP;
   LOP lop(problem);
 
   typedef Dune::PDELab::istl::BCRSMatrixBackend<> MBE;
@@ -156,19 +155,12 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   // it's there to test the copy constructor and assignment operator of the
   // matrix wrapper
   typedef typename GridOperator::Traits::Domain DV;
-  DV x0(gfs,Dune::PDELab::Backend::unattached_container());
-  {
-    DV x1(gfs);
-    DV x2(x1);
-    x2 = 0.0;
-    x0 = x1;
-    x0 = x2;
-  }
+  DV x0(gfs);
 
   // initialize DOFs from Dirichlet extension
-  typedef Dune::PDELab::ConvectionDiffusionDirichletExtensionAdapter<Problem> G;
-  G g(gv,problem);
-  Dune::PDELab::interpolate(g,gfs,x0);
+  typedef Dune::PDELab::ConvectionDiffusionDirichletExtensionAdapter<decltype(problem)> G_Ext;
+  G_Ext g_ext(gv,problem);
+  Dune::PDELab::interpolate(g_ext,gfs,x0);
   Dune::PDELab::set_nonconstrained_dofs(cg,0.0,x0);
 
   // represent operator as a matrix

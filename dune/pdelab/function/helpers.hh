@@ -245,7 +245,10 @@ namespace PDELab {
             friend Base;
         public:
             using Base::Base;
-            using Entity = typename std::tuple_element<N, typename Base::Parameters>::type;
+            using Entity =
+                typename std::decay<
+                    typename std::tuple_element<
+                        N, typename Base::Parameters>::type>::type;
             void bind (const Entity & entity)
             {
                 entity_ = &entity;

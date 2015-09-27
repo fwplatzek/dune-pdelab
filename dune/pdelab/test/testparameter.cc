@@ -57,14 +57,11 @@ int main(int argc, char** argv)
         namespace Param = Dune::PDELab::Parameters;
         namespace ModelParam = Dune::PDELab::ConvectionDiffusionParameters;
         auto param =
-            Param::overwrite(
-                Param::merge(
-                    ModelParam::defineSourceTerm(
-                        replaceEntityByBind(f,_1)
-                        ),
-                    ModelParam::defineBoundaryCondition(freeFunctionBCType<Element,Domain>)
+            Param::merge(
+                ModelParam::defineSourceTerm(
+                    replaceEntityByBind(f,_1)
                     ),
-                ModelParam::defineSinkTerm(f)
+                ModelParam::defineBoundaryCondition(freeFunctionBCType<Element,Domain>)
                 );
         assemble(grid.leafGridView(),param);
 

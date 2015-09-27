@@ -77,6 +77,9 @@ namespace Dune {
         // dimensions
         const int dim = EG::Entity::dimension;
 
+        // bind parameter class to current entity
+        param.bind(eg.entity());
+
         // select quadrature rule
         Dune::GeometryType gt = eg.geometry().type();
         const int intorder = intorderadd+2*lfsu.finiteElement().localBasis().order();
@@ -85,7 +88,7 @@ namespace Dune {
         // evaluate diffusion tensor at cell center, assume it is constant over elements
         typename T::Traits::PermTensorType tensor;
         Dune::FieldVector<DF,dim> localcenter = Dune::ReferenceElements<DF,dim>::general(gt).position(0,0);
-        tensor = param.A(eg.entity(),localcenter);
+        tensor = param.A(localcenter);
 
         // loop over quadrature points
         for (const auto& ip : rule)
@@ -122,9 +125,9 @@ namespace Dune {
             tensor.umv(gradu,Agradu);
 
             // evaluate velocity field, sink term and source term
-            typename T::Traits::RangeType b = param.b(eg.entity(),ip.position());
-            typename T::Traits::RangeFieldType c = param.c(eg.entity(),ip.position());
-            typename T::Traits::RangeFieldType f = param.f(eg.entity(),ip.position());
+            typename T::Traits::RangeType b = param.b(ip.position());
+            typename T::Traits::RangeFieldType c = param.c(ip.position());
+            typename T::Traits::RangeFieldType f = param.f(ip.position());
 
             // integrate (A grad u)*grad phi_i - u b*grad phi_i + c*u*phi_i
             RF factor = ip.weight() * eg.geometry().integrationElement(ip.position());
@@ -152,6 +155,9 @@ namespace Dune {
         // dimensions
         const int dim = EG::Entity::dimension;
 
+        // bind parameter class to current entity
+        param.bind(eg.entity());
+
         // select quadrature rule
         Dune::GeometryType gt = eg.geometry().type();
         const int intorder = intorderadd+2*lfsu.finiteElement().localBasis().order();
@@ -160,7 +166,7 @@ namespace Dune {
         // evaluate diffusion tensor at cell center, assume it is constant over elements
         typename T::Traits::PermTensorType tensor;
         Dune::FieldVector<DF,dim> localcenter = Dune::ReferenceElements<DF,dim>::general(gt).position(0,0);
-        tensor = param.A(eg.entity(),localcenter);
+        tensor = param.A(localcenter);
 
         // loop over quadrature points
         for (const auto& ip : rule)
@@ -187,8 +193,8 @@ namespace Dune {
             const std::vector<RangeType>& phi = cache.evaluateFunction(ip.position(),lfsu.finiteElement().localBasis());
 
             // evaluate velocity field, sink term and source te
-            typename T::Traits::RangeType b = param.b(eg.entity(),ip.position());
-            typename T::Traits::RangeFieldType c = param.c(eg.entity(),ip.position());
+            typename T::Traits::RangeType b = param.b(ip.position());
+            typename T::Traits::RangeFieldType c = param.c(ip.position());
 
             // integrate (A grad phi_j)*grad phi_i - phi_j b*grad phi_i + c*phi_j*phi_i
             RF factor = ip.weight() * eg.geometry().integrationElement(ip.position());
@@ -262,8 +268,11 @@ namespace Dune {
                 for (size_type i=0; i<lfsu_s.size(); i++)
                   u += x_s(lfsu_s,i)*phi[i];
 
+                // bind parameter class to inside entity
+                param.bind(inside_cell);
+
                 // evaluate velocity field and outer unit normal
-                typename T::Traits::RangeType b = param.b(inside_cell,local);
+                typename T::Traits::RangeType b = param.b(local);
                 const Dune::FieldVector<DF,dim> n = ig.unitOuterNormal(ip.position());
 
                 // evaluate outflow boundary condition
@@ -324,8 +333,11 @@ namespace Dune {
             // lfsu_s.finiteElement().localBasis().evaluateFunction(local,phi);
             const std::vector<RangeType>& phi = cache.evaluateFunction(local,lfsu_s.finiteElement().localBasis());
 
+            // bind parameter class to inside entity
+            param.bind(inside_cell);
+
             // evaluate velocity field and outer unit normal
-            typename T::Traits::RangeType b = param.b(inside_cell,local);
+            typename T::Traits::RangeType b = param.b(local);
             const Dune::FieldVector<DF,dim> n = ig.unitOuterNormal(ip.position());
 
             // integrate
@@ -340,7 +352,7 @@ namespace Dune {
       //! set time in parameter class
       void setTime (double t)
       {
-        param.setTime(t);
+        // param.setTime(t);
       }
 
     private:
@@ -408,6 +420,9 @@ namespace Dune {
         const int dim = EG::Geometry::dimension;
         const int intorder = 2*lfsu.finiteElement().localBasis().order();
 
+        // bind parameter class to current entity
+        param.bind(eg.entity());
+
         // select quadrature rule
         Dune::GeometryType gt = eg.geometry().type();
         const Dune::QuadratureRule<DF,dim>& rule = Dune::QuadratureRules<DF,dim>::rule(gt,intorder);
@@ -426,10 +441,10 @@ namespace Dune {
               u += x(lfsu,i)*phi[i];
 
             // evaluate reaction term
-            typename T::Traits::RangeFieldType c = param.c(eg.entity(),ip.position());
+            typename T::Traits::RangeFieldType c = param.c(ip.position());
 
             // evaluate right hand side parameter function
-            typename T::Traits::RangeFieldType f = param.f(eg.entity(),ip.position());
+            typename T::Traits::RangeFieldType f = param.f(ip.position());
 
             // integrate f^2
             RF factor = ip.weight() * eg.geometry().integrationElement(ip.position());
@@ -440,7 +455,6 @@ namespace Dune {
         DF h_T = diameter(eg.geometry());
         r.accumulate(lfsv,0,h_T*h_T*sum);
       }
-
 
       // skeleton integral depending on test and ansatz functions
       // each face is only visited ONCE!

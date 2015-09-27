@@ -46,44 +46,19 @@
 //===============================================================
 
 template<typename GV, typename RF>
-class PoissonModelProblem
+class PoissonModelProblem :
+  public Dune::PDELab::ConvectionDiffusionModelProblem<GV,RF>
 {
-  typedef Dune::PDELab::ConvectionDiffusionBoundaryConditions::Type BCType;
+  using typename Dune::PDELab::ConvectionDiffusionModelProblem<GV,RF>::BCType;
 
 public:
-  typedef Dune::PDELab::ConvectionDiffusionParameterTraits<GV,RF> Traits;
-
-  //! tensor diffusion coefficient
-  typename Traits::PermTensorType
-  A (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
-  {
-    typename Traits::PermTensorType I;
-    for (std::size_t i=0; i<Traits::dimDomain; i++)
-      for (std::size_t j=0; j<Traits::dimDomain; j++)
-        I[i][j] = (i==j) ? 1 : 0;
-    return I;
-  }
-
-  //! velocity field
-  typename Traits::RangeType
-  b (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
-  {
-    typename Traits::RangeType v(0.0);
-    return v;
-  }
-
-  //! sink term
-  typename Traits::RangeFieldType
-  c (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
-  {
-    return 0.0;
-  }
+  using typename Dune::PDELab::ConvectionDiffusionModelProblem<GV,RF>::Traits;
 
   //! source term
   typename Traits::RangeFieldType
-  f (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
+  f (const typename Traits::DomainType& x) const
   {
-    const auto& xglobal = e.geometry().global(x);
+    const auto& xglobal = this->e_->geometry().global(x);
     if (xglobal[0]>0.25 && xglobal[0]<0.375 && xglobal[1]>0.25 && xglobal[1]<0.375)
       return 50.0;
     else
@@ -109,9 +84,9 @@ public:
 
   //! Dirichlet boundary condition value
   typename Traits::RangeFieldType
-  g (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
+  g (const typename Traits::DomainType& x) const
   {
-    typename Traits::DomainType xglobal = e.geometry().global(x);
+    typename Traits::DomainType xglobal = this->e_->geometry().global(x);
     xglobal -= 0.5;
     return exp(-xglobal.two_norm2());
   }
@@ -129,12 +104,6 @@ public:
     }
   }
 
-  //! outflow boundary condition
-  typename Traits::RangeFieldType
-  o (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
-  {
-    return 0.0;
-  }
 };
 
 //===============================================================

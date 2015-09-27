@@ -98,14 +98,31 @@ namespace Dune {
     template<typename GV, typename RF>
     class ConvectionDiffusionModelProblem
     {
+    protected:
       typedef ConvectionDiffusionBoundaryConditions::Type BCType;
 
     public:
       typedef ConvectionDiffusionParameterTraits<GV,RF> Traits;
 
+      void bind(const typename Traits::ElementType& e)
+      {
+        e_ = &e;
+      }
+
+      void bind(const typename Traits::IntersectionType & i)
+      {
+        i_ = &i;
+      }
+
+      void unbind()
+      {
+        e_ = nullptr;
+        i_ = nullptr;
+      }
+
       //! tensor diffusion coefficient
       typename Traits::PermTensorType
-      A (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
+      A (const typename Traits::DomainType& x) const
       {
         typename Traits::PermTensorType I;
         for (std::size_t i=0; i<Traits::dimDomain; i++)
@@ -116,7 +133,7 @@ namespace Dune {
 
       //! velocity field
       typename Traits::RangeType
-      b (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
+      b (const typename Traits::DomainType& x) const
       {
         typename Traits::RangeType v(0.0);
         return v;
@@ -124,47 +141,52 @@ namespace Dune {
 
       //! sink term
       typename Traits::RangeFieldType
-      c (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
+      c (const typename Traits::DomainType& x) const
       {
         return 0.0;
       }
 
       //! source term
       typename Traits::RangeFieldType
-      f (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
+      f (const typename Traits::DomainType& x) const
       {
         return 0.0;
       }
 
       //! boundary condition type function
       BCType
-      bctype (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
+      bctype (const typename Traits::IntersectionType&, const typename Traits::IntersectionDomainType& x) const
       {
-        typename Traits::DomainType xglobal = is.geometry().global(x);
         return ConvectionDiffusionBoundaryConditions::Dirichlet;
       }
 
       //! Dirichlet boundary condition value
       typename Traits::RangeFieldType
-      g (const typename Traits::ElementType& e, const typename Traits::DomainType& x) const
+      g (const typename Traits::DomainType& x) const
       {
-        typename Traits::DomainType xglobal = e.geometry().global(x);
+        typename Traits::DomainType xglobal = e_->geometry().global(x);
         return xglobal.two_norm();
       }
 
       //! Neumann boundary condition
       typename Traits::RangeFieldType
-      j (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
+      j (const typename Traits::IntersectionType&, const typename Traits::IntersectionDomainType& x) const
       {
         return 0.0;
       }
 
       //! outflow boundary condition
       typename Traits::RangeFieldType
-      o (const typename Traits::IntersectionType& is, const typename Traits::IntersectionDomainType& x) const
+      o (const typename Traits::IntersectionType&, const typename Traits::IntersectionDomainType& x) const
       {
         return 0.0;
       }
+
+    protected:
+
+      const typename Traits::ElementType * e_;
+      const typename Traits::IntersectionType * i_;
+
     };
 
 
@@ -289,7 +311,8 @@ namespace Dune {
                           const typename Traits::DomainType& x,
                           typename Traits::RangeType& y) const
     {
-      y = t.g(e,x);
+      t.bind(e);
+      y = t.g(x);
     }
 
     inline const typename Traits::GridViewType& getGridView () const

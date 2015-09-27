@@ -10,6 +10,7 @@
    \todo share storage for time, entity, intersection, where possible
  */
 
+#include <dune/functions/common/concept.hh>
 #include <utility>
 #include <type_traits>
 
@@ -19,6 +20,25 @@ namespace PDELab {
         namespace Imp {
 
             struct NoParameter {};
+
+            struct HasBindMethod
+            {
+                template<class F, class C>
+                auto require(F&& f, C&& c) -> decltype(
+                    f.bind(c)
+                    );
+            };
+
+            template<typename F, typename C,
+                     typename std::enable_if< Functions::Concept::models<HasBindMethod, F,C>(), int>::type = 0>
+            void forwardBind(F && f, C && c)
+            {
+                f.bind(std::forward<C>(c));
+            }
+
+            template<typename F, typename C,
+                     typename std::enable_if< not Functions::Concept::models<HasBindMethod, F,C>(), int>::type = 0>
+            void forwardBind(F && f, C && c) {}
 
 #undef DefinePDELabParameterName
 #define DefinePDELabParameterName(Name,Variable)                        \
@@ -34,6 +54,8 @@ namespace PDELab {
                     Base(b),                                            \
                     Variable(other.Variable) {}                         \
                 typename std::decay<T>::type Variable;                  \
+                template<typename C>                                    \
+                    void bind(C && c) { Dune::PDELab::Parameters::Imp::forwardBind(Variable,c); } \
             };                                                          \
             template<typename T>                                        \
             Name##Parameter<T> define##Name(T && t)                     \
@@ -71,7 +93,6 @@ namespace PDELab {
            \endcode
          */
         template<typename... Pack>
-        // Imp::MergedParameters<Pack...>
         auto
         merge(Pack && ... pack)
             -> decltype(Imp::merge(pack...))

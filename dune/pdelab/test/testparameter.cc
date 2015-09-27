@@ -15,7 +15,7 @@ void assemble(const GV & gv, Param & p)
     for (const auto & e : elements(gv))
     {
         Dune::FieldVector<double,2> x(0.5);
-        p.f.bind(e);
+        p.bind(e);
         std::cout << x << "\t"
                   << p.f(x) << "\t"
                   << p.bctype(e,x) << std::endl;
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
             Param::overwrite(param, // BasicParam(),
                 ModelParam::defineSourceTerm(
                     replaceEntityByBind(
-                        [](Domain,Element) { return 1.0; } ,
+                        [](Domain,const Element &) { return 1.0; } ,
                         _2)
                     )
                 );

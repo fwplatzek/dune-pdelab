@@ -95,19 +95,21 @@ namespace PDELab {
                 return { std::forward<T>(t) };                          \
             }
 
-            template<typename Head>
-            Head
-            merge(const Head & head)
+            template<typename Base, typename Head>
+            auto
+            merge(const Base & b, const Head & head)
+                -> typename Head::template bindBaseClass<Base>
             {
-                return head;
+                return typename Head::template bindBaseClass<Base>(b,head);
             };
 
-            template<typename Head, typename... Pack>
+            template<typename Base, typename Head, typename... Pack>
             auto
-            merge(const Head & head, Pack && ... pack)
-                -> typename Head::template bindBaseClass<decltype(merge(pack...))>
+            merge(const Base & b, const Head & head, Pack && ... pack)
+                -> typename Head::template bindBaseClass<decltype(merge(b,pack...))>
             {
-                auto remainder = merge(pack...);
+                // forward the base to the end of our chain
+                auto remainder = merge(b,std::forward<Pack>(pack)...);
                 return typename Head::template bindBaseClass<decltype(remainder)>(remainder,head);
             };
 
@@ -127,9 +129,10 @@ namespace PDELab {
         template<typename... Pack>
         auto
         merge(Pack && ... pack)
-            -> decltype(Imp::merge(pack...))
+            -> decltype(Imp::merge(Imp::NoParameter(),std::forward<Pack>(pack)...))
         {
-            return Imp::merge(pack...);
+            return Imp::merge(Imp::NoParameter(),std::forward<Pack>(pack)...);
+            // return Imp::merge(std::forward<Pack> pack...);
         };
 
         /**
@@ -143,11 +146,12 @@ namespace PDELab {
                );
            \endcode
          */
-        template<typename Base, typename P>
-        typename P::template bindBaseClass<Base>
-        overwrite(const Base & b, const P & p)
+        template<typename Base, typename... Pack>
+        auto
+        overwrite(const Base & b, Pack && ... pack)
+            -> decltype(Imp::merge(b,std::forward<Pack>(pack)...))
         {
-            return typename P::template bindBaseClass<Base>(b,p);
+            return Imp::merge(b,std::forward<Pack>(pack)...);
         };
     }
 

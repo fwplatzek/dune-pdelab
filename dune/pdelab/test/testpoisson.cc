@@ -28,6 +28,7 @@
 #include <dune/pdelab/localoperator/laplacedirichletp12d.hh>
 #include <dune/pdelab/localoperator/convectiondiffusionfem.hh>
 #include <dune/pdelab/gridfunctionspace/vtk.hh>
+#include<dune/pdelab/stationary/linearproblem.hh>
 
 #include"gridexamples.hh"
 
@@ -171,13 +172,8 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   typedef Dune::PDELab::ConvectionDiffusionFEM<Problem,FEM> LOP;
   LOP lop(problem);
 
-#ifdef OLD_BACKEND
-  typedef Dune::PDELab::ISTLMatrixBackend MBE;
-  MBE mbe;
-#else
   typedef Dune::PDELab::istl::BCRSMatrixBackend<> MBE;
-  MBE mbe(27); // 27 is too large / correct for all test cases, so should work fine
-#endif
+  MBE mbe(27);
 
   // make grid operator
   typedef Dune::PDELab::GridOperator<GFS,GFS,LOP,
@@ -206,27 +202,13 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   Dune::PDELab::interpolate(g,gfs,x0);
   Dune::PDELab::set_nonconstrained_dofs(cg,0.0,x0);
 
-
   // represent operator as a matrix
   // There is some weird shuffling around here - please leave it in,
   // it's there to test the copy constructor and assignment operator of the
   // matrix wrapper
   typedef typename GridOperator::Traits::Jacobian M;
-  M m;
-  {
-    Dune::Timer patternTimer;
-    M m1(gridoperator);
-    std::cout << "pattern creation:" << patternTimer.elapsed() << std::endl;
-#ifndef OLD_BACKEND
-    std::cout << m1.patternStatistics() << std::endl;
-#endif
-    M m2(m1);
-    m2 = 0.0;
-    m = m1;
-    m = m2;
-  }
+  M m(gridoperator);
   gridoperator.jacobian(x0,m);
-  //  Dune::printmatrix(std::cout,m.base(),"global stiffness matrix","row",9,1);
 
   // evaluate residual w.r.t initial guess
   typedef typename GridOperator::Traits::Range RV;
@@ -234,35 +216,15 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   r = 0.0;
   gridoperator.residual(x0,r);
 
-  // make ISTL solver
-  Dune::MatrixAdapter<typename M::BaseT,typename DV::BaseT,typename RV::BaseT> opa(native(m));
-  //ISTLOnTheFlyOperator opb(gridoperator);
-  Dune::SeqSSOR<typename M::BaseT,typename DV::BaseT,typename RV::BaseT> ssor(native(m),1,1.0);
-  Dune::SeqILU0<typename M::BaseT,typename DV::BaseT,typename RV::BaseT> ilu0(native(m),1.0);
-  Dune::Richardson<typename DV::BaseT,typename RV::BaseT> richardson(1.0);
-
-//   typedef Dune::Amg::CoarsenCriterion<Dune::Amg::SymmetricCriterion<M,
-//     Dune::Amg::FirstDiagonal> > Criterion;
-//   typedef Dune::SeqSSOR<M,V,V> Smoother;
-//   typedef typename Dune::Amg::SmootherTraits<Smoother>::Arguments SmootherArgs;
-//   SmootherArgs smootherArgs;
-//   smootherArgs.iterations = 2;
-//   int maxlevel = 20, coarsenTarget = 100;
-//   Criterion criterion(maxlevel, coarsenTarget);
-//   criterion.setMaxDistance(2);
-//   typedef Dune::Amg::AMG<Dune::MatrixAdapter<M,V,V>,V,Smoother> AMG;
-//   AMG amg(opa,criterion,smootherArgs,1,1);
-
-  Dune::CGSolver<typename DV::BaseT> solvera(opa,ilu0,1E-10,5000,2);
-  // FIXME: Use ISTLOnTheFlyOperator in the second solver again
-  Dune::CGSolver<typename DV::BaseT> solverb(opa,richardson,1E-10,5000,2);
-  Dune::InverseOperatorResult stat;
-
   // solve the jacobian system
-  r *= -1.0; // need -residual
   DV x(gfs,0.0);
-  solvera.apply(native(x),native(r),stat);
-  x += x0;
+  {
+    using CG = Dune::PDELab::ISTLBackend_SEQ_CG_ILU0;
+    using Solver = Dune::PDELab::StationaryLinearProblemSolver<GridOperator,CG,DV>;
+    CG cg(1000,2);
+    Solver solver(gridoperator, cg, x, 1e-10, 1e-99, false);
+    solver.apply();
+  }
 
   // output grid function with VTKWriter
   Dune::VTKWriter<GV> vtkwriter(gv,Dune::VTK::conforming);

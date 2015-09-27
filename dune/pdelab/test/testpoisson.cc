@@ -12,6 +12,7 @@
 
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/grid/yaspgrid.hh>
+#include <dune/functions/gridfunctions/gridviewfunction.hh>
 
 #include <dune/pdelab/finiteelementmap/p0fem.hh>
 #include <dune/pdelab/finiteelementmap/pkfem.hh>
@@ -72,26 +73,20 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   using BCType = Dune::PDELab::ConvectionDiffusionBoundaryConditions::Type;
   using BasicParam = Dune::PDELab::ConvectionDiffusionModelProblem<GV,R>;
   using Element = typename BasicParam::Traits::ElementType;
-  using Domain = typename BasicParam::Traits::DomainType;
+  using Domain = Dune::FieldVector<typename GV::ctype,GV::dimensionworld>;
   using Intersection = typename BasicParam::Traits::IntersectionType;
   using IntersectionDomain = typename BasicParam::Traits::IntersectionDomainType;
 
   // Define parameter functions f,g,j and \partial\Omega_D/N
-  auto f =
-    [] (const Element& e, const Domain& x) -> R
+  auto f = Dune::Functions::makeGridViewFunction (
+    [] (const Domain& x)
     {
-      auto xglobal = e.geometry().global(x);
-      if (xglobal[0]>0.25 && xglobal[0]<0.375 && xglobal[1]>0.25 && xglobal[1]<0.375)
-        return 50.0;
-      else
-        return 0.0;
-    };
-  auto g = [] (const Element& e, const Domain& x)
-    {
-      auto xglobal = e.geometry().global(x);
-      xglobal -= 0.5;
-      return exp(-xglobal.two_norm2());
-    };
+      return (x[0]>0.25 && x[0]<0.375 && x[1]>0.25 && x[1]<0.375) ? 50.0 : 0.0;
+    },
+    gv);
+  auto g = Dune::Functions::makeGridViewFunction (
+    [] (const Domain& x) { using std::exp; return exp(-x.two_norm2()); },
+    gv);
   auto bctype =
     [] (const Intersection& is, const IntersectionDomain& x) -> BCType
     {
@@ -120,9 +115,9 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   auto problem =
     Param::overwrite(
       BasicParam(),
-      ModelParam::defineSourceTerm(replaceEntityByBind(f,_1)),
+      ModelParam::defineSourceTerm(localFunction(f)),
       ModelParam::defineBoundaryCondition(bctype),
-      ModelParam::defineDirichletBoundaryValue(replaceEntityByBind(g,_1)),
+      ModelParam::defineDirichletBoundaryValue(localFunction(g)),
       ModelParam::defineNeumannBoundaryValue(j)
       );
 
@@ -154,9 +149,7 @@ void poisson (const GV& gv, const FEM& fem, std::string filename, int q)
   DV x0(gfs);
 
   // initialize DOFs from Dirichlet extension
-  typedef Dune::PDELab::ConvectionDiffusionDirichletExtensionAdapter<decltype(problem)> G_Ext;
-  G_Ext g_ext(gv,problem);
-  Dune::PDELab::interpolate(g_ext,gfs,x0);
+  Dune::PDELab::interpolate(g,gfs,x0);
   Dune::PDELab::set_nonconstrained_dofs(cg,0.0,x0);
 
   // represent operator as a matrix

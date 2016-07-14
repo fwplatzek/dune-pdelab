@@ -16,6 +16,7 @@
 #include <dune/istl/paamg/pinfo.hh>
 #include <dune/istl/io.hh>
 #include <dune/istl/superlu.hh>
+#include <dune/istl/umfpack.hh>
 
 #include <dune/pdelab/constraints/common/constraints.hh>
 #include <dune/pdelab/gridfunctionspace/genericdatahandle.hh>
@@ -318,6 +319,137 @@ namespace Dune {
       const istl::ParallelHelper<GFS>& helper;
     };
 #endif
+
+#if HAVE_UMFPACK
+    // exact subdomain solves with SuperLU as preconditioner
+    template<class GFS, class M, class X, class Y>
+    class UMFPACKSubdomainSolver : public Dune::Preconditioner<X,Y>
+    {
+      typedef Backend::Native<M> ISTLM;
+
+    public:
+      //! \brief The domain type of the preconditioner.
+      typedef X domain_type;
+      //! \brief The range type of the preconditioner.
+      typedef Y range_type;
+      //! \brief The field type of the preconditioner.
+      typedef typename X::ElementType field_type;
+
+
+      // define the category
+      enum {
+        //! \brief The category the preconditioner is part of.
+        category=Dune::SolverCategory::overlapping
+      };
+
+      /*! \brief Constructor.
+
+        Constructor gets all parameters to operate the prec.
+        \param gfs_ The grid function space.
+        \param A_ The matrix to operate on.
+      */
+      UMFPACKSubdomainSolver (const GFS& gfs_, const M& A_)
+        : gfs(gfs_), solver(Backend::native(A_),false) // this does the decomposition
+      {}
+
+      /*!
+        \brief Prepare the preconditioner.
+      */
+      virtual void pre (X& x, Y& b) {}
+
+      /*!
+        \brief Apply the precondioner.
+      */
+      virtual void apply (X& v, const Y& d)
+      {
+        Dune::InverseOperatorResult stat;
+        Y b(d); // need copy, since solver overwrites right hand side
+        solver.apply(Backend::native(v),Backend::native(b),stat);
+        if (gfs.gridView().comm().size()>1)
+          {
+            AddDataHandle<GFS,X> adddh(gfs,v);
+            gfs.gridView().communicate(adddh,Dune::All_All_Interface,Dune::ForwardCommunication);
+          }
+      }
+
+      /*!
+        \brief Clean up.
+      */
+      virtual void post (X& x) {}
+
+    private:
+      const GFS& gfs;
+      Dune::UMFPACK<ISTLM> solver;
+    };
+
+    // exact subdomain solves with SuperLU as preconditioner
+    template<class GFS, class M, class X, class Y>
+    class RestrictedUMFPACKSubdomainSolver : public Dune::Preconditioner<X,Y>
+    {
+      typedef typename M::BaseT ISTLM;
+
+    public:
+      //! \brief The domain type of the preconditioner.
+      typedef X domain_type;
+      //! \brief The range type of the preconditioner.
+      typedef Y range_type;
+      //! \brief The field type of the preconditioner.
+      typedef typename X::ElementType field_type;
+
+
+      // define the category
+      enum {
+        //! \brief The category the preconditioner is part of.
+        category=Dune::SolverCategory::overlapping
+      };
+
+      /*! \brief Constructor.
+
+        Constructor gets all parameters to operate the prec.
+        \param gfs_ The grid function space.
+        \param A_ The matrix to operate on.
+        \param helper_ The parallel istl helper.
+      */
+      RestrictedUMFPACKSubdomainSolver (const GFS& gfs_, const M& A_,
+                                        const istl::ParallelHelper<GFS>& helper_)
+        : gfs(gfs_), solver(Backend::native(A_),false), helper(helper_) // this does the decomposition
+      {}
+
+      /*!
+        \brief Prepare the preconditioner.
+      */
+      virtual void pre (X& x, Y& b) {}
+
+      /*!
+        \brief Apply the precondioner.
+      */
+      virtual void apply (X& v, const Y& d)
+      {
+        using Backend::native;
+        Dune::InverseOperatorResult stat;
+        Y b(d); // need copy, since solver overwrites right hand side
+        solver.apply(native(v),native(b),stat);
+        if (gfs.gridView().comm().size()>1)
+          {
+            helper.maskForeignDOFs(native(v));
+            AddDataHandle<GFS,X> adddh(gfs,v);
+            gfs.gridView().communicate(adddh,Dune::InteriorBorder_All_Interface,Dune::ForwardCommunication);
+          }
+      }
+
+      /*!
+        \brief Clean up.
+      */
+      virtual void post (X& x) {}
+
+    private:
+      const GFS& gfs;
+      Dune::UMFPACK<ISTLM> solver;
+      const istl::ParallelHelper<GFS>& helper;
+    };
+
+#endif // HAVE_UMFPACK
+
 
     template<typename GFS>
     class OVLPScalarProductImplementation
@@ -852,6 +984,116 @@ namespace Dune {
         : ISTLBackend_OVLP_SuperLU_Base<GFS,CC,Dune::CGSolver>(gfs_,cc_,maxiter_,verbose_)
       {}
     };
+
+
+
+    template<class GFS, class C, template<typename> class Solver>
+    class ISTLBackend_OVLP_UMFPACK_Base
+      : public OVLPScalarProductImplementation<GFS>, public LinearResultStorage
+    {
+    public:
+      /*! \brief make a linear solver object
+
+        \param[in] gfs_ a grid function space
+        \param[in] c_ a constraints object
+        \param[in] maxiter_ maximum number of iterations to do
+        \param[in] verbose_ print messages if true
+      */
+      ISTLBackend_OVLP_UMFPACK_Base (const GFS& gfs_, const C& c_, unsigned maxiter_=5000,
+                                              int verbose_=1)
+        : OVLPScalarProductImplementation<GFS>(gfs_), gfs(gfs_), c(c_), maxiter(maxiter_), verbose(verbose_)
+      {}
+
+      /*! \brief solve the given linear system
+
+        \param[in] A the given matrix
+        \param[out] z the solution vector to be computed
+        \param[in] r right hand side
+        \param[in] reduction to be achieved
+      */
+      template<class M, class V, class W>
+      void apply(M& A, V& z, W& r, typename Dune::template FieldTraits<typename V::ElementType >::real_type reduction)
+      {
+        typedef OverlappingOperator<C,M,V,W> POP;
+        POP pop(c,A);
+        typedef OVLPScalarProduct<GFS,V> PSP;
+        PSP psp(*this);
+#if HAVE_UMFACK
+        typedef UMFPACKSubdomainSolver<GFS,M,V,W> PREC;
+        PREC prec(gfs,A);
+        int verb=0;
+        if (gfs.gridView().comm().rank()==0) verb=verbose;
+        Solver<V> solver(pop,psp,prec,reduction,maxiter,verb);
+        Dune::InverseOperatorResult stat;
+        solver.apply(z,r,stat);
+        res.converged  = stat.converged;
+        res.iterations = stat.iterations;
+        res.elapsed    = stat.elapsed;
+        res.reduction  = stat.reduction;
+        res.conv_rate  = stat.conv_rate;
+#else
+        std::cout << "No UMFACK support, please install and configure it." << std::endl;
+#endif
+      }
+
+    private:
+      const GFS& gfs;
+      const C& c;
+      unsigned maxiter;
+      int verbose;
+    };
+
+    //! \addtogroup PDELab_ovlpsolvers Overlapping Solvers
+    //! \{
+    /**
+     * @brief Overlapping parallel BiCGStab solver with SuperLU preconditioner
+     * @tparam GFS The Type of the GridFunctionSpace.
+     * @tparam CC The Type of the Constraints Container.
+     */
+    template<class GFS, class CC>
+    class ISTLBackend_OVLP_BCGS_UMFPACK
+      : public ISTLBackend_OVLP_UMFPACK_Base<GFS,CC,Dune::BiCGSTABSolver>
+    {
+    public:
+
+      /*! \brief make a linear solver object
+
+        \param[in] gfs_ a grid function space
+        \param[in] cc_ a constraints container object
+        \param[in] maxiter_ maximum number of iterations to do
+        \param[in] verbose_ print messages if true
+      */
+      ISTLBackend_OVLP_BCGS_UMFPACK (const GFS& gfs_, const CC& cc_, unsigned maxiter_=5000,
+                                              int verbose_=1)
+        : ISTLBackend_OVLP_UMFPACK_Base<GFS,CC,Dune::BiCGSTABSolver>(gfs_,cc_,maxiter_,verbose_)
+      {}
+    };
+
+    /**
+     * @brief Overlapping parallel CG solver with SuperLU preconditioner
+     * @tparam GFS The Type of the GridFunctionSpace.
+     * @tparam CC The Type of the Constraints Container.
+     */
+    template<class GFS, class CC>
+    class ISTLBackend_OVLP_CG_UMFPACK
+      : public ISTLBackend_OVLP_UMFPACK_Base<GFS,CC,Dune::CGSolver>
+    {
+    public:
+
+      /*! \brief make a linear solver object
+
+        \param[in] gfs_ a grid function space
+        \param[in] cc_ a constraints object
+        \param[in] maxiter_ maximum number of iterations to do
+        \param[in] verbose_ print messages if true
+      */
+      ISTLBackend_OVLP_CG_UMFPACK (const GFS& gfs_, const CC& cc_,
+                                              unsigned maxiter_=5000,
+                                              int verbose_=1)
+        : ISTLBackend_OVLP_UMFPACK_Base<GFS,CC,Dune::CGSolver>(gfs_,cc_,maxiter_,verbose_)
+      {}
+    };
+
 
 
     /** @brief Solver to be used for explicit time-steppers with (block-)diagonal mass matrix

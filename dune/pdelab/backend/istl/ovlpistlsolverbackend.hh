@@ -323,7 +323,7 @@ namespace Dune {
 #if HAVE_UMFPACK
     // exact subdomain solves with SuperLU as preconditioner
     template<class GFS, class M, class X, class Y>
-    class UMFPACKSubdomainSolver : public Dune::Preconditioner<X,Y>
+    class UMFPackSubdomainSolver : public Dune::Preconditioner<X,Y>
     {
       typedef Backend::Native<M> ISTLM;
 
@@ -348,7 +348,7 @@ namespace Dune {
         \param gfs_ The grid function space.
         \param A_ The matrix to operate on.
       */
-      UMFPACKSubdomainSolver (const GFS& gfs_, const M& A_)
+      UMFPackSubdomainSolver (const GFS& gfs_, const M& A_)
         : gfs(gfs_), solver(Backend::native(A_),false) // this does the decomposition
       {}
 
@@ -379,12 +379,12 @@ namespace Dune {
 
     private:
       const GFS& gfs;
-      Dune::UMFPACK<ISTLM> solver;
+      Dune::UMFPack<ISTLM> solver;
     };
 
     // exact subdomain solves with SuperLU as preconditioner
     template<class GFS, class M, class X, class Y>
-    class RestrictedUMFPACKSubdomainSolver : public Dune::Preconditioner<X,Y>
+    class RestrictedUMFPackSubdomainSolver : public Dune::Preconditioner<X,Y>
     {
       typedef typename M::BaseT ISTLM;
 
@@ -410,7 +410,7 @@ namespace Dune {
         \param A_ The matrix to operate on.
         \param helper_ The parallel istl helper.
       */
-      RestrictedUMFPACKSubdomainSolver (const GFS& gfs_, const M& A_,
+      RestrictedUMFPackSubdomainSolver (const GFS& gfs_, const M& A_,
                                         const istl::ParallelHelper<GFS>& helper_)
         : gfs(gfs_), solver(Backend::native(A_),false), helper(helper_) // this does the decomposition
       {}
@@ -444,7 +444,7 @@ namespace Dune {
 
     private:
       const GFS& gfs;
-      Dune::UMFPACK<ISTLM> solver;
+      Dune::UMFPack<ISTLM> solver;
       const istl::ParallelHelper<GFS>& helper;
     };
 
@@ -988,7 +988,7 @@ namespace Dune {
 
 
     template<class GFS, class C, template<typename> class Solver>
-    class ISTLBackend_OVLP_UMFPACK_Base
+    class ISTLBackend_OVLP_UMFPack_Base
       : public OVLPScalarProductImplementation<GFS>, public LinearResultStorage
     {
     public:
@@ -999,7 +999,7 @@ namespace Dune {
         \param[in] maxiter_ maximum number of iterations to do
         \param[in] verbose_ print messages if true
       */
-      ISTLBackend_OVLP_UMFPACK_Base (const GFS& gfs_, const C& c_, unsigned maxiter_=5000,
+      ISTLBackend_OVLP_UMFPack_Base (const GFS& gfs_, const C& c_, unsigned maxiter_=5000,
                                               int verbose_=1)
         : OVLPScalarProductImplementation<GFS>(gfs_), gfs(gfs_), c(c_), maxiter(maxiter_), verbose(verbose_)
       {}
@@ -1019,7 +1019,7 @@ namespace Dune {
         typedef OVLPScalarProduct<GFS,V> PSP;
         PSP psp(*this);
 #if HAVE_UMFACK
-        typedef UMFPACKSubdomainSolver<GFS,M,V,W> PREC;
+        typedef UMFPackSubdomainSolver<GFS,M,V,W> PREC;
         PREC prec(gfs,A);
         int verb=0;
         if (gfs.gridView().comm().rank()==0) verb=verbose;
@@ -1051,8 +1051,8 @@ namespace Dune {
      * @tparam CC The Type of the Constraints Container.
      */
     template<class GFS, class CC>
-    class ISTLBackend_OVLP_BCGS_UMFPACK
-      : public ISTLBackend_OVLP_UMFPACK_Base<GFS,CC,Dune::BiCGSTABSolver>
+    class ISTLBackend_OVLP_BCGS_UMFPack
+      : public ISTLBackend_OVLP_UMFPack_Base<GFS,CC,Dune::BiCGSTABSolver>
     {
     public:
 
@@ -1063,9 +1063,9 @@ namespace Dune {
         \param[in] maxiter_ maximum number of iterations to do
         \param[in] verbose_ print messages if true
       */
-      ISTLBackend_OVLP_BCGS_UMFPACK (const GFS& gfs_, const CC& cc_, unsigned maxiter_=5000,
+      ISTLBackend_OVLP_BCGS_UMFPack (const GFS& gfs_, const CC& cc_, unsigned maxiter_=5000,
                                               int verbose_=1)
-        : ISTLBackend_OVLP_UMFPACK_Base<GFS,CC,Dune::BiCGSTABSolver>(gfs_,cc_,maxiter_,verbose_)
+        : ISTLBackend_OVLP_UMFPack_Base<GFS,CC,Dune::BiCGSTABSolver>(gfs_,cc_,maxiter_,verbose_)
       {}
     };
 
@@ -1075,8 +1075,8 @@ namespace Dune {
      * @tparam CC The Type of the Constraints Container.
      */
     template<class GFS, class CC>
-    class ISTLBackend_OVLP_CG_UMFPACK
-      : public ISTLBackend_OVLP_UMFPACK_Base<GFS,CC,Dune::CGSolver>
+    class ISTLBackend_OVLP_CG_UMFPack
+      : public ISTLBackend_OVLP_UMFPack_Base<GFS,CC,Dune::CGSolver>
     {
     public:
 
@@ -1087,10 +1087,10 @@ namespace Dune {
         \param[in] maxiter_ maximum number of iterations to do
         \param[in] verbose_ print messages if true
       */
-      ISTLBackend_OVLP_CG_UMFPACK (const GFS& gfs_, const CC& cc_,
+      ISTLBackend_OVLP_CG_UMFPack (const GFS& gfs_, const CC& cc_,
                                               unsigned maxiter_=5000,
                                               int verbose_=1)
-        : ISTLBackend_OVLP_UMFPACK_Base<GFS,CC,Dune::CGSolver>(gfs_,cc_,maxiter_,verbose_)
+        : ISTLBackend_OVLP_UMFPack_Base<GFS,CC,Dune::CGSolver>(gfs_,cc_,maxiter_,verbose_)
       {}
     };
 

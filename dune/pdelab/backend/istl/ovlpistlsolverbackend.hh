@@ -1018,7 +1018,7 @@ namespace Dune {
         POP pop(c,A);
         typedef OVLPScalarProduct<GFS,V> PSP;
         PSP psp(*this);
-#if HAVE_UMFACK
+#if HAVE_UMFPACK
         typedef UMFPackSubdomainSolver<GFS,M,V,W> PREC;
         PREC prec(gfs,A);
         int verb=0;
@@ -1032,7 +1032,7 @@ namespace Dune {
         res.reduction  = stat.reduction;
         res.conv_rate  = stat.conv_rate;
 #else
-        std::cout << "No UMFACK support, please install and configure it." << std::endl;
+        std::cout << "No UMFPack support, please install and configure it." << std::endl;
 #endif
       }
 

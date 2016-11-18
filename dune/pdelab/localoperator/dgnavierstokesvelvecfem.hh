@@ -258,7 +258,7 @@ namespace Dune {
               r.accumulate(lfsv_v, i, - div_phi_v[i] * val_p * weight);
 
               //================================================//
-              // \int \rho ((u\cdot\nabla ) u )\cdot v
+              // convection term
               //================================================//
               if(navier) {
                   Range_V nabla_u_u(0.0);
@@ -387,7 +387,7 @@ namespace Dune {
                 mat.accumulate(lfsv_v,i,lfsu_v,j, mu * dvdu * weight);
 
                 //================================================//
-                // \int \rho ((u\cdot\nabla ) u )\cdot v
+                // convection term
                 //================================================//
                 if(navier) {
                   Range_V nabla_u_phi_v_j(0.0);

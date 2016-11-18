@@ -893,6 +893,12 @@ namespace Dune {
       } // end jacobian_skeleton
 
       // boundary term
+      // ******************************************************************
+      // NOTE that only interior contributions are included in here,
+      //      boundary terms can be found in lambda_boundary EXCEPT for the convective part
+      // TODO change this!!! Put stuff from lambda_boundary to alpha_boundary,
+      //      also put stuff from lambda_volume to alpha_volume
+      //******************************************************************
       template<typename IG, typename LFSU, typename X, typename LFSV, typename R>
       void alpha_boundary (const IG& ig,
                            const LFSU& lfsu, const X& x, const LFSV& lfsv,
@@ -934,7 +940,9 @@ namespace Dune {
         // Determine quadrature order
         const int v_order = FESwitch_V::basis(lfsv_v.finiteElement()).order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-1);
-        const int qorder = 2*v_order + det_jac_order + superintegration_order;
+        const int qorder = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+          3*v_order + det_jac_order + superintegration_order :
+          2*v_order + det_jac_order + superintegration_order;
 
         auto epsilon = prm.epsilonIPSymmetryFactor();
         auto incomp_scaling = prm.incompressibilityScaling(current_dt);
@@ -988,9 +996,25 @@ namespace Dune {
             auto normal = ig.unitOuterNormal(ip.position());
             auto weight = ip.weight()*geo.integrationElement(ip.position());
             auto mu = prm.mu(ig,ip.position());
+            auto rho = prm.rho(ig,ip.position());
 
             // evaluate boundary condition type
             auto bctype(prm.bctype(ig,ip.position()));
+
+            //============================================//
+            // convection term, upwind discretization
+            //============================================//
+            RF flux, omega;
+            if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+              flux = u*normal;
+              omega = (flux >= 0.0) ? 1.0 : 0.0;
+              for(unsigned int d = 0; d < dim; ++d) {
+                const LFSV_V& lfsu_v = lfsv_pfs_v.child(d);
+
+                for(unsigned int i=0; i<vsize; i++)
+                  r.accumulate(lfsu_v,i, rho * flux * omega * u[d] * phi_v[i] * weight);
+              } // end d
+            }
 
             // Slip factor smoothly switching between slip and no slip conditions.
             RF slip_factor = 0.0;
@@ -1007,6 +1031,9 @@ namespace Dune {
               {
                 // on BC::VelocityDirichlet: 1.0 - slip_factor = 1.0
                 auto factor = weight * (1.0 - slip_factor);
+
+                typename PRM::Traits::VelocityRange u0 = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+                  prm.g(cell_inside,local) : static_cast<typename PRM::Traits::VelocityRange>(0.0);
 
                 for(unsigned int d = 0; d < dim; ++d) {
                   const auto& lfsv_v = lfsv_pfs_v.child(d);
@@ -1030,6 +1057,12 @@ namespace Dune {
                     // \mu \int \sigma / |\gamma|^\beta v u
                     //================================================//
                     r.accumulate(lfsv_v,i, u[d] * phi_v[i] * mu * penalty_factor * factor);
+
+                    //================================================//
+                    // convection term, upwind discretization
+                    //================================================//
+                    if(navier and not(conv == DGNavierStokesConvection::NoFlux))
+                      r.accumulate(lfsv_v,i, rho * flux * (1.0-omega) * u0[d] * phi_v[i] * factor);
 
                     //================================================//
                     // \int p v n
@@ -1119,7 +1152,9 @@ namespace Dune {
         // Determine quadrature order
         const int v_order = FESwitch_V::basis(lfsv_v.finiteElement()).order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-1);
-        const int qorder = 2*v_order + det_jac_order + superintegration_order;
+        const int qorder = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+          3*v_order + det_jac_order + superintegration_order :
+          2*v_order + det_jac_order + superintegration_order;
 
         auto epsilon = prm.epsilonIPSymmetryFactor();
         auto incomp_scaling = prm.incompressibilityScaling(current_dt);
@@ -1145,12 +1180,47 @@ namespace Dune {
             BasisSwitch_V::gradient(FESwitch_V::basis(lfsv_v.finiteElement()),
                                     geo_inside, local, grad_phi_v);
 
+            // compute u
+            Dune::FieldVector<RF,dim> u(0.0);
+            if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+              for(unsigned int d = 0; d < dim; ++d) {
+                const LFSV_V& lfsu_v = lfsv_pfs_v.child(d);
+                for(unsigned int i=0; i<vsize; i++)
+                  u[d] += x(lfsu_v,i) * phi_v[i];
+              }
+            } // end navier
+
             auto normal = ig.unitOuterNormal(ip.position());
             auto weight = ip.weight()*geo.integrationElement(ip.position());
             auto mu = prm.mu(ig,ip.position());
+            auto rho = prm.rho(ig,ip.position());
 
             // evaluate boundary condition type
             auto bctype(prm.bctype(ig,ip.position()));
+
+            //============================================//
+            // convection term, upwind discretization
+            //============================================//
+            RF flux, omega;
+            if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+              flux = u*normal;
+              omega = (flux >= 0.0) ? 1.0 : 0.0;
+              for(unsigned int d = 0; d < dim; ++d) {
+                const LFSV_V& lfsv_v = lfsv_pfs_v.child(d);
+
+                for(unsigned int i=0; i<vsize; i++) {
+
+                  for(unsigned int j=0; j<vsize; j++) {
+                    mat.accumulate(lfsv_v,i,lfsv_v,j, rho * flux * omega*phi_v[j] * phi_v[i] * weight);
+
+                    for(unsigned int dd = 0; dd < dim; ++dd) {
+                      const LFSV_V& lfsv_v_dd = lfsv_pfs_v.child(dd);
+                      mat.accumulate(lfsv_v,i,lfsv_v_dd,j, rho*phi_v[j]*normal[dd] * omega*u[d] * phi_v[i] * weight);
+                    }
+                  }
+                } // end i
+              } // end d
+            } // navier
 
             // Slip factor smoothly switching between slip and no slip conditions.
             RF slip_factor = 0.0;
@@ -1167,6 +1237,9 @@ namespace Dune {
               {
                 // on BC::VelocityDirichlet: 1.0 - slip_factor = 1.0
                 auto factor = weight * (1.0 - slip_factor);
+
+                typename PRM::Traits::VelocityRange u0 = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+                  prm.g(cell_inside,local) : static_cast<typename PRM::Traits::VelocityRange>(0.0);
 
                 for(unsigned int d = 0; d < dim; ++d) {
                   const auto& lfsv_v = lfsv_pfs_v.child(d);
@@ -1194,6 +1267,16 @@ namespace Dune {
                       // \mu \int \sigma / |\gamma|^\beta v u
                       //================================================//
                       mat.accumulate(lfsv_v,j,lfsv_v,i, phi_v[i] * phi_v[j] * mu * penalty_factor * factor);
+
+                      //================================================//
+                      // convection term, upwind discretization
+                      //================================================//
+                      if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+                        for(unsigned int dd = 0; dd < dim; ++dd) {
+                          const LFSV_V& lfsv_v_dd = lfsv_pfs_v.child(dd);
+                          mat.accumulate(lfsv_v,i,lfsv_v_dd,j, rho*phi_v[j]*normal[dd] * (1.0-omega)*u0[d] * phi_v[i] * factor);
+                        }
+                      } // end navier
                     }
 
                     //================================================//

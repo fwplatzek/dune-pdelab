@@ -12,6 +12,11 @@
 namespace Dune {
   namespace PDELab {
 
+    enum struct DGNavierStokesConvection
+    {
+      NoFlux, VijaFlux
+    };
+
     /** \brief Parameter class for local operator DGNavierStokes.
 
         \tparam GV          GridView.
@@ -188,7 +193,7 @@ namespace Dune {
 
       template< typename PRM>
       struct VariableBoundarySlipSwitch
-      <PRM,typename Dune::enable_if<PRM::enable_variable_slip>::type>
+      <PRM,typename std::enable_if<PRM::enable_variable_slip>::type>
       {
         template<typename IntersectionGeometry>
         static typename PRM::Traits::RangeField

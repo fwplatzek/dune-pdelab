@@ -97,7 +97,7 @@ namespace Dune {
         \tparam PRM Parameter class for this local operator.
 
     */
-    template<typename PRM>
+    template<typename PRM, DGNavierStokesConvection conv = DGNavierStokesConvection::NoFlux>
     class DGNavierStokesVelVecFEM :
       public LocalOperatorDefaultFlags,
       public FullSkeletonPattern, public FullVolumePattern,
@@ -191,7 +191,9 @@ namespace Dune {
         const int v_order = FESwitch_V::basis(lfsv_v.finiteElement()).order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-1);
         const int jac_order = geo.type().isSimplex() ? 0 : 1;
-        const int qorder = 3*v_order - 1 + jac_order + det_jac_order + superintegration_order;
+        const int qorder = navier ?
+          3*v_order - 1 + jac_order + det_jac_order + superintegration_order :
+          2*v_order - 1 + jac_order + det_jac_order + superintegration_order;
 
         const RF incomp_scaling = prm.incompressibilityScaling(current_dt);
 
@@ -259,10 +261,22 @@ namespace Dune {
               // \int \rho ((u\cdot\nabla ) u )\cdot v
               //================================================//
               if(navier) {
-                // compute (grad u) u (matrix-vector product)
-                Range_V nabla_u_u(0.0);
-                jac_u.mv(val_u,nabla_u_u);
-                r.accumulate(lfsv_v, i, rho * (nabla_u_u*phi_v[i]) * weight);
+                  Range_V nabla_u_u(0.0);
+                  RF u_dv_u(0.0);
+                switch(conv) {
+                case DGNavierStokesConvection::NoFlux :
+                  // compute (grad u) u (matrix-vector product)
+                  jac_u.mv(val_u,nabla_u_u);
+                  r.accumulate(lfsv_v, i, rho * (nabla_u_u*phi_v[i]) * weight);
+                  break;
+                case DGNavierStokesConvection::VijaFlux :
+                  const auto& jac_phi_v_i = jac_phi_v[i];
+                  for(size_type alpha=0; alpha<dim; alpha++)
+                    for(size_type beta=0; beta<dim; beta++)
+                      u_dv_u += jac_phi_v_i[alpha][beta] * val_u[alpha] * val_u[beta];
+                  r.accumulate(lfsv_v, i, -rho * u_dv_u * weight);
+                  break;
+                }
               } // end navier
 
             } // end i
@@ -313,7 +327,9 @@ namespace Dune {
         const int v_order = FESwitch_V::basis(lfsv_v.finiteElement()).order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-1);
         const int jac_order = geo.type().isSimplex() ? 0 : 1;
-        const int qorder = 3*v_order - 1 + jac_order + det_jac_order + superintegration_order;
+        const int qorder = navier ?
+          3*v_order - 1 + jac_order + det_jac_order + superintegration_order :
+          2*v_order - 1 + jac_order + det_jac_order + superintegration_order;
 
         const RF incomp_scaling = prm.incompressibilityScaling(current_dt);
 
@@ -374,13 +390,28 @@ namespace Dune {
                 // \int \rho ((u\cdot\nabla ) u )\cdot v
                 //================================================//
                 if(navier) {
-                  // compute (grad u) phi_v_j (matrix-vector product)
                   Range_V nabla_u_phi_v_j(0.0);
-                  jac_u.mv(phi_v[j],nabla_u_phi_v_j);
-                  // compute (grad phi_v_j) u (matrix-vector product)
                   Range_V nabla_phi_v_j_u(0.0);
-                  jac_phi_v[j].mv(val_u,nabla_phi_v_j_u);
-                  mat.accumulate(lfsv_v,i,lfsu_v,j, rho * ((nabla_u_phi_v_j*phi_v[i]) + (nabla_phi_v_j_u*phi_v[i])) * weight);
+                  RF phi_j_dv_u(0.0), u_dv_phi_j(0.0);
+                  switch(conv) {
+                  case DGNavierStokesConvection::NoFlux :
+                    // compute (grad u) phi_v_j (matrix-vector product)
+                    jac_u.mv(phi_v[j],nabla_u_phi_v_j);
+                    // compute (grad phi_v_j) u (matrix-vector product)
+                    jac_phi_v[j].mv(val_u,nabla_phi_v_j_u);
+                    mat.accumulate(lfsv_v,i,lfsu_v,j, rho * ((nabla_u_phi_v_j*phi_v[i]) + (nabla_phi_v_j_u*phi_v[i])) * weight);
+                    break;
+                  case DGNavierStokesConvection::VijaFlux :
+                    const auto& jac_phi_v_i = jac_phi_v[i];
+                    const auto& phi_v_j = phi_v[j];
+                    for(size_type alpha=0; alpha<dim; alpha++)
+                      for(size_type beta=0; beta<dim; beta++) {
+                        phi_j_dv_u += jac_phi_v_i[alpha][beta] * phi_v_j[alpha] * val_u[beta];
+                        u_dv_phi_j += jac_phi_v_i[alpha][beta] * val_u[alpha] * phi_v_j[beta];
+                      }
+                    mat.accumulate(lfsv_v,i,lfsu_v,j, -rho * (phi_j_dv_u + u_dv_phi_j) * weight);
+                    break;
+                  }
                 } // end navier
 
               } // end j
@@ -451,7 +482,9 @@ namespace Dune {
         // Determine quadrature order
         const int v_order = FESwitch_V::basis(lfsv_v_s.finiteElement()).order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-2);
-        const int qorder = 2*v_order + det_jac_order + superintegration_order;
+        const int qorder = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+          3*v_order + det_jac_order + superintegration_order :
+          2*v_order + det_jac_order + superintegration_order;
 
         const int epsilon = prm.epsilonIPSymmetryFactor();
         const RF incomp_scaling = prm.incompressibilityScaling(current_dt);
@@ -511,6 +544,7 @@ namespace Dune {
             auto normal = ig.unitOuterNormal(ip.position());
             auto weight = ip.weight()*geo.integrationElement(ip.position());
             auto mu = prm.mu(ig,ip.position());
+            auto rho = prm.rho(ig,ip.position());
 
             auto factor = mu * weight;
 
@@ -525,6 +559,25 @@ namespace Dune {
             add_compute_flux(jac_u_s,normal,flux_jac_u);
             add_compute_flux(jac_u_n,normal,flux_jac_u);
             flux_jac_u *= 0.5;
+
+            // compute convective flux
+            RF normal_meanflux = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+              0.5*((normal*val_u_s) + (normal*val_u_n)) :
+              0.0;
+            RF omega_s, omega_n;
+            if(normal_meanflux >= 0.0) {
+              omega_s = 1.0;
+              omega_n = 0.0;
+            }
+            else {
+              omega_s = 0.0;
+              omega_n = 1.0;
+            }
+            Range_V mean_u(0.0);
+            if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+              mean_u.axpy(omega_s,val_u_s);
+              mean_u.axpy(omega_n,val_u_n);
+            }
 
             // loop over test functions, same element
             for (size_t i=0; i<lfsv_v_s.size(); i++) {
@@ -544,6 +597,12 @@ namespace Dune {
               // standard IP term integral
               //================================================//
               r_s.accumulate(lfsv_v_s,i, penalty_factor * (jump*phi_v_s[i]) * factor);
+
+              //================================================//
+              // convection term, upwind discretization
+              //================================================//
+              if(navier and not(conv == DGNavierStokesConvection::NoFlux))
+                r_s.accumulate(lfsv_v_s,i, rho * normal_meanflux * (mean_u*phi_v_s[i]) * weight);
 
               //================================================//
               // pressure-velocity-coupling in momentum equation
@@ -571,6 +630,12 @@ namespace Dune {
               r_n.accumulate(lfsv_v_n,i, -penalty_factor * (jump*phi_v_n[i]) * factor);
 
               //================================================//
+              // convection term, upwind discretization
+              //================================================//
+              if(navier and not(conv == DGNavierStokesConvection::NoFlux))
+                r_n.accumulate(lfsv_v_n,i, -rho * normal_meanflux * (mean_u*phi_v_n[i]) * weight);
+
+              //================================================//
               // pressure-velocity-coupling in momentum equation
               //================================================//
               r_n.accumulate(lfsv_v_n,i, -mean_p * (phi_v_n[i]*normal) * weight);
@@ -591,8 +656,8 @@ namespace Dune {
       template<typename IG, typename LFSU, typename X, typename LFSV,
                typename LocalMatrix>
       void jacobian_skeleton (const IG& ig,
-                              const LFSU& lfsu_s, const X&, const LFSV& lfsv_s,
-                              const LFSU& lfsu_n, const X&, const LFSV& lfsv_n,
+                              const LFSU& lfsu_s, const X& x_s, const LFSV& lfsv_s,
+                              const LFSU& lfsu_n, const X& x_n, const LFSV& lfsv_n,
                               LocalMatrix& mat_ss, LocalMatrix& mat_sn,
                               LocalMatrix& mat_ns, LocalMatrix& mat_nn) const
       {
@@ -642,7 +707,9 @@ namespace Dune {
         // Determine quadrature order
         const int v_order = FESwitch_V::basis(lfsv_v_s.finiteElement()).order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-2);
-        const int qorder = 2*v_order + det_jac_order + superintegration_order;
+        const int qorder = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+          3*v_order + det_jac_order + superintegration_order :
+          2*v_order + det_jac_order + superintegration_order;
 
         auto epsilon = prm.epsilonIPSymmetryFactor();
         auto incomp_scaling = prm.incompressibilityScaling(current_dt);
@@ -677,11 +744,41 @@ namespace Dune {
             VectorBasisSwitch_V::jacobian
               (FESwitch_V::basis(lfsv_v_n.finiteElement()), geo_outside, local_n, jac_phi_v_n);
 
+            // compute velocity values (if Navier term enabled)
+            Range_V val_u_s(0.0);
+            Range_V val_u_n(0.0);
+            if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+              for (size_type i=0; i<lfsu_v_s.size(); i++)
+                val_u_s.axpy(x_s(lfsu_v_s,i),phi_v_s[i]);
+              for (size_type i=0; i<lfsu_v_n.size(); i++)
+                val_u_n.axpy(x_n(lfsu_v_n,i),phi_v_n[i]);
+            }
+
             auto normal = ig.unitOuterNormal(ip.position());
             auto weight = ip.weight()*geo.integrationElement(ip.position());
             auto mu = prm.mu(ig,ip.position());
+            auto rho = prm.rho(ig,ip.position());
 
             auto factor = mu * weight;
+
+            // compute convective flux
+            RF normal_meanflux = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+              0.5*((normal*val_u_s) + (normal*val_u_n)) :
+              0.0;
+            RF omega_s, omega_n;
+            if(normal_meanflux >= 0.0) {
+              omega_s = 1.0;
+              omega_n = 0.0;
+            }
+            else {
+              omega_s = 0.0;
+              omega_n = 1.0;
+            }
+            Range_V mean_u(0.0);
+            if(navier and not(conv == DGNavierStokesConvection::VijaFlux)) {
+              mean_u.axpy(omega_s,val_u_s);
+              mean_u.axpy(omega_n,val_u_n);
+            }
 
             //============================================
             // loop over test functions, same element
@@ -713,6 +810,25 @@ namespace Dune {
                 mat_sn.accumulate(lfsv_v_s,i,lfsu_v_n,j, -0.5 * (flux_jac_phi_j*phi_v_s[i]) * factor);
                 mat_sn.accumulate(lfsv_v_s,i,lfsu_v_n,j, -epsilon * 0.5 * (flux_jac_phi_i*phi_v_n[j]) * factor);
                 mat_sn.accumulate(lfsv_v_s,i,lfsu_v_n,j, -penalty_factor * (phi_v_n[j]*phi_v_s[i]) * factor);
+              }
+
+              //================================================//
+              // convection term, upwind discretization
+              //================================================//
+              if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+                for(size_type j=0; j<lfsu_v_s.size(); j++) {
+                  mat_ss.accumulate(lfsv_v_s,i,lfsu_v_s,j,
+                                    rho * normal_meanflux * omega_s * (phi_v_s[j]*phi_v_s[i]) * weight);
+                  mat_ss.accumulate(lfsv_v_s,i,lfsu_v_s,j,
+                                    0.5*rho*(phi_v_s[j]*normal) * (mean_u*phi_v_s[i]) * weight);
+                }
+
+                for(size_type j=0; j<lfsu_v_n.size(); j++) {
+                  mat_sn.accumulate(lfsv_v_s,i,lfsv_v_n,j,
+                                    rho * normal_meanflux * omega_n * (phi_v_n[j]*phi_v_s[i]) * weight);
+                  mat_sn.accumulate(lfsv_v_s,i,lfsu_v_n,j,
+                                    0.5*rho*(phi_v_n[j]*normal) * (mean_u*phi_v_s[i]) * weight);
+                }
               }
 
               //============================================
@@ -757,6 +873,25 @@ namespace Dune {
                 mat_nn.accumulate(lfsv_v_n,i,lfsu_v_n,j, 0.5 * (flux_jac_phi_j*phi_v_n[i]) * factor);
                 mat_nn.accumulate(lfsv_v_n,i,lfsu_v_n,j, -epsilon * 0.5 * (flux_jac_phi_i*phi_v_n[j]) * factor);
                 mat_nn.accumulate(lfsv_v_n,i,lfsu_v_n,j, penalty_factor * (phi_v_n[j]*phi_v_n[i]) * factor);
+              }
+
+              //================================================//
+              // convection term, upwind discretization
+              //================================================//
+              if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+                for(size_type j=0; j<lfsu_v_s.size(); j++) {
+                  mat_ns.accumulate(lfsv_v_n,i,lfsu_v_s,j,
+                                    -rho * normal_meanflux * omega_s * (phi_v_s[j]*phi_v_n[i]) * weight);
+                  mat_ns.accumulate(lfsv_v_n,i,lfsu_v_s,j,
+                                    -0.5*rho*(phi_v_s[j]*normal) * (mean_u*phi_v_n[i]) * weight);
+                }
+
+                for(size_type j=0; j<lfsu_v_n.size(); j++) {
+                  mat_nn.accumulate(lfsv_v_n,i,lfsu_v_n,j,
+                                    -rho * normal_meanflux * omega_n * (phi_v_n[j]*phi_v_n[i]) * weight);
+                  mat_nn.accumulate(lfsv_v_n,i,lfsu_v_n,j,
+                                    -0.5*rho*(phi_v_n[j]*normal) * (mean_u*phi_v_n[i]) * weight);
+                }
               }
 
               //============================================
@@ -838,7 +973,9 @@ namespace Dune {
         // Determine quadrature order
         const int v_order = FESwitch_V::basis(lfsv_v.finiteElement()).order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-1);
-        const int qorder = 2*v_order + det_jac_order + superintegration_order;
+        const int qorder = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+          3*v_order + det_jac_order + superintegration_order :
+          2*v_order + det_jac_order + superintegration_order;
 
         auto epsilon = prm.epsilonIPSymmetryFactor();
         auto incomp_scaling = prm.incompressibilityScaling(current_dt);
@@ -880,9 +1017,21 @@ namespace Dune {
             auto normal = ig.unitOuterNormal(ip.position());
             auto weight = ip.weight()*geo.integrationElement(ip.position());
             auto mu = prm.mu(ig,ip.position());
+            auto rho = prm.rho(ig,ip.position());
 
             // evaluate boundary condition type
             auto bctype(prm.bctype(ig,ip.position()));
+
+            //============================================//
+            // convection term, upwind discretization
+            //============================================//
+            RF flux, omega;
+            if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+              flux = val_u*normal;
+              omega = (flux >= 0.0) ? 1.0 : 0.0;
+              for(size_t i=0; i<lfsv_v.size(); i++)
+                r.accumulate(lfsv_v,i, rho * flux * omega * (val_u*phi_v[i]) * weight);
+            }
 
             if (bctype == BC::VelocityDirichlet) {
               // compute jump relative to Dirichlet value
@@ -910,6 +1059,12 @@ namespace Dune {
                 // standard IP term integral
                 //================================================//
                 r.accumulate(lfsv_v,i, mu * (jump*phi_v[i]) * penalty_factor * weight);
+
+                //============================================//
+                // convection term, upwind discretization
+                //============================================//
+                if(navier and not(conv == DGNavierStokesConvection::NoFlux))
+                  r.accumulate(lfsv_v,i, rho * flux * (1.0-omega) * (u0*phi_v[i]) * weight);
 
                 //================================================//
                 // pressure-velocity-coupling in momentum equation
@@ -982,7 +1137,9 @@ namespace Dune {
         // Determine quadrature order
         const int v_order = FESwitch_V::basis(lfsv_v.finiteElement()).order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-1);
-        const int qorder = 2*v_order + det_jac_order + superintegration_order;
+        const int qorder = navier and not(conv == DGNavierStokesConvection::NoFlux) ?
+          3*v_order + det_jac_order + superintegration_order :
+          2*v_order + det_jac_order + superintegration_order;
 
         auto epsilon = prm.epsilonIPSymmetryFactor();
         auto incomp_scaling = prm.incompressibilityScaling(current_dt);
@@ -1008,12 +1165,34 @@ namespace Dune {
             VectorBasisSwitch_V::jacobian
               (FESwitch_V::basis(lfsv_v.finiteElement()), geo_inside, local, jac_phi_v);
 
+            // compute u
+            Range_V val_u(0.0);
+            if(navier and not(conv == DGNavierStokesConvection::NoFlux))
+              for (size_type i=0; i<lfsu_v.size(); i++)
+                val_u.axpy(x(lfsu_v,i),phi_v[i]);
+
             auto normal = ig.unitOuterNormal(ip.position());
             auto weight = ip.weight()*geo.integrationElement(ip.position());
             auto mu = prm.mu(ig,ip.position());
+            auto rho = prm.rho(ig,ip.position());
 
             // evaluate boundary condition type
             auto bctype(prm.bctype(ig,ip.position()));
+
+            //============================================//
+            // convection term, upwind discretization
+            //============================================//
+            RF flux, omega;
+            if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+              flux = val_u*normal;
+              omega = (flux >= 0.0) ? 1.0 : 0.0;
+              for(size_type i=0; i<lfsv_v.size(); i++) {
+                for(size_type j=0; j<lfsu_v.size(); j++) {
+                  mat.accumulate(lfsv_v,i,lfsu_v,j, rho * flux * omega * (phi_v[j]*phi_v[i]) * weight);
+                  mat.accumulate(lfsv_v,i,lfsu_v,j, rho * (phi_v[j]*normal) * omega * (val_u*phi_v[i]) * weight);
+                }
+              }
+            }
 
             if (bctype == BC::VelocityDirichlet) {
 
@@ -1037,6 +1216,14 @@ namespace Dune {
                   // standard IP term integral
                   //================================================//
                   mat.accumulate(lfsv_v,i,lfsu_v,j, mu * (phi_v[j]*phi_v[i]) * penalty_factor * weight);
+
+                  //============================================//
+                  // convection term, upwind discretization
+                  //============================================//
+                  if(navier and not(conv == DGNavierStokesConvection::NoFlux)) {
+                    auto u0(prm.g(cell_inside,local));
+                    mat.accumulate(lfsv_v,i,lfsu_v,j, rho * (phi_v[j]*normal) * (1.0-omega) * (u0*phi_v[i]) * weight);
+                  }
                 }
 
                 //================================================//

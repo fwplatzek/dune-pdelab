@@ -127,7 +127,9 @@ namespace Dune {
         const int v_order = lfsu_v_pfs.child(0).finiteElement().localBasis().order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-1);
         const int jac_order = geo.type().isSimplex() ? 0 : 1;
-        const int qorder = 3*v_order - 1 + jac_order + det_jac_order + superintegration_order;
+        const int qorder = navier ?
+          3*v_order - 1 + jac_order + det_jac_order + superintegration_order :
+          2*v_order - 1 + jac_order + det_jac_order + superintegration_order;
 
         // Initialize vectors outside for loop
         typename EG::Geometry::JacobianInverseTransposed jac;
@@ -310,6 +312,8 @@ namespace Dune {
         using namespace Indices;
         using LFSV_V_PFS = TypeTree::Child<LFSV,_0>;
         using LFSV_V = TypeTree::Child<LFSV_V_PFS,_0>;
+        using RF = typename LFSV_V::Traits::FiniteElementType::
+          Traits::LocalBasisType::Traits::RangeFieldType;
         using RT_V = typename LFSV_V::Traits::FiniteElementType::
           Traits::LocalBasisType::Traits::RangeType;
 
@@ -330,10 +334,13 @@ namespace Dune {
         const int v_order = lfsv_v_pfs.child(0).finiteElement().localBasis().order();
         const int det_jac_order = geo_in_inside.type().isSimplex() ? 0 : (dim-2);
         const int jac_order = geo_in_inside.type().isSimplex() ? 0 : 1;
-        const int qorder = 2*v_order + det_jac_order + jac_order + superintegration_order;
+        const int qorder = navier and outflow == NavierStokesOutflowCondition::DDN ?
+          3*v_order + det_jac_order + jac_order + superintegration_order :
+          2*v_order + det_jac_order + jac_order + superintegration_order;
 
         // Initialize vectors outside for loop
         std::vector<RT_V> phi(vsize);
+        Dune::FieldVector<RF,dim> u(0.0);
 
         // loop over quadrature points and integrate normal flux
         for (const auto& ip : quadratureRule(geo,qorder))
@@ -341,33 +348,55 @@ namespace Dune {
             // evaluate boundary condition type
             auto bctype = _p.bctype(ig,ip.position());
 
-            // skip rest if we are on Dirichlet boundary
-            if (bctype != BC::StressNeumann)
-              continue;
+            // boundary where pressure is fixed
+            if(bctype == BC::StressNeumann) {
+              // position of quadrature point in local coordinates of element
+              auto local = geo_in_inside.global(ip.position());
 
-            // position of quadrature point in local coordinates of element
-            auto local = geo_in_inside.global(ip.position());
+              // evaluate basis functions
+              lfsv_v_pfs.child(0).finiteElement().localBasis().evaluateFunction(local,phi);
 
-            // evaluate basis functions
-            lfsv_v_pfs.child(0).finiteElement().localBasis().evaluateFunction(local,phi);
+              const auto factor = ip.weight() * geo.integrationElement(ip.position());
+              const auto normal = ig.unitOuterNormal(ip.position());
 
-            const auto factor = ip.weight() * geo.integrationElement(ip.position());
-            const auto normal = ig.unitOuterNormal(ip.position());
+              // evaluate flux boundary condition
+              const auto neumann_stress = _p.j(ig,ip.position(),normal);
 
-            // evaluate flux boundary condition
-            const auto neumann_stress = _p.j(ig,ip.position(),normal);
-
-            for(unsigned int d=0; d<dim; ++d)
-              {
-
-                const auto& lfsv_v = lfsv_v_pfs.child(d);
-
-                for (size_t i=0; i<vsize; i++)
-                  {
+              for(unsigned int d=0; d<dim; ++d) {
+                  const auto& lfsv_v = lfsv_v_pfs.child(d);
+                  for (size_t i=0; i<vsize; i++)
                     r.accumulate(lfsv_v,i, neumann_stress[d] * phi[i] * factor);
-                  }
-
               }
+            } // end StressNeumann
+
+            // contribution from directional do-nothing boundary condition
+            if(bctype == BC::DoNothing and navier and outflow == NavierStokesOutflowCondition::DDN) {
+              // position of quadrature point in local coordinates of element
+              auto local = geo_in_inside.global(ip.position());
+
+              // evaluate velocity field
+              lfsv_v_pfs.child(0).finiteElement().localBasis().evaluateFunction(local,phi);
+              for(unsigned int d=0; d<dim; ++d) {
+                u[d] = 0.0;
+                const LFSV_V& lfsv_v = lfsv_v_pfs.child(d);
+                for(unsigned int i=0; i<vsize; i++)
+                  u[d] += x(lfsv_v,i) * phi[i];
+              }
+
+              const auto factor = ip.weight() * geo.integrationElement(ip.position());
+              const auto normal = ig.unitOuterNormal(ip.position());
+
+              RF flux = u*normal;
+              using std::abs;
+              RF absflux = abs(flux);
+
+              // substract inflow part
+              for(unsigned int d=0; d<dim; ++d) {
+                const auto& lfsv_v = lfsv_v_pfs.child(d);
+                for(size_t i=0; i<vsize; i++)
+                  r.accumulate(lfsv_v,i, 0.25*(flux - absflux) * u[d] * phi[i] * factor);
+              }
+            } // end DDN
           } // end loop quadrature points
       } // end alpha_boundary
 
@@ -406,7 +435,9 @@ namespace Dune {
         const int v_order = lfsu_v_pfs.child(0).finiteElement().localBasis().order();
         const int det_jac_order = geo.type().isSimplex() ? 0 : (dim-1);
         const int jac_order = geo.type().isSimplex() ? 0 : 1;
-        const int qorder = 3*v_order - 1 + jac_order + det_jac_order + superintegration_order;
+        const int qorder = navier ?
+          3*v_order - 1 + jac_order + det_jac_order + superintegration_order :
+          2*v_order - 1 + jac_order + det_jac_order + superintegration_order;
 
         // Initialize vectors outside for loop
         typename EG::Geometry::JacobianInverseTransposed jac;

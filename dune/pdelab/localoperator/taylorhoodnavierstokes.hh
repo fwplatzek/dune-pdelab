@@ -54,7 +54,7 @@ namespace Dune {
         \tparam q Quadrature order.
     */
 
-    template<typename P>
+    template<typename P, NavierStokesOutflowCondition outflow = NavierStokesOutflowCondition::CDN>
     class TaylorHoodNavierStokes :
       public FullVolumePattern,
       public LocalOperatorDefaultFlags,
@@ -76,7 +76,7 @@ namespace Dune {
       // residual assembly flags
       enum { doAlphaVolume = true };
       enum { doLambdaVolume = true };
-      enum { doLambdaBoundary = true };
+      enum { doAlphaBoundary = true };
 
       using PhysicalParameters = P;
 
@@ -223,7 +223,7 @@ namespace Dune {
                     r.accumulate(lfsu_p,i, -1.0 * jacu[d][d] * psi[i] * factor);
 
           }
-      }
+      } // end alpha_volume
 
 
       // volume integral depending on test functions
@@ -298,12 +298,13 @@ namespace Dune {
               }
 
           }
-      }
+      } // end lambda_volume
 
-
-      // residual of boundary term
-      template<typename IG, typename LFSV, typename R>
-      void lambda_boundary (const IG& ig, const LFSV& lfsv, R& r) const
+      // boundary term
+      template<typename IG, typename LFSU, typename X, typename LFSV, typename R>
+      void alpha_boundary (const IG& ig,
+                           const LFSU& lfsu, const X& x, const LFSV& lfsv,
+                           R& r) const
       {
         // define types
         using namespace Indices;
@@ -367,8 +368,8 @@ namespace Dune {
                   }
 
               }
-          }
-      }
+          } // end loop quadrature points
+      } // end alpha_boundary
 
 
       template<typename EG, typename LFSU, typename X, typename LFSV, typename M>
@@ -506,7 +507,18 @@ namespace Dune {
               }
             } // d
           } // it
-      }
+      } // end jacobian_volume
+
+      // jacobian of boundary term
+      template<typename IG, typename LFSU, typename X, typename LFSV,
+               typename LocalMatrix>
+      void jacobian_boundary (const IG& ig,
+                              const LFSU& lfsu, const X& x, const LFSV& lfsv,
+                              LocalMatrix& mat) const
+      {
+        if(outflow == NavierStokesOutflowCondition::CDN)
+          return;
+      } // end jacobian_boundary
 
     private:
       P& _p;

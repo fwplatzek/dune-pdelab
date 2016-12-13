@@ -39,6 +39,23 @@ namespace Dune {
     };
 
     /**
+     *
+     * Possible types:
+     *
+     * <ul>
+     *
+     * <li>\a CDN: Classical Do-nothing condition.
+     *
+     * <li>\a DDN: Directional Do-nothing condition.
+     *
+     * </ul>
+     */
+    enum struct NavierStokesOutflowCondition
+    {
+      CDN, DDN
+    };
+
+    /**
      * Traits class for the parameter class of a Navier-Stokes local operator.
      */
     template<typename GV, typename RF>

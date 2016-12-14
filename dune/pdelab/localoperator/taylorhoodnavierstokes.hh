@@ -549,6 +549,86 @@ namespace Dune {
       {
         if(outflow == NavierStokesOutflowCondition::CDN)
           return;
+
+        // define types
+        using namespace Indices;
+        using LFSV_V_PFS = TypeTree::Child<LFSV,_0>;
+        using LFSV_V = TypeTree::Child<LFSV_V_PFS,_0>;
+        using RF = typename LFSV_V::Traits::FiniteElementType::
+          Traits::LocalBasisType::Traits::RangeFieldType;
+        using RT_V = typename LFSV_V::Traits::FiniteElementType::
+          Traits::LocalBasisType::Traits::RangeType;
+
+        // extract local velocity function spaces
+        const auto& lfsv_v_pfs = child(lfsv,_0);
+        const unsigned int vsize = lfsv_v_pfs.child(0).size();
+
+        // dimensions
+        static const unsigned int dim = IG::dimension;
+
+        // get geometry
+        auto geo = ig.geometry();
+
+        // Get geometry of intersection in local coordinates of inside cell
+        auto geo_in_inside = ig.geometryInInside();
+
+        // determine quadrature order
+        const int v_order = lfsv_v_pfs.child(0).finiteElement().localBasis().order();
+        const int det_jac_order = geo_in_inside.type().isSimplex() ? 0 : (dim-2);
+        const int jac_order = geo_in_inside.type().isSimplex() ? 0 : 1;
+        const int qorder = navier and outflow == NavierStokesOutflowCondition::DDN ?
+          3*v_order + det_jac_order + jac_order + superintegration_order :
+          2*v_order + det_jac_order + jac_order + superintegration_order;
+
+        // Initialize vectors outside for loop
+        std::vector<RT_V> phi(vsize);
+        Dune::FieldVector<RF,dim> u(0.0);
+
+        // loop over quadrature points and integrate normal flux
+        for (const auto& ip : quadratureRule(geo,qorder))
+          {
+            // evaluate boundary condition type
+            auto bctype = _p.bctype(ig,ip.position());
+
+            // contribution from directional do-nothing boundary condition
+            if(bctype == BC::DoNothing and navier and outflow == NavierStokesOutflowCondition::DDN) {
+              // position of quadrature point in local coordinates of element
+              auto local = geo_in_inside.global(ip.position());
+
+              // evaluate velocity field
+              lfsv_v_pfs.child(0).finiteElement().localBasis().evaluateFunction(local,phi);
+              for(unsigned int d=0; d<dim; ++d) {
+                u[d] = 0.0;
+                const LFSV_V& lfsv_v = lfsv_v_pfs.child(d);
+                for(unsigned int i=0; i<vsize; i++)
+                  u[d] += x(lfsv_v,i) * phi[i];
+              }
+
+              const auto factor = ip.weight() * geo.integrationElement(ip.position());
+              const auto normal = ig.unitOuterNormal(ip.position());
+
+              RF flux = u*normal;
+              using std::abs;
+              RF absflux = abs(flux);
+              RF omega = (flux < 0.0) ? 1.0 : 0.0;
+
+              // substract inflow part
+              for(unsigned int d=0; d<dim; ++d) {
+                const auto& lfsv_v = lfsv_v_pfs.child(d);
+
+                for(size_t i=0; i<vsize; i++) {
+                  for(size_t j=0; j<vsize; j++) {
+                    mat.accumulate(lfsv_v,i,lfsv_v,j, -0.25*(flux - absflux) * phi[j] * phi[i] * factor);
+
+                    for(unsigned int dd=0; dd<dim; ++dd) {
+                      const LFSV_V& lfsv_v_dd = lfsv_v_pfs.child(dd);
+                      mat.accumulate(lfsv_v,i,lfsv_v_dd,j, -0.5 * phi[j] * normal[dd] * omega * u[d] * phi[i] * factor);
+                    }
+                  }
+                }
+              }
+            } // end DDN
+          } // end loop quadrature points
       } // end jacobian_boundary
 
     private:

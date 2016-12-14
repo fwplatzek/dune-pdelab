@@ -394,7 +394,7 @@ namespace Dune {
               for(unsigned int d=0; d<dim; ++d) {
                 const auto& lfsv_v = lfsv_v_pfs.child(d);
                 for(size_t i=0; i<vsize; i++)
-                  r.accumulate(lfsv_v,i, 0.25*(flux - absflux) * u[d] * phi[i] * factor);
+                  r.accumulate(lfsv_v,i, -0.25*(flux - absflux) * u[d] * phi[i] * factor);
               }
             } // end DDN
           } // end loop quadrature points
